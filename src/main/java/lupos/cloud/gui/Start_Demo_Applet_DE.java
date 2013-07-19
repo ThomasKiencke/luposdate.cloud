@@ -21,17 +21,17 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.distributedendpoints.gui;
+package lupos.cloud.gui;
 
 import javax.swing.JOptionPane;
 
-import lupos.distributedendpoints.query.withoutsubgraphsubmission.QueryClient_DE;
-import lupos.distributedendpoints.query.withoutsubgraphsubmission.QueryClient_DE_OneKeyDistribution;
-import lupos.distributedendpoints.query.withoutsubgraphsubmission.QueryClient_DE_OneToThreeKeysDistribution;
-import lupos.distributedendpoints.query.withoutsubgraphsubmission.QueryClient_DE_TwoKeysDistribution;
-import lupos.distributedendpoints.query.withsubgraphsubmission.QueryClient_DE_SG_OneKeyDistribution;
-import lupos.distributedendpoints.query.withsubgraphsubmission.QueryClient_DE_SG_OneToThreeKeysDistribution;
-import lupos.distributedendpoints.query.withsubgraphsubmission.QueryClient_DE_SG_TwoKeysDistribution;
+import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_Cloud;
+//import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_DE_OneKeyDistribution;
+//import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_DE_OneToThreeKeysDistribution;
+//import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_DE_TwoKeysDistribution;
+//import lupos.cloud.query.withsubgraphsubmission.QueryClient_DE_SG_OneKeyDistribution;
+//import lupos.cloud.query.withsubgraphsubmission.QueryClient_DE_SG_OneToThreeKeysDistribution;
+//import lupos.cloud.query.withsubgraphsubmission.QueryClient_DE_SG_TwoKeysDistribution;
 import lupos.gui.Demo_Applet;
 
 /**
@@ -40,13 +40,13 @@ import lupos.gui.Demo_Applet;
 public class Start_Demo_Applet_DE {
 
 	public static void main(final String[] args) throws ClassNotFoundException {
-		Demo_Applet.registerEvaluator("Distributed Evaluator (without distribution strategy)", QueryClient_DE.class);
-		Demo_Applet.registerEvaluator("Distributed Evaluator (one key distribution)", QueryClient_DE_OneKeyDistribution.class);
-		Demo_Applet.registerEvaluator("Distributed Evaluator (two keys distribution)", QueryClient_DE_TwoKeysDistribution.class);
-		Demo_Applet.registerEvaluator("Distributed Evaluator (one to three keys distribution)", QueryClient_DE_OneToThreeKeysDistribution.class);
-		Demo_Applet.registerEvaluator("Distributed Evaluator with subgraph submission (one key distribution)", QueryClient_DE_SG_OneKeyDistribution.class);
-		Demo_Applet.registerEvaluator("Distributed Evaluator with subgraph submission (two keys distribution)", QueryClient_DE_SG_TwoKeysDistribution.class);
-		Demo_Applet.registerEvaluator("Distributed Evaluator with subgraph submission (one to three keys distribution)", QueryClient_DE_SG_OneToThreeKeysDistribution.class);
+		Demo_Applet.registerEvaluator("Cloud Evaluator", QueryClient_Cloud.class);
+//		Demo_Applet.registerEvaluator("Distributed Evaluator (one key distribution)", QueryClient_DE_OneKeyDistribution.class);
+//		Demo_Applet.registerEvaluator("Distributed Evaluator (two keys distribution)", QueryClient_DE_TwoKeysDistribution.class);
+//		Demo_Applet.registerEvaluator("Distributed Evaluator (one to three keys distribution)", QueryClient_DE_OneToThreeKeysDistribution.class);
+//		Demo_Applet.registerEvaluator("Distributed Evaluator with subgraph submission (one key distribution)", QueryClient_DE_SG_OneKeyDistribution.class);
+//		Demo_Applet.registerEvaluator("Distributed Evaluator with subgraph submission (two keys distribution)", QueryClient_DE_SG_TwoKeysDistribution.class);
+//		Demo_Applet.registerEvaluator("Distributed Evaluator with subgraph submission (one to three keys distribution)", QueryClient_DE_SG_OneToThreeKeysDistribution.class);
 		Demo_Applet.main(args);
 	}
 

@@ -21,14 +21,16 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.distributedendpoints.storage;
+package lupos.cloud.storage;
 
+//import org.openrdf.sail.rdbms.evaluation.QueryBuilder;
+
+import lupos.cloud.storage.util.CloudManagement;
+import lupos.cloud.storage.util.CloudQueryBuilder;
 import lupos.datastructures.items.Triple;
 import lupos.datastructures.queryresult.QueryResult;
-import lupos.distributed.query.operator.histogramsubmission.AbstractHistogramExecutor;
+//import lupos.distributed.query.operator.histogramsubmission.AbstractHistogramExecutor;
 import lupos.distributed.storage.nodistributionstrategy.BlockUpdatesStorage;
-import lupos.distributedendpoints.storage.util.EndpointManagement;
-import lupos.distributedendpoints.storage.util.QueryBuilder;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 /**
@@ -45,7 +47,7 @@ public class Storage_DE extends BlockUpdatesStorage {
 	/**
 	 *  for managing the registered endpoints and submitting queries to them
 	 */
-	protected final EndpointManagement endpointManagement;
+	protected final CloudManagement cloudManagement;
 
 	/**
 	 * this flag is true if data has been inserted, otherwise it is false
@@ -56,29 +58,33 @@ public class Storage_DE extends BlockUpdatesStorage {
 	 * Constructor: The endpoint management is initialized (which reads in the configuration file with registered endpoints)
 	 */
 	public Storage_DE(){
-		this.endpointManagement = new EndpointManagement();
+		this.cloudManagement = new CloudManagement();
 	}
 
 	@Override
 	public void blockInsert(){
-		this.endpointManagement.submitSPARULQueryToArbitraryEndpoint(QueryBuilder.buildInsertQuery(this.toBeAdded));
+		this.cloudManagement.submitHBaseTripleToDatabase(CloudQueryBuilder.buildInputHBaseTriple(this.toBeAdded));
+		System.out.println("size: " + toBeAdded.size());
 		this.insertedData = true;
 	}
 
 	@Override
 	public boolean containsTripleAfterAdding(final Triple triple) {
-		return !this.endpointManagement.submitSPARQLQuery(QueryBuilder.buildQuery(triple)).isEmpty();
+//		return !this.cloudManagement.submitSPARQLQuery(CloudQueryBuilder.buildQuery(triple)).isEmpty();
+		return !this.cloudManagement.submitPigQuery(CloudQueryBuilder.buildQuery(triple)).isEmpty();
 	}
 
 	@Override
 	public void removeAfterAdding(final Triple triple) {
-		this.endpointManagement.submitSPARULQuery(QueryBuilder.buildDeleteQuery(triple));
-		this.endpointManagement.waitForThreadPool();
+//		this.cloudManagement.submitSPARULQuery(CloudQueryBuilder.buildDeleteQuery(triple));
+//		this.cloudManagement.waitForThreadPool();
+		this.cloudManagement.deleteHBaseTripleFromDatabase(CloudQueryBuilder.generateSixIndecesTriple(triple));
 	}
 
 	@Override
 	public QueryResult evaluateTriplePatternAfterAdding(final TriplePattern triplePattern) {
-		return this.endpointManagement.submitSPARQLQuery(QueryBuilder.buildQuery(triplePattern));
+//		return this.cloudManagement.submitSPARQLQuery(CloudQueryBuilder.buildQuery(triplePattern));
+		return this.cloudManagement.submitPigQuery((CloudQueryBuilder.buildQuery(triplePattern)));
 	}
 
 	@Override
@@ -86,10 +92,10 @@ public class Storage_DE extends BlockUpdatesStorage {
 		if(!this.toBeAdded.isEmpty()){
 			super.endImportData();
 		}
-		this.endpointManagement.waitForThreadPool();
+//		this.cloudManagement.waitForThreadPool();
 		if(this.insertedData){
 			// send request for rebuilding the statistics!
-			this.endpointManagement.submitHistogramRequest(AbstractHistogramExecutor.createRebuildStatisticsRequestString());
+//			this.cloudManagement.submitHistogramRequest(AbstractHistogramExecutor.createRebuildStatisticsRequestString());
 			this.insertedData = false;
 		}
 	}
@@ -97,7 +103,7 @@ public class Storage_DE extends BlockUpdatesStorage {
 	/**
 	 * @return the endpoint management object for submitting to the registered endpoints
 	 */
-	public EndpointManagement getEndpointManagement(){
-		return this.endpointManagement;
+	public CloudManagement getEndpointManagement(){
+		return this.cloudManagement;
 	}
 }
