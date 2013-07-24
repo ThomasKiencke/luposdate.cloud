@@ -26,6 +26,7 @@ package lupos.cloud.storage.util;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import lupos.cloud.storage.HBaseTableStrategy;
 import lupos.cloud.storage.HBaseTriple;
 import lupos.datastructures.items.Triple;
 import lupos.datastructures.items.literal.AnonymousLiteral;
@@ -64,32 +65,12 @@ public class CloudQueryBuilder {
 		ArrayList<HBaseTriple> hbaseTripleList = new ArrayList<HBaseTriple>();
 
 		for (Triple triple : toBeAdded) {
-			for (HBaseTriple insert : generateSixIndecesTriple(triple)) {
-				hbaseTripleList.add(insert);
-			}
+			for (HBaseTriple ht : HBaseTableStrategy.generateSixIndecesTriple(triple))
+				hbaseTripleList.add(ht);
 		}
 		return hbaseTripleList;
 	}
 
-	public static Collection<HBaseTriple> generateSixIndecesTriple(
-			final Triple triple) {
-		ArrayList<HBaseTriple> result = new ArrayList<HBaseTriple>();
-		/* S_PO */
-		result.add(generateHBaseTriple(triple.getSubject().toString(), "VALUE",
-				triple.getPredicate().toString()
-						+ " " + triple.getObject().toString()));
-		/* P_SO */
-		/* O_SP */
-		/* PS O */
-		/* SO_P */
-		/* PO_S */
-		return result;
-	}
-
-	public static HBaseTriple generateHBaseTriple(final String row_key,
-			final String column_family, final String value) {
-		return new HBaseTriple(row_key, column_family, value);
-	}
 
 	// /**
 	// * Builds a query to check if a triple is contained in the distributed

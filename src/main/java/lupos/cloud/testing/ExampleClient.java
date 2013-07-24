@@ -1,4 +1,4 @@
-package lupos.cloud.storage.util;
+package lupos.cloud.testing;
 
 import java.io.IOException;
 
@@ -29,7 +29,7 @@ public class ExampleClient {
 		if (tables.length != 1 && Bytes.equals(tablename, tables[0].getName())) {
 			throw new IOException("Failed create of table");
 		}
-		// Run some operations â a put, a get, and a scan â against the table.
+		// Run some operations ï¿½ a put, a get, and a scan ï¿½ against the table.
 		HTable table = new HTable(config, tablename);
 		byte[] row1 = Bytes.toBytes("row1");
 		Put p1 = new Put(row1);
@@ -50,7 +50,7 @@ public class ExampleClient {
 			scanner.close();
 		}
 		// Drop the table
-		admin.disableTable(tablename);
-		admin.deleteTable(tablename);
+//		admin.disableTable(tablename);
+//		admin.deleteTable(tablename);
 	}
 }

@@ -2,16 +2,22 @@ package lupos.cloud.storage;
 
 public class HBaseTriple {
 	String row_key;
-	String column_family;
+	String column;
 	String value;
+	String tablename;
 
-	public HBaseTriple(String row_key, String column_family, String value) {
+	public HBaseTriple(String tablename, String row_key, String column_family, String value) {
 		super();
 		this.row_key = row_key;
-		this.column_family = column_family;
+		this.column = column_family;
 		this.value = value;
+		this.tablename = tablename;
 	}
-
+	
+	public String getTablename() {
+		return tablename;
+	}
+	
 	public String getRow_key() {
 		return row_key;
 	}
@@ -20,12 +26,12 @@ public class HBaseTriple {
 		this.row_key = row_key;
 	}
 
-	public String getColumn_family() {
-		return column_family;
+	public String getColumn() {
+		return column;
 	}
 
-	public void setColumn_family(String column_family) {
-		this.column_family = column_family;
+	public void setColumn(String column_family) {
+		this.column = column_family;
 	}
 
 	public String getValue() {
@@ -39,7 +45,7 @@ public class HBaseTriple {
 	@Override
 	public String toString() {
 		return "HBaseTriple [row_key=" + row_key + ", column_family="
-				+ column_family + ", value=" + value + "]";
+				+ column + ", value=" + value + "]";
 	}
 	
 }

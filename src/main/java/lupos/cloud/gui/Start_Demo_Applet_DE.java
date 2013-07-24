@@ -26,6 +26,7 @@ package lupos.cloud.gui;
 import javax.swing.JOptionPane;
 
 import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_Cloud;
+import lupos.cloud.query.withsubgraphsubmission.CloudEvaluator;
 //import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_DE_OneKeyDistribution;
 //import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_DE_OneToThreeKeysDistribution;
 //import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_DE_TwoKeysDistribution;
@@ -40,6 +41,7 @@ import lupos.gui.Demo_Applet;
 public class Start_Demo_Applet_DE {
 
 	public static void main(final String[] args) throws ClassNotFoundException {
+		Demo_Applet.registerEvaluator("Cloud SubGraph Evaluator", CloudEvaluator.class);
 		Demo_Applet.registerEvaluator("Cloud Evaluator", QueryClient_Cloud.class);
 //		Demo_Applet.registerEvaluator("Distributed Evaluator (one key distribution)", QueryClient_DE_OneKeyDistribution.class);
 //		Demo_Applet.registerEvaluator("Distributed Evaluator (two keys distribution)", QueryClient_DE_TwoKeysDistribution.class);

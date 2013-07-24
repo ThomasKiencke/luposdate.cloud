@@ -25,8 +25,11 @@ package lupos.cloud.storage;
 
 //import org.openrdf.sail.rdbms.evaluation.QueryBuilder;
 
+import org.apache.hadoop.hdfs.server.common.StorageInfo;
+
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.cloud.storage.util.CloudQueryBuilder;
+import lupos.cloud.storage.util.HBaseConnection;
 import lupos.datastructures.items.Triple;
 import lupos.datastructures.queryresult.QueryResult;
 //import lupos.distributed.query.operator.histogramsubmission.AbstractHistogramExecutor;
@@ -34,18 +37,20 @@ import lupos.distributed.storage.nodistributionstrategy.BlockUpdatesStorage;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 /**
- * This class contains the storage layer for our distributed SPARQL endpoint query evaluator.
- * This class handles the communication with the SPARQL endpoints during data manipulation and distributed querying.
- *
- * All registered endpoints are asked for the evaluation of the triple patterns within a SPARQL query.
- * It is assumed that the data is not distributed in an intelligent way and that any registered endpoint
- * can have data for any triple pattern.
- * Also non-luposdate SPARQL endpoints are supported.
+ * This class contains the storage layer for our distributed SPARQL endpoint
+ * query evaluator. This class handles the communication with the SPARQL
+ * endpoints during data manipulation and distributed querying.
+ * 
+ * All registered endpoints are asked for the evaluation of the triple patterns
+ * within a SPARQL query. It is assumed that the data is not distributed in an
+ * intelligent way and that any registered endpoint can have data for any triple
+ * pattern. Also non-luposdate SPARQL endpoints are supported.
  */
 public class Storage_DE extends BlockUpdatesStorage {
 
+	private int countTriple = 0;
 	/**
-	 *  for managing the registered endpoints and submitting queries to them
+	 * for managing the registered endpoints and submitting queries to them
 	 */
 	protected final CloudManagement cloudManagement;
 
@@ -53,57 +58,84 @@ public class Storage_DE extends BlockUpdatesStorage {
 	 * this flag is true if data has been inserted, otherwise it is false
 	 */
 	protected boolean insertedData = false;
+	
+	public static Storage_DE storageInstance = null;
+	
+	public static Storage_DE getInstance() {
+		if (storageInstance == null) {
+			storageInstance = new Storage_DE();
+		}
+		return storageInstance;
+	}
 
 	/**
-	 * Constructor: The endpoint management is initialized (which reads in the configuration file with registered endpoints)
+	 * Constructor: The endpoint management is initialized (which reads in the
+	 * configuration file with registered endpoints)
 	 */
-	public Storage_DE(){
+	public Storage_DE() {
 		this.cloudManagement = new CloudManagement();
+	}
+	
+	public CloudManagement getCloudManagement() {
+		return cloudManagement;
 	}
 
 	@Override
-	public void blockInsert(){
-		this.cloudManagement.submitHBaseTripleToDatabase(CloudQueryBuilder.buildInputHBaseTriple(this.toBeAdded));
-		System.out.println("size: " + toBeAdded.size());
+	public void blockInsert() {
+		countTriple += toBeAdded.size();
+		this.cloudManagement.submitHBaseTripleToDatabase(CloudQueryBuilder
+				.buildInputHBaseTriple(this.toBeAdded));
 		this.insertedData = true;
 	}
 
 	@Override
 	public boolean containsTripleAfterAdding(final Triple triple) {
-//		return !this.cloudManagement.submitSPARQLQuery(CloudQueryBuilder.buildQuery(triple)).isEmpty();
-		return !this.cloudManagement.submitPigQuery(CloudQueryBuilder.buildQuery(triple)).isEmpty();
+		// return
+		// !this.cloudManagement.submitSPARQLQuery(CloudQueryBuilder.buildQuery(triple)).isEmpty();
+		return !this.cloudManagement.submitPigQuery(
+				CloudQueryBuilder.buildQuery(triple)).isEmpty();
 	}
 
 	@Override
 	public void removeAfterAdding(final Triple triple) {
-//		this.cloudManagement.submitSPARULQuery(CloudQueryBuilder.buildDeleteQuery(triple));
-//		this.cloudManagement.waitForThreadPool();
-		this.cloudManagement.deleteHBaseTripleFromDatabase(CloudQueryBuilder.generateSixIndecesTriple(triple));
+		// this.cloudManagement.submitSPARULQuery(CloudQueryBuilder.buildDeleteQuery(triple));
+		// this.cloudManagement.waitForThreadPool();
+		this.cloudManagement.deleteHBaseTripleFromDatabase(HBaseTableStrategy
+				.generateSixIndecesTriple(triple));
 	}
 
 	@Override
-	public QueryResult evaluateTriplePatternAfterAdding(final TriplePattern triplePattern) {
-//		return this.cloudManagement.submitSPARQLQuery(CloudQueryBuilder.buildQuery(triplePattern));
-		return this.cloudManagement.submitPigQuery((CloudQueryBuilder.buildQuery(triplePattern)));
+	public QueryResult evaluateTriplePatternAfterAdding(
+			final TriplePattern triplePattern) {
+		// return
+		// this.cloudManagement.submitSPARQLQuery(CloudQueryBuilder.buildQuery(triplePattern));
+		return this.cloudManagement.submitPigQuery((CloudQueryBuilder
+				.buildQuery(triplePattern)));
 	}
 
 	@Override
 	public void endImportData() {
-		if(!this.toBeAdded.isEmpty()){
+		if (!this.toBeAdded.isEmpty()) {
 			super.endImportData();
+			System.out.println(countTriple + " Tripel importiert!");
+//			for (String tablename : HBaseTableStrategy.TABLE_NAMES) {
+//				HBaseConnection.flush(tablename);
+//			}
+			countTriple = 0;
 		}
-//		this.cloudManagement.waitForThreadPool();
-		if(this.insertedData){
+		// this.cloudManagement.waitForThreadPool();
+		if (this.insertedData) {
 			// send request for rebuilding the statistics!
-//			this.cloudManagement.submitHistogramRequest(AbstractHistogramExecutor.createRebuildStatisticsRequestString());
+			// this.cloudManagement.submitHistogramRequest(AbstractHistogramExecutor.createRebuildStatisticsRequestString());
 			this.insertedData = false;
 		}
 	}
 
 	/**
-	 * @return the endpoint management object for submitting to the registered endpoints
+	 * @return the endpoint management object for submitting to the registered
+	 *         endpoints
 	 */
-	public CloudManagement getEndpointManagement(){
+	public CloudManagement getEndpointManagement() {
 		return this.cloudManagement;
 	}
 }
