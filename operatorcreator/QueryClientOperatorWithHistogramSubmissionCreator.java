@@ -21,24 +21,36 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.query.withsubgraphsubmission;
+package lupos.distributed.operator.format.operatorcreator;
 
-import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.storage.util.CloudManagement;
-import lupos.datastructures.queryresult.QueryResult;
-import lupos.distributed.operator.ISubgraphExecutor;
-import lupos.distributed.storage.distributionstrategy.tripleproperties.KeyContainer;
+import java.util.Collection;
 
-public class Cloud_SubgraphExecutor implements ICloudSubgraphExecutor {
+import lupos.distributed.query.operator.histogramsubmission.IHistogramExecutor;
+import lupos.distributed.query.operator.histogramsubmission.QueryClientIndexScanWithHistogramSubmission;
+import lupos.distributed.query.operator.histogramsubmission.QueryClientRootWithHistogramSubmission;
+import lupos.engine.operators.index.BasicIndexScan;
+import lupos.engine.operators.index.Dataset;
+import lupos.engine.operators.index.Root;
+import lupos.engine.operators.tripleoperator.TriplePattern;
 
-	protected final CloudManagement cloudManagement;
+/**
+ * This class is for creating the operators of the query client...
+ */
+public class QueryClientOperatorWithHistogramSubmissionCreator implements IOperatorCreator {
 
-	public Cloud_SubgraphExecutor(final CloudManagement cloudManagement) {
-		this.cloudManagement = cloudManagement;
+	protected final IHistogramExecutor histogramExecutor;
+
+	public QueryClientOperatorWithHistogramSubmissionCreator(final IHistogramExecutor histogramExecutor) {
+		this.histogramExecutor = histogramExecutor;
 	}
 
 	@Override
-	public QueryResult evaluate(String cloudSubgraphAsPig) {
-		return this.cloudManagement.submitPigQuery(cloudSubgraphAsPig);
+	public Root createRoot(final Dataset dataset) {
+		return new QueryClientRootWithHistogramSubmission(dataset, this.histogramExecutor);
+	}
+
+	@Override
+	public BasicIndexScan createIndexScan(final Root root, final Collection<TriplePattern> triplePatterns) {
+		return new QueryClientIndexScanWithHistogramSubmission((QueryClientRootWithHistogramSubmission) root, triplePatterns);
 	}
 }

@@ -27,9 +27,10 @@ package lupos.cloud.storage;
 
 import org.apache.hadoop.hdfs.server.common.StorageInfo;
 
+import lupos.cloud.hbase.HBaseConnection;
+import lupos.cloud.hbase.HBaseTableStrategy;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.cloud.storage.util.CloudQueryBuilder;
-import lupos.cloud.storage.util.HBaseConnection;
 import lupos.datastructures.items.Triple;
 import lupos.datastructures.queryresult.QueryResult;
 //import lupos.distributed.query.operator.histogramsubmission.AbstractHistogramExecutor;

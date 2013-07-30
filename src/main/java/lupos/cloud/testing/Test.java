@@ -1,12 +1,12 @@
 package lupos.cloud.testing;
 
 import java.io.IOException;
-import java.util.TreeMap;
+import java.util.Iterator;
 
-import org.apache.velocity.runtime.directive.Literal;
 
-import lupos.cloud.storage.util.HBaseConnection;
-import lupos.datastructures.items.Triple;
+import org.apache.pig.FuncSpec;
+import org.apache.pig.PigServer;
+import org.apache.pig.data.Tuple;
 
 public class Test {
 
@@ -15,28 +15,17 @@ public class Test {
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException {
-		// // HBaseConnection.deleteTable("test");
-		// HBaseConnection.createTable("S_PO", "VALUE");
-		// HBaseConnection.addRow("S_PO", "S", "P O");
-		// HBaseConnection.addRow("S_PO", "S2", "P2 O2");
-		// // HBaseConnection.listAllTables();
-		// HBaseConnection.printTable("P_SO");
-//		HBaseConnection.getRow("S_PO",
-//				"<http://localhost/publications/journals/Journal1/1940>");
+		PigServer pigServer = new PigServer("local");
+		pigServer.registerFunction("PigLoadUDF", new FuncSpec("lupos.cloud.pig.udfs.PigLoadUDF"));
+		pigServer
+				.registerQuery("p1 = load 'hbase://S_PO' using org.apache.pig.backend.hadoop.hbase.HBaseStorage('VALUE', '-loadKey true') as (rowkey:bytearray, VALUE:map[]);");
+		Iterator i = pigServer.openIterator("p1");
+	
 		
-		HBaseConnection.createTable("testTable", "VALUE");
-		HBaseConnection.addRow("testTable", "a", "b1");
-		HBaseConnection.addRow("testTable", "a", "b2");
-
-		// String table = "S_PO";
-		// String row_key_string = table.substring(0, table.indexOf("_"));
-		// String column_name_string = table.substring(table.indexOf("_") + 1,
-		// table.length());
-		// System.out.println(row_key_string + "    " + column_name_string);
-		//
-		// String elements = column_name_string;
-		// System.out.println(elements);
-
+		while (i.hasNext()) {
+//			org.apache.pig.data.Tuple t = (org.apache.pig.data.Tuple) i.next();
+			Tuple t = (Tuple) i.next();
+			System.out.println(t.get(1));
+		}
 	}
-
 }

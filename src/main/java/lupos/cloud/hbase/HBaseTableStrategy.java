@@ -1,4 +1,4 @@
-package lupos.cloud.storage;
+package lupos.cloud.hbase;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,14 +24,14 @@ public class HBaseTableStrategy {
 				row_key += getInputValue(row_key_string, triple).get(key);
 			}
 
-			String column_family = "";
+			String column = "";
 			for (Integer key : getInputValue(column_name_string, triple)
 					.keySet()) {
-				column_family += getInputValue(column_name_string, triple).get(
+				column += getInputValue(column_name_string, triple).get(
 						key);
 			}
 
-			result.add(generateHBaseTriple(tablename, row_key, column_family, ""));
+			result.add(generateHBaseTriple(tablename, row_key, column, ""));
 		}
 		return result;
 	}
@@ -52,8 +52,8 @@ public class HBaseTableStrategy {
 	}
 
 	public static HBaseTriple generateHBaseTriple(final String tablename, final String row_key,
-			final String column_family, final String value) {
-		return new HBaseTriple(tablename, row_key, column_family, value);
+			final String column, final String value) {
+		return new HBaseTriple(tablename, row_key, column, value);
 	}
 
 }

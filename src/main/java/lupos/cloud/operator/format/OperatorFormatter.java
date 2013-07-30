@@ -21,21 +21,34 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.distributed.operator;
+package lupos.cloud.operator.format;
 
-import lupos.datastructures.queryresult.QueryResult;
+import lupos.engine.operators.BasicOperator;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
- * This interface declares the methods to submit a subgraph and retrieve its result
- * @param <K> the type of the key which addresses the node where the subgraph is submitted to
+ * The Interface OperatorFormatter.
  */
-public interface ICloudSubgraphExecutor {
+public interface OperatorFormatter {
 
 	/**
-	 * This method submits a given subgraph and returns the result of the evaluated subgraph
-	 * @param key the key to address the node to which the subgraph is submitted to
-	 * @param subgraphSeriliazedAsJSON the subgraph serialized as JSON string
-	 * @return the retrieved query result
+	 * Serialize.
+	 *
+	 * @param operator the operator
+	 * @param node_id the node_id
+	 * @return the jSON object
+	 * @throws JSONException the jSON exception
 	 */
-	public QueryResult evaluate(String cloudSubgraphAsPig);
+	public String serialize(BasicOperator operator, int node_id) throws JSONException;
+
+	/**
+	 * Deserialize.
+	 *
+	 * @param serializedOperator the serialiezed operator
+	 * @return the basic operator
+	 * @throws JSONException the jSON exception
+	 */
+	public BasicOperator deserialize(JSONObject serializedOperator) throws JSONException;
 }

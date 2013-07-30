@@ -21,24 +21,54 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.query.withsubgraphsubmission;
+package lupos.cloud.operator.format;
 
-import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.storage.util.CloudManagement;
-import lupos.datastructures.queryresult.QueryResult;
-import lupos.distributed.operator.ISubgraphExecutor;
-import lupos.distributed.storage.distributionstrategy.tripleproperties.KeyContainer;
+import lupos.cloud.operator.format.OperatorFormatter;
+import lupos.engine.operators.BasicOperator;
+import lupos.engine.operators.singleinput.filter.Filter;
+import lupos.sparql1_1.ParseException;
 
-public class Cloud_SubgraphExecutor implements ICloudSubgraphExecutor {
+import org.json.JSONException;
+import org.json.JSONObject;
 
-	protected final CloudManagement cloudManagement;
+/**
+ * Implements the formatter for the Filter Operator.
+ */
+public class FilterFormatter implements OperatorFormatter {
 
-	public Cloud_SubgraphExecutor(final CloudManagement cloudManagement) {
-		this.cloudManagement = cloudManagement;
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * luposdate.operators.formatter.OperatorFormatter#serialize(lupos.engine
+	 * .operators.BasicOperator, int)
+	 */
+	@Override
+	public String serialize(final BasicOperator operator, final int node_id)
+			throws JSONException {
+		final JSONObject json = new JSONObject();
+		json.put("type", Filter.class.getName());
+		json.put("node_id", node_id);
+		json.put("expression", operator.toString());
+		return json.toString();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * luposdate.operators.formatter.OperatorFormatter#deserialize(org.json.JSONObject)
+	 */
 	@Override
-	public QueryResult evaluate(String cloudSubgraphAsPig) {
-		return this.cloudManagement.submitPigQuery(cloudSubgraphAsPig);
+	public BasicOperator deserialize(final JSONObject serializedOperator) throws JSONException {
+		final JSONObject json = serializedOperator;
+		String filtername =  json.getString("expression");
+		filtername = filtername.substring(0,filtername.length()-3);
+		try {
+			return new Filter(filtername);
+		} catch (final ParseException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

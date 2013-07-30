@@ -1,4 +1,4 @@
-package lupos.cloud.storage.util;
+package lupos.cloud.pig;
 
 import lupos.engine.operators.index.Root;
 

@@ -1,4 +1,4 @@
-package lupos.cloud.storage;
+package lupos.cloud.hbase;
 
 public class HBaseTriple {
 	String row_key;
@@ -6,10 +6,10 @@ public class HBaseTriple {
 	String value;
 	String tablename;
 
-	public HBaseTriple(String tablename, String row_key, String column_family, String value) {
+	public HBaseTriple(String tablename, String row_key, String column, String value) {
 		super();
 		this.row_key = row_key;
-		this.column = column_family;
+		this.column = column;
 		this.value = value;
 		this.tablename = tablename;
 	}

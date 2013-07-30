@@ -26,8 +26,8 @@ package lupos.cloud.storage.util;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import lupos.cloud.storage.HBaseTableStrategy;
-import lupos.cloud.storage.HBaseTriple;
+import lupos.cloud.hbase.HBaseTableStrategy;
+import lupos.cloud.hbase.HBaseTriple;
 import lupos.datastructures.items.Triple;
 import lupos.datastructures.items.literal.AnonymousLiteral;
 import lupos.datastructures.items.literal.Literal;

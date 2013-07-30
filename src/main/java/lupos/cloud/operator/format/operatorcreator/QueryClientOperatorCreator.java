@@ -21,24 +21,30 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.query.withsubgraphsubmission;
+package lupos.cloud.operator.format.operatorcreator;
 
-import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.storage.util.CloudManagement;
-import lupos.datastructures.queryresult.QueryResult;
-import lupos.distributed.operator.ISubgraphExecutor;
-import lupos.distributed.storage.distributionstrategy.tripleproperties.KeyContainer;
+import java.util.Collection;
 
-public class Cloud_SubgraphExecutor implements ICloudSubgraphExecutor {
+import lupos.distributed.operator.format.operatorcreator.IOperatorCreator;
+import lupos.distributed.query.operator.withouthistogramsubmission.QueryClientIndexScan;
+import lupos.distributed.query.operator.withouthistogramsubmission.QueryClientRoot;
+import lupos.engine.operators.index.BasicIndexScan;
+import lupos.engine.operators.index.Dataset;
+import lupos.engine.operators.index.Root;
+import lupos.engine.operators.tripleoperator.TriplePattern;
 
-	protected final CloudManagement cloudManagement;
+/**
+ * This class is for creating the operators of the query client...
+ */
+public class QueryClientOperatorCreator implements IOperatorCreator {
 
-	public Cloud_SubgraphExecutor(final CloudManagement cloudManagement) {
-		this.cloudManagement = cloudManagement;
+	@Override
+	public Root createRoot(final Dataset dataset) {
+		return new QueryClientRoot(dataset);
 	}
 
 	@Override
-	public QueryResult evaluate(String cloudSubgraphAsPig) {
-		return this.cloudManagement.submitPigQuery(cloudSubgraphAsPig);
+	public BasicIndexScan createIndexScan(final Root root, final Collection<TriplePattern> triplePatterns) {
+		return new QueryClientIndexScan(root, triplePatterns);
 	}
 }

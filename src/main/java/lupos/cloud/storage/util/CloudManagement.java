@@ -35,8 +35,9 @@ import java.util.concurrent.Executors;
 
 //import org.apache.hadoop.hbase.thrift.generated.Hbase;
 
-import lupos.cloud.storage.HBaseTableStrategy;
-import lupos.cloud.storage.HBaseTriple;
+import lupos.cloud.hbase.HBaseConnection;
+import lupos.cloud.hbase.HBaseTableStrategy;
+import lupos.cloud.hbase.HBaseTriple;
 import lupos.datastructures.queryresult.QueryResult;
 import lupos.distributed.storage.distributionstrategy.tripleproperties.KeyContainer;
 //import lupos.distributed.storage.distributionstrategy.tripleproperties.KeyContainer;

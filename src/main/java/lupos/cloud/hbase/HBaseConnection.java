@@ -1,11 +1,10 @@
-package lupos.cloud.storage.util;
+package lupos.cloud.hbase;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import lupos.cloud.storage.HBaseTriple;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;

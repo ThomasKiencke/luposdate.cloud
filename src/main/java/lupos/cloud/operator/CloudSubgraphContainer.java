@@ -21,12 +21,12 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.distributed.operator;
+package lupos.cloud.operator;
 
-import lupos.cloud.storage.util.PigQueryParser;
+import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
+import lupos.cloud.pig.PigQueryParser;
 import lupos.datastructures.queryresult.QueryResult;
 import lupos.distributed.operator.ISubgraphExecutor;
-import lupos.distributed.operator.format.SubgraphContainerFormatter;
 import lupos.engine.operators.RootChild;
 import lupos.engine.operators.index.Dataset;
 import lupos.engine.operators.index.Root;
@@ -85,12 +85,11 @@ public class CloudSubgraphContainer<K> extends RootChild {
 	 */
 	@Override
 	public QueryResult process(final Dataset dataset) {
-		final SubgraphContainerFormatter serializer = new SubgraphContainerFormatter();
-		// try {
+		final CloudSubgraphContainerFormatter pigParser = new CloudSubgraphContainerFormatter();
+		 try {
 		// final JSONObject serializedGraph =
 		// serializer.serialize(this.rootNodeOfSubGraph, 0);
-		final String pigQuery = PigQueryParser
-				.getPigLatin(this.rootNodeOfSubGraph);
+		final String pigQuery = pigParser.serialize(this.rootNodeOfSubGraph, 0);
 		final QueryResult result = this.cloudSubgraphExecutor
 				.evaluate(pigQuery);
 		result.materialize(); // just for now read all from the stream sent by
@@ -98,11 +97,11 @@ public class CloudSubgraphContainer<K> extends RootChild {
 								// (may be removed if each endpoint can work
 								// completely in parallel!)
 		return result;
-		// } catch (final JSONException e) {
-		// System.err.println(e);
-		// e.printStackTrace();
-		// return null;
-		// }
+		 } catch (final JSONException e) {
+		 System.err.println(e);
+		 e.printStackTrace();
+		 return null;
+		 }
 	}
 
 	@Override

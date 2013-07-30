@@ -21,24 +21,31 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.query.withsubgraphsubmission;
+package lupos.distributed.operator.format.operatorcreator;
 
-import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.storage.util.CloudManagement;
-import lupos.datastructures.queryresult.QueryResult;
-import lupos.distributed.operator.ISubgraphExecutor;
-import lupos.distributed.storage.distributionstrategy.tripleproperties.KeyContainer;
+import java.util.Collection;
 
-public class Cloud_SubgraphExecutor implements ICloudSubgraphExecutor {
+import lupos.engine.operators.index.BasicIndexScan;
+import lupos.engine.operators.index.Dataset;
+import lupos.engine.operators.index.Root;
+import lupos.engine.operators.tripleoperator.TriplePattern;
 
-	protected final CloudManagement cloudManagement;
+/**
+ * Methods for creating the basic operators Root and IndexScan
+ */
+public interface IOperatorCreator {
+	/**
+	 * create the root node
+	 * @param dataset the dataset to be used in the root node
+	 * @return the new root node
+	 */
+	public Root createRoot(final Dataset dataset);
 
-	public Cloud_SubgraphExecutor(final CloudManagement cloudManagement) {
-		this.cloudManagement = cloudManagement;
-	}
-
-	@Override
-	public QueryResult evaluate(String cloudSubgraphAsPig) {
-		return this.cloudManagement.submitPigQuery(cloudSubgraphAsPig);
-	}
+	/**
+	 * create the index scan operator
+	 * @param root the root node
+	 * @param triplePatterns the triple patterns to be matched by the new index scan operator
+	 * @return the new index scan operator
+	 */
+	public BasicIndexScan createIndexScan(final Root root, final Collection<TriplePattern> triplePatterns);
 }

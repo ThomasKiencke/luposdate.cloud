@@ -26,16 +26,16 @@ package lupos.cloud.query.withsubgraphsubmission;
 import java.util.Date;
 import java.util.List;
 
-import lupos.cloud.distributed.operator.ICloudSubgraphExecutor;
+import lupos.cloud.operator.ICloudSubgraphExecutor;
 import lupos.cloud.optimizations.logical.rules.generated.AddCloudSubGraphContainerRule;
 import lupos.cloud.optimizations.logical.rules.generated.CloudRulePackage;
+import lupos.distributed.query.operator.histogramsubmission.IHistogramExecutor;
 import lupos.cloud.storage.Storage_DE;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.bindings.Bindings;
 import lupos.datastructures.bindings.BindingsMap;
 import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.distributed.query.QueryClient;
-import lupos.distributed.query.operator.histogramsubmission.IHistogramExecutor;
 import lupos.distributed.storage.IStorage;
 import lupos.engine.operators.index.BasicIndexScan;
 import lupos.misc.debug.BasicOperatorByteArray;

@@ -28,8 +28,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import lupos.cloud.distributed.operator.ICloudSubgraphExecutor;
-import lupos.cloud.distributed.operator.CloudSubgraphContainer;
+import lupos.cloud.operator.CloudSubgraphContainer;
+import lupos.cloud.operator.ICloudSubgraphExecutor;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
 import lupos.distributed.storage.distributionstrategy.IDistribution;

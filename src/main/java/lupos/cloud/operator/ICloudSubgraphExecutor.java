@@ -21,24 +21,21 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.query.withsubgraphsubmission;
+package lupos.cloud.operator;
 
-import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.queryresult.QueryResult;
-import lupos.distributed.operator.ISubgraphExecutor;
-import lupos.distributed.storage.distributionstrategy.tripleproperties.KeyContainer;
 
-public class Cloud_SubgraphExecutor implements ICloudSubgraphExecutor {
+/**
+ * This interface declares the methods to submit a subgraph and retrieve its result
+ * @param <K> the type of the key which addresses the node where the subgraph is submitted to
+ */
+public interface ICloudSubgraphExecutor {
 
-	protected final CloudManagement cloudManagement;
-
-	public Cloud_SubgraphExecutor(final CloudManagement cloudManagement) {
-		this.cloudManagement = cloudManagement;
-	}
-
-	@Override
-	public QueryResult evaluate(String cloudSubgraphAsPig) {
-		return this.cloudManagement.submitPigQuery(cloudSubgraphAsPig);
-	}
+	/**
+	 * This method submits a given subgraph and returns the result of the evaluated subgraph
+	 * @param key the key to address the node to which the subgraph is submitted to
+	 * @param subgraphSeriliazedAsJSON the subgraph serialized as JSON string
+	 * @return the retrieved query result
+	 */
+	public QueryResult evaluate(String cloudSubgraphAsPig);
 }
