@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+	<property>
+		<name>dfs.default.name</name>
+		<value>hdfs://linux.fritz.box:8020</value>
+	</property>
+
+	<property>
+		<name>mapred.job.tracker</name>
+		<value>192.168.2.45:8021</value>
+	</property>
+
+</configuration>

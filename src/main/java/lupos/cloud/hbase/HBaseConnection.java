@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import lupos.misc.FileHelper;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -31,7 +32,6 @@ public class HBaseConnection {
 	public static void init() throws IOException {
 		if (configuration == null || admin == null) {
 			configuration = HBaseConfiguration.create();
-			admin = new HBaseAdmin(configuration);
 		}
 	}
 
@@ -111,7 +111,8 @@ public class HBaseConnection {
 		admin.disableTable(tablename);
 		admin.deleteTable(tablename);
 		if (message) {
-			System.out.println("Tabelle \"" + tablename + "\" wurde gel�scht");
+			System.out
+					.println("Tabelle \"" + tablename + "\" wurde gel�scht");
 		}
 	}
 
@@ -127,8 +128,8 @@ public class HBaseConnection {
 	public static boolean checkTable(String tablename) throws IOException {
 		init();
 		if (!admin.isTableAvailable(tablename)) {
-			System.out
-					.println("Tabelle \"" + tablename + "\" nicht verf�gbar!");
+			System.out.println("Tabelle \"" + tablename
+					+ "\" nicht verf�gbar!");
 			return false;
 		}
 		return true;
