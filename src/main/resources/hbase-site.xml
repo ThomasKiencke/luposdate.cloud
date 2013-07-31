@@ -4,13 +4,13 @@
 		<name>timeout</name>
 		<value>120000</value>
 	</property>
-	<property>
-		<name>hbase.master</name>
-		<value>192.168.2.45:9000</value>
-	</property>
+<!-- 	<property> -->
+<!-- 		<name>hbase.master</name> -->
+<!-- 		<value>127.0.0.1:51368</value> -->
+<!-- 	</property> -->
 	<property>
 		<name>hbase.zookeeper.quorum</name>
-		<value>192.168.2.45</value>
+		<value>127.0.0.1</value>
 	</property>
 	<property>
 		<name>hbase.zookeeper.property.clientPort</name>

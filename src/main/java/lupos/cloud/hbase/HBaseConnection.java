@@ -32,6 +32,7 @@ public class HBaseConnection {
 	public static void init() throws IOException {
 		if (configuration == null || admin == null) {
 			configuration = HBaseConfiguration.create();
+			admin = new HBaseAdmin(configuration);
 		}
 	}
 

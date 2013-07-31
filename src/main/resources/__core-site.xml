@@ -5,12 +5,12 @@
 
 	<property>
 		<name>dfs.default.name</name>
-		<value>hdfs://linux.fritz.box:8020</value>
+		<value>hdfs://127.0.0.1:8020</value>
 	</property>
 
 	<property>
 		<name>mapred.job.tracker</name>
-		<value>192.168.2.45:8021</value>
+		<value>127.0.0.1:8021</value>
 	</property>
 
 </configuration>
