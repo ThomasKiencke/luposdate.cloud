@@ -10,7 +10,7 @@
 <!-- 	</property> -->
 	<property>
 		<name>hbase.zookeeper.quorum</name>
-		<value>127.0.0.1</value>
+		<value>192.168.2.22</value>
 	</property>
 	<property>
 		<name>hbase.zookeeper.property.clientPort</name>

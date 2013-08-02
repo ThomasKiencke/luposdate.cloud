@@ -22,11 +22,18 @@ public class Test {
 		// props.setProperty("fs.default.name", "hdfs://192.168.2.45:8020");
 		// props.setProperty("mapred.job.tracker", "192.168.2.45:8021");
 		// PigServer pigServer = new PigServer(ExecType.MAPREDUCE, props);
-		PigServer pigServer = new PigServer(ExecType.LOCAL);
+		 
+//		PigServer pigServer = new PigServer(ExecType.MAPREDUCE);
+		Properties props = new Properties();
+		props.setProperty("fs.defaultFS", "hdfs://192.168.2.22:8020");
+		props.setProperty("mapred.job.tracker", "192.168.2.22:8021");
+		PigServer pigServer = new PigServer(ExecType.MAPREDUCE, props);
 		pigServer.registerFunction("PigLoadUDF", new FuncSpec(
 				"lupos.cloud.pig.udfs.PigLoadUDF"));
 		 pigServer
-		 .registerQuery("p1 = load 'hbase://S_PO' using lupos.cloud.pig.udfs.PigLoadUDF('VALUE', '-loadKey true') as (rowkey:bytearray, pmap:map[], omap:map[]);");
+		 .registerQuery("p1 = load 'hbase://S_PO' using org.apache.pig.backend.hadoop.hbase.HBaseStorage('VALUE', '-loadKey true') as (rowkey:bytearray, pmap:map[], omap:map[]);");
+//		 pigServer
+//		 .registerQuery("p1 = load 'hbase://S_PO' using lupos.cloud.pig.udfs.PigLoadUDF('VALUE', '-loadKey true') as (rowkey:bytearray, pmap:map[], omap:map[]);");
 //		pigServer
 //				.registerQuery("p1 = load 'hbase://S_PO' using org.apache.pig.backend.hadoop.hbase.HBaseStorage('VALUE', '-loadKey true') as (rowkey:bytearray, pmap:map[], omap:map[]);");
 

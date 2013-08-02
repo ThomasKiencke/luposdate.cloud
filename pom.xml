@@ -6,6 +6,20 @@
 	<version>1.0-SNAPSHOT</version>
 	<name>LUPOSDATE Cloud</name>
 
+
+	<repositories>
+		<repository>
+			<id>cloudera-releases</id>
+			<url>https://repository.cloudera.com/artifactory/cloudera-repos</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
 	<dependencies>
 
 		<!-- Luposdate -->
@@ -33,9 +47,15 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-core</artifactId>
-			<version>1.2.0</version>
+			<artifactId>hadoop-client</artifactId>
+			<version>2.0.0-alpha</version>
+			<classifier>tests</classifier>
 		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.apache.hadoop</groupId> -->
+<!-- 			<artifactId>hadoop-core</artifactId> -->
+<!-- 			<version>1.2.0</version> -->
+<!-- 		</dependency> -->
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
