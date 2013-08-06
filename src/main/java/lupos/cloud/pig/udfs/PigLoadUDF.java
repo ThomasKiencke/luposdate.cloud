@@ -139,7 +139,6 @@ public class PigLoadUDF extends HBaseStorage {
 								// the
 								// same CF.
 								if (true) {
-
 									byte[] cell = cfResults.get(quantifier);
 									DataByteArray value = cell == null ? null
 											: new DataByteArray(cell);

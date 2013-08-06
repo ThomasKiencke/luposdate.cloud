@@ -20,17 +20,32 @@ public class HBaseTableStrategy {
 					tablename.length());
 
 			String row_key = "";
+			boolean first = true;
 			for (Integer key : getInputValue(row_key_string, triple).keySet()) {
+				if (first) {
+//					row_key += "(";
+					first = false;
+				} else {
+					row_key += ",";
+				}
 				row_key += getInputValue(row_key_string, triple).get(key);
 			}
-
+//			row_key += ")";
+			
 			String column = "";
+			first = true;
 			for (Integer key : getInputValue(column_name_string, triple)
 					.keySet()) {
+				if (first) {
+//					column += "(";
+					first = false;
+				} else {
+					column += ",";
+				}
 				column += getInputValue(column_name_string, triple).get(
 						key);
 			}
-
+//			column += ")";
 			result.add(generateHBaseTriple(tablename, row_key, column, ""));
 		}
 		return result;

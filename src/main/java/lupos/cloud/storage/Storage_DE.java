@@ -49,7 +49,7 @@ import lupos.engine.operators.tripleoperator.TriplePattern;
  */
 public class Storage_DE extends BlockUpdatesStorage {
 
-	private int countTriple = 0;
+	public static int countTriple;
 	/**
 	 * for managing the registered endpoints and submitting queries to them
 	 */
@@ -122,7 +122,7 @@ public class Storage_DE extends BlockUpdatesStorage {
 //			for (String tablename : HBaseTableStrategy.TABLE_NAMES) {
 //				HBaseConnection.flush(tablename);
 //			}
-			countTriple = 0;
+//			countTriple = 0;
 		}
 		// this.cloudManagement.waitForThreadPool();
 		if (this.insertedData) {
