@@ -84,11 +84,7 @@ public class CloudSubgraphContainerFormatter implements OperatorFormatter {
 	@Override
 	public String serialize(final BasicOperator operator, final int node_id) {
 
-//		final Collection<JSONObject> nodesJSON = newLinkedList();
-//		final Collection<JSONObject> edgesJSON = newLinkedList();
 		StringBuilder pigLatin = new StringBuilder();
-
-		this.id_counter = 0;
 
 		this.serializeNode(new OperatorIDTuple(operator, 0), pigLatin);
 

@@ -110,8 +110,9 @@ public class Storage_DE extends BlockUpdatesStorage {
 			final TriplePattern triplePattern) {
 		// return
 		// this.cloudManagement.submitSPARQLQuery(CloudQueryBuilder.buildQuery(triplePattern));
-		return this.cloudManagement.submitPigQuery((CloudQueryBuilder
-				.buildQuery(triplePattern)));
+//		return this.cloudManagement.submitPigQuery((CloudQueryBuilder
+//				.buildQuery(triplePattern)));
+		return null;
 	}
 
 	@Override

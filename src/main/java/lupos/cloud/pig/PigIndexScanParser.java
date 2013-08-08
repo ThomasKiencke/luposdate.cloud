@@ -34,8 +34,9 @@ public class PigIndexScanParser {
 				+ curPattern.getPatternId()
 				+ " = foreach PATTERN_"
 				+ curPattern.getPatternId()
-				+ " generate flatten(lupos.cloud.pig.udfs.MapToBag($1)) as (output:chararray);"
-				+ "\n");
+				+ " generate flatten(lupos.cloud.pig.udfs.MapToBag($1)) as "
+				+ ((curPattern.getJoinElements().size() == 1) ? "(output:chararray);"
+						: "(output1:chararray, output2:chararray); ") + "\n");
 
 		intermediateJoins.add(curPattern);
 		return result.toString();
@@ -152,21 +153,33 @@ public class PigIndexScanParser {
 
 	public String optimizeResultOrder() {
 		StringBuilder result = new StringBuilder();
-		HashMap<String, Boolean> existMap = new HashMap<String,Boolean>();
-		ArrayList<String> currentElements = new ArrayList<String>();
-		for (String copy : intermediateJoins.get(0).getJoinElements()) {
-				currentElements.add(copy);
-		}
-		
+		HashMap<String, Boolean> existMap = new HashMap<String, Boolean>();
+		ArrayList<Integer> keepList = new ArrayList<Integer>();
+		ArrayList<String> optimizedList = new ArrayList<String>();
 		int i = 0;
-		for (String element : currentElements) {
-			i++;
+		for (String element : intermediateJoins.get(0).getJoinElements()) {
 			if (existMap.get(element) == null) {
 				existMap.put(element, true);
-			} else {
-				intermediateJoins.get(0).getJoinElements().remove(i);
+				keepList.add(i);
+				optimizedList.add(element);
 			}
+			i++;
 		}
+
+		intermediateJoins.get(0).setJoinElements(optimizedList);
+		String list = "";
+		boolean first = true;
+		for (Integer id : keepList) {
+			if (first) {
+				list += "$" + id;
+				first = false;
+			} else
+				list += ", $" + id;
+		}
+
+		result.append("X = FOREACH " + "INTERMEDIATE_BAG_"
+				+ intermediateJoins.get(0).getPatternId() + " GENERATE " + list
+				+ ";");
 		return result.toString();
 	}
 

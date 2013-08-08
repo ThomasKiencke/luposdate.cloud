@@ -85,7 +85,7 @@ public class ResultFormatter implements OperatorFormatter {
 			System.err.println(e);
 			e.printStackTrace();
 		}
-		return json.toString();
+		return "";
 	}
 
 	/*

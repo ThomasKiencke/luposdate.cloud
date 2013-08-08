@@ -87,7 +87,7 @@ public class RootFormatter implements OperatorFormatter {
 //		json.put("node_id", node_id);
 //		json.put("root", true);
 
-		return json.toString();
+		return "";
 	}
 
 	/*

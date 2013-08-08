@@ -44,74 +44,76 @@ import org.json.JSONObject;
  */
 public class IndexScanFormatter implements OperatorFormatter {
 
-		/** The index collection. */
-		private Root root;
+	/** The index collection. */
+	private Root root;
 
-		/**
-		 * the operator creator for creating the index scan operator
-		 */
-		private IOperatorCreator operatorCreator;
-		
-		public ArrayList<String> resultOrder = new ArrayList<String>();
+	/**
+	 * the operator creator for creating the index scan operator
+	 */
+	private IOperatorCreator operatorCreator;
 
-		/**
-		 * Instantiates a new index scan formatter.
-		 *
-		 * @param operatorCreator the operator creator for creating the index scan operator
-		 */
-		public IndexScanFormatter(final IOperatorCreator operatorCreator) {
-			this.operatorCreator = operatorCreator;
+	public ArrayList<String> resultOrder = new ArrayList<String>();
+
+	/**
+	 * Instantiates a new index scan formatter.
+	 * 
+	 * @param operatorCreator
+	 *            the operator creator for creating the index scan operator
+	 */
+	public IndexScanFormatter(final IOperatorCreator operatorCreator) {
+		this.operatorCreator = operatorCreator;
+	}
+
+	/**
+	 * Instantiates a new index scan formatter.
+	 */
+	public IndexScanFormatter() {
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * luposdate.operators.formatter.OperatorFormatter#serialize(lupos.engine
+	 * .operators.BasicOperator, int)
+	 */
+	@Override
+	public String serialize(final BasicOperator operator, final int node_id) {
+		final BasicIndexScan indexScan = (BasicIndexScan) operator;
+
+		Collection<TriplePattern> tp = indexScan.getTriplePattern();
+		StringBuilder result = new StringBuilder();
+		PigIndexScanParser pigQuery = new PigIndexScanParser();
+		for (TriplePattern t : tp) {
+			result.append(pigQuery.buildQuery(t));
 		}
+		result.append(pigQuery.getJoinQuery());
+		result.append(pigQuery.optimizeResultOrder());
+		resultOrder = pigQuery.getResultOrder();
+		return result.toString();
+	}
 
-		/**
-		 * Instantiates a new index scan formatter.
-		 */
-		public IndexScanFormatter() {
-		}
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * luposdate.operators.formatter.OperatorFormatter#deserialize(org.json.
+	 * JSONObject)
+	 */
+	@Override
+	public BasicOperator deserialize(final JSONObject serializedOperator)
+			throws JSONException {
+		return this.operatorCreator.createIndexScan(this.root,
+				Helper.createTriplePatternsFromJSON(serializedOperator));
+	}
 
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * luposdate.operators.formatter.OperatorFormatter#serialize(lupos.engine
-		 * .operators.BasicOperator, int)
-		 */
-		@Override
-		public String serialize(final BasicOperator operator, final int node_id) {
-			final BasicIndexScan indexScan = (BasicIndexScan) operator;
-			
-			Collection<TriplePattern> tp = indexScan.getTriplePattern();
-			StringBuilder result = new StringBuilder();
-			PigIndexScanParser pigQuery = new PigIndexScanParser();
-			for (TriplePattern t : tp) {
-				result.append(pigQuery.buildQuery(t));
-			}
-			result.append(pigQuery.getJoinQuery());
-			resultOrder = pigQuery.getResultOrder();
-			for (String b : resultOrder) 
-			System.out.println("inhalt: " + b);
-			return result.toString();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * luposdate.operators.formatter.OperatorFormatter#deserialize(org.json.
-		 * JSONObject)
-		 */
-		@Override
-		public BasicOperator deserialize(final JSONObject serializedOperator) throws JSONException {
-			return this.operatorCreator.createIndexScan(this.root, Helper.createTriplePatternsFromJSON(serializedOperator));
-		}
-
-		/**
-		 * Sets the index collection.
-		 *
-		 * @param root
-		 *            the new index collection
-		 */
-		public void setRoot(final Root root) {
-			this.root = root;
-		}
+	/**
+	 * Sets the index collection.
+	 * 
+	 * @param root
+	 *            the new index collection
+	 */
+	public void setRoot(final Root root) {
+		this.root = root;
+	}
 }
