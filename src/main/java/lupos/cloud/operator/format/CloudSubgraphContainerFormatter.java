@@ -82,48 +82,24 @@ public class CloudSubgraphContainerFormatter implements OperatorFormatter {
 	}
 
 	@Override
-	public String serialize(final BasicOperator operator, final int node_id)
-			throws JSONException {
+	public String serialize(final BasicOperator operator, final int node_id) {
 
-		final Collection<JSONObject> nodesJSON = newLinkedList();
-		final Collection<JSONObject> edgesJSON = newLinkedList();
+//		final Collection<JSONObject> nodesJSON = newLinkedList();
+//		final Collection<JSONObject> edgesJSON = newLinkedList();
+		StringBuilder pigLatin = new StringBuilder();
 
 		this.id_counter = 0;
 
-		this.serializeNode(new OperatorIDTuple(operator, 0), nodesJSON,
-				edgesJSON, this.id_counter);
-		final JSONObject serializedSubGraph = new JSONObject();
+		this.serializeNode(new OperatorIDTuple(operator, 0), pigLatin);
 
-		try {
-			serializedSubGraph.put("nodes", nodesJSON);
-			serializedSubGraph.put("edges", edgesJSON);
-		} catch (final JSONException e) {
-			throw propagate(e);
-		}
-
-		return serializedSubGraph.toString();
+		return pigLatin.toString();
 	}
 
 	private void serializeNode(final OperatorIDTuple node,
-			final Collection<JSONObject> nodesJSON,
-			final Collection<JSONObject> edgesJSON, final int parent_id) {
-		this.id_counter++;
+			StringBuilder pigLatin) {
 
-		final int edge_id = node.getId();
 
 		final BasicOperator op = node.getOperator();
-
-		if (parent_id > 0) {
-			final JSONObject edge = new JSONObject();
-			try {
-				edge.put("from", parent_id);
-				edge.put("to", this.id_counter);
-				edge.put("edge_id", edge_id);
-				edgesJSON.add(edge);
-			} catch (final JSONException e) {
-				e.printStackTrace();
-			}
-		}
 
 		OperatorFormatter serializer;
 		if (op instanceof BasicIndexScan) {
@@ -138,18 +114,10 @@ public class CloudSubgraphContainerFormatter implements OperatorFormatter {
 			throw new RuntimeException("Something is wrong here. Forgot case?");
 		}
 
-		try {
-			// nodesJSON.add(serializer.serialize(op, this.id_counter));
-		} catch (final NullPointerException e) {
-			throw new IllegalArgumentException(
-					"Dieser Operator ist bisher nicht serialisierbar", e);
-		}
-		// } catch (final JSONException e) {
-		// throw propagate(e);
-		// }
+			pigLatin.append(serializer.serialize(op, this.id_counter) + "\n");
 
 		for (final OperatorIDTuple successor : op.getSucceedingOperators()) {
-			this.serializeNode(successor, nodesJSON, edgesJSON, this.id_counter);
+			this.serializeNode(successor, pigLatin);
 		}
 	}
 

@@ -41,7 +41,7 @@ public interface OperatorFormatter {
 	 * @return the jSON object
 	 * @throws JSONException the jSON exception
 	 */
-	public String serialize(BasicOperator operator, int node_id) throws JSONException;
+	public String serialize(BasicOperator operator, int node_id);
 
 	/**
 	 * Deserialize.

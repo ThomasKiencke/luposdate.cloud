@@ -163,7 +163,8 @@ public class AddCloudSubGraphContainerRule extends Rule {
 
 
     public AddCloudSubGraphContainerRule() {
-        this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
+//        this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
+    	this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
         this.ruleName = "AddSubGraphContainer";
     }
 

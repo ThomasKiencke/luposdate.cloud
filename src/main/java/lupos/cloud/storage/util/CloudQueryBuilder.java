@@ -29,6 +29,7 @@ import java.util.Collection;
 import lupos.cloud.hbase.HBaseTableStrategy;
 import lupos.cloud.hbase.HBaseTriple;
 import lupos.datastructures.items.Triple;
+import lupos.datastructures.items.Variable;
 import lupos.datastructures.items.literal.AnonymousLiteral;
 import lupos.datastructures.items.literal.Literal;
 import lupos.engine.operators.tripleoperator.TriplePattern;
@@ -38,6 +39,8 @@ import lupos.engine.operators.tripleoperator.TriplePattern;
  * distributed endpoints
  */
 public class CloudQueryBuilder {
+	static int patternCounter = 0;
+	static ArrayList<Integer> patternToJoin = new ArrayList<Integer>();
 
 	// /**
 	// * Builds an insert-data-query, which inserts all given triples
@@ -65,12 +68,12 @@ public class CloudQueryBuilder {
 		ArrayList<HBaseTriple> hbaseTripleList = new ArrayList<HBaseTriple>();
 
 		for (Triple triple : toBeAdded) {
-			for (HBaseTriple ht : HBaseTableStrategy.generateSixIndecesTriple(triple))
+			for (HBaseTriple ht : HBaseTableStrategy
+					.generateSixIndecesTriple(triple))
 				hbaseTripleList.add(ht);
 		}
 		return hbaseTripleList;
 	}
-
 
 	// /**
 	// * Builds a query to check if a triple is contained in the distributed
@@ -103,8 +106,58 @@ public class CloudQueryBuilder {
 	// }
 
 	public static String buildQuery(TriplePattern triplePattern) {
-		// TODO: Pig Query erzeugen triplePattern
-		return "PIG QUERY";
+		StringBuilder result = new StringBuilder();
+		String hBaseTable = getHBaseTable(triplePattern);
+
+		String literals = "";
+		String variables = "";
+
+		result.append(hBaseTable
+				+ "_DATA = "
+				+ "load 'hbase://"
+				+ hBaseTable
+				+ "'"
+				+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('VALUE', '-loadKey true');");
+		result.append("PATTERN" + patternCounter + " = FILTER "
+				+ hBaseTable + " data BY $0 == '" + literals
+				+ "';");
+		patternCounter++;
+		return result.toString();
+	}
+
+	private static String getHBaseTable(TriplePattern triplePattern) {
+		int subject = triplePattern.getSubject().getClass() == Variable.class ? 1
+				: 0;
+		int predicate = triplePattern.getPredicate().getClass() == Variable.class ? 10
+				: 0;
+		int object = triplePattern.getObject().getClass() == Variable.class ? 100
+				: 0;
+
+		String result = null;
+		switch (subject + predicate + object) {
+		case 110:
+			result = "S_PO";
+			break;
+		case 101:
+			result = "P_SO";
+			break;
+		case 11:
+			result = "O_SP";
+			break;
+		case 100:
+			result = "PS_O";
+			break;
+		case 10:
+			result = "SO_P";
+			break;
+		case 1:
+			result = "PO_S";
+			break;
+		default:
+			// TODO: SPO und ??? fehlen
+			break;
+		}
+		return result;
 	}
 
 	/**

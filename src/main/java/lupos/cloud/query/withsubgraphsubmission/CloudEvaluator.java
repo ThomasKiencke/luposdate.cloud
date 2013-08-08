@@ -30,6 +30,8 @@ import lupos.cloud.operator.ICloudSubgraphExecutor;
 import lupos.cloud.optimizations.logical.rules.generated.AddCloudSubGraphContainerRule;
 import lupos.cloud.optimizations.logical.rules.generated.CloudRulePackage;
 import lupos.distributed.query.operator.histogramsubmission.IHistogramExecutor;
+import lupos.distributed.query.operator.histogramsubmission.QueryClientRootWithHistogramSubmission;
+import lupos.distributed.query.operator.withouthistogramsubmission.QueryClientRoot;
 import lupos.cloud.storage.Storage_DE;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.bindings.Bindings;
@@ -38,6 +40,7 @@ import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.distributed.query.QueryClient;
 import lupos.distributed.storage.IStorage;
 import lupos.engine.operators.index.BasicIndexScan;
+import lupos.engine.operators.index.Root;
 import lupos.misc.debug.BasicOperatorByteArray;
 import lupos.optimizations.logical.rules.DebugContainer;
 import lupos.optimizations.logical.rules.generated.DistributedRulePackage;
@@ -55,7 +58,7 @@ public class CloudEvaluator extends QueryClient {
 				.getCloudManagement(), new Cloud_SubgraphExecutor(Storage_DE
 				.getInstance().getCloudManagement()));
 	}
-	
+
 	public CloudEvaluator(final String[] args) throws Exception {
 		this(Storage_DE.getInstance(), Storage_DE.getInstance()
 				.getCloudManagement(), new Cloud_SubgraphExecutor(Storage_DE
@@ -96,13 +99,19 @@ public class CloudEvaluator extends QueryClient {
 
 	@Override
 	protected void initOptimization() {
-		if (this.histogramExecutor == null) {
-			// make binary joins such that subgraphs can be identified...
-			this.opt = BasicIndexScan.BINARYSTATICANALYSIS;
-		} else {
-			// use histograms to find best join order
-			this.opt = BasicIndexScan.BINARY;
-		}
+
+		/**
+		 * ANMERKUNG: Auskommentiert, denn es ist nicht notwendig den
+		 * IndexScanOperator in verschiedene Operatoren aufzuteilen beim Cloud
+		 * Ansatz!
+		 */
+		// if (this.histogramExecutor == null) {
+		// // make binary joins such that subgraphs can be identified...
+		// this.opt = BasicIndexScan.BINARYSTATICANALYSIS;
+		// } else {
+		// // use histograms to find best join order
+		// this.opt = BasicIndexScan.BINARY;
+		// }
 	}
 
 	@Override

@@ -45,11 +45,11 @@ public class FilterFormatter implements OperatorFormatter {
 	 */
 	@Override
 	public String serialize(final BasicOperator operator, final int node_id)
-			throws JSONException {
+			 {
 		final JSONObject json = new JSONObject();
-		json.put("type", Filter.class.getName());
-		json.put("node_id", node_id);
-		json.put("expression", operator.toString());
+//		json.put("type", Filter.class.getName());
+//		json.put("node_id", node_id);
+//		json.put("expression", operator.toString());
 		return json.toString();
 	}
 

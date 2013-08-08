@@ -74,7 +74,7 @@ public class ResultFormatter implements OperatorFormatter {
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public String serialize(final BasicOperator operator, final int node_id) throws JSONException {
+	public String serialize(final BasicOperator operator, final int node_id)  {
 		final JSONObject json = new JSONObject();
 		final Result result = (Result) operator;
 		try {

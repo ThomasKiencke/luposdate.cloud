@@ -23,12 +23,18 @@
  */
 package lupos.cloud.operator.format;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import lupos.cloud.operator.format.operatorcreator.IOperatorCreator;
 import lupos.cloud.operator.format.Helper;
 import lupos.cloud.operator.format.OperatorFormatter;
+import lupos.cloud.pig.PigIndexScanParser;
+import lupos.cloud.storage.util.CloudQueryBuilder;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.BasicIndexScan;
 import lupos.engine.operators.index.Root;
+import lupos.engine.operators.tripleoperator.TriplePattern;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,6 +51,8 @@ public class IndexScanFormatter implements OperatorFormatter {
 		 * the operator creator for creating the index scan operator
 		 */
 		private IOperatorCreator operatorCreator;
+		
+		public ArrayList<String> resultOrder = new ArrayList<String>();
 
 		/**
 		 * Instantiates a new index scan formatter.
@@ -71,18 +79,18 @@ public class IndexScanFormatter implements OperatorFormatter {
 		@Override
 		public String serialize(final BasicOperator operator, final int node_id) {
 			final BasicIndexScan indexScan = (BasicIndexScan) operator;
-			try {
-				final JSONObject json = Helper.createTriplePatternsJSONObject(indexScan.getTriplePattern());
-
-				json.put("type", BasicIndexScan.class.getName());
-				json.put("node_id", node_id);
-
-				return json.toString();
-
-			} catch (final JSONException e) {
-				e.printStackTrace();
+			
+			Collection<TriplePattern> tp = indexScan.getTriplePattern();
+			StringBuilder result = new StringBuilder();
+			PigIndexScanParser pigQuery = new PigIndexScanParser();
+			for (TriplePattern t : tp) {
+				result.append(pigQuery.buildQuery(t));
 			}
-			return new JSONObject().toString();
+			result.append(pigQuery.getJoinQuery());
+			resultOrder = pigQuery.getResultOrder();
+			for (String b : resultOrder) 
+			System.out.println("inhalt: " + b);
+			return result.toString();
 		}
 
 		/*
