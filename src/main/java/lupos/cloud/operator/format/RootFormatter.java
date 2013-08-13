@@ -25,6 +25,7 @@ package lupos.cloud.operator.format;
 
 import lupos.cloud.operator.format.operatorcreator.IOperatorCreator;
 import lupos.cloud.operator.format.OperatorFormatter;
+import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.Dataset;
 import lupos.engine.operators.index.Root;
@@ -80,14 +81,14 @@ public class RootFormatter implements OperatorFormatter {
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public String serialize(final BasicOperator operator, final int node_id) {
+	public PigQuery serialize(final BasicOperator operator, final int node_id) {
 		final JSONObject json = new JSONObject();
 
 //		json.put("type", Root.class.getName());
 //		json.put("node_id", node_id);
 //		json.put("root", true);
 
-		return "";
+		return new PigQuery();
 	}
 
 	/*

@@ -24,13 +24,16 @@
 package lupos.cloud.storage.util;
 
 //import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 //import java.io.IOException;
 //import java.io.InputStream;
 import java.util.Collection;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Iterator;
+
+import org.apache.pig.ExecType;
+import org.apache.pig.PigServer;
+import org.apache.pig.data.Tuple;
 //import java.util.concurrent.TimeUnit;
 
 //import org.apache.hadoop.hbase.thrift.generated.Hbase;
@@ -38,12 +41,15 @@ import java.util.concurrent.Executors;
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseTableStrategy;
 import lupos.cloud.hbase.HBaseTriple;
+import lupos.cloud.pig.PigQuery;
+import lupos.datastructures.bindings.Bindings;
+import lupos.datastructures.items.Variable;
+import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.datastructures.queryresult.QueryResult;
-import lupos.distributed.storage.distributionstrategy.tripleproperties.KeyContainer;
 //import lupos.distributed.storage.distributionstrategy.tripleproperties.KeyContainer;
 //import lupos.endpoint.client.Client;
 //import lupos.engine.operators.multiinput.join.parallel.ResultCollector;
-import lupos.misc.FileHelper;
+import lupos.misc.util.ImmutableIterator;
 
 //import lupos.misc.Tuple;
 
@@ -55,6 +61,9 @@ public class CloudManagement {
 	protected String[] urlsOfEndpoints;
 
 	public static final boolean enableHbase = true;
+	static PigServer pigServer = null;
+	Iterator<Tuple> pigQueryResult = null;
+	ArrayList<String> curVariableList = null;
 
 	/**
 	 * Reads in the registered SPARQL endpoints from the configuration file
@@ -65,6 +74,7 @@ public class CloudManagement {
 
 		try {
 			HBaseConnection.init();
+			pigServer = new PigServer(ExecType.MAPREDUCE);
 
 			for (String tablename : HBaseTableStrategy.TABLE_NAMES) {
 				HBaseConnection.createTable(tablename, "VALUE");
@@ -72,76 +82,7 @@ public class CloudManagement {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		// TODO: Hier HBase/Pig Config laden
-		// try {
-		// this.urlsOfEndpoints = FileHelper
-		// .readInputStreamToCollection(
-		// FileHelper
-		// .getInputStreamFromJarOrFile("/endpoints.config"))
-		// .toArray(new String[0]);
-		// for (int i = 0; i < this.urlsOfEndpoints.length; i++) {
-		// if (!this.urlsOfEndpoints[i].endsWith("/")) {
-		// // this is necessary when using distribution strategies as
-		// // different contexts must be addressed for different key
-		// // types
-		// this.urlsOfEndpoints[i] += "/";
-		// }
-		// }
-		// } catch (final FileNotFoundException e) {
-		// System.err.println(e);
-		// e.printStackTrace();
-		// this.urlsOfEndpoints = new String[0];
-		// }
 	}
-
-	// /**
-	// * Returns the number of registered endpoints
-	// *
-	// * @return the number of registered endpoints
-	// */
-	// public int numberOfEndpoints() {
-	// return this.urlsOfEndpoints.length;
-	// }
-
-	// /**
-	// * submits a SPARUL query to all registered SPARQL endpoints
-	// *
-	// * @param query
-	// * the query to be submitted
-	// */
-	// public void submitSPARULQuery(final String query) {
-	// for (int i = 0; i < this.urlsOfEndpoints.length; i++) {
-	// this.submitSPARULQuery(query, i);
-	// }
-	// }
-
-	// /**
-	// * submits asynchronously a SPARUL query to an arbitrary of the registered
-	// * SPARQL endpoints
-	// *
-	// * @param query
-	// * the query to be submitted
-	// */
-	// public void submitSPARULQueryToArbitraryEndpoint(final String query){
-	// // choose randomly one endpoint to which the sparul request is submitted
-	// to
-	// this.submitSPARULQuery(query,
-	// (int)(Math.random()*this.urlsOfEndpoints.length));
-	// }
-	//
-	// /**
-	// * submits asynchronously a SPARUL query to a specific registered SPARQL
-	// * endpoint
-	// *
-	// * @param query
-	// * the query to be submitted
-	// * @param number
-	// * the number of the endpoint to which the query is sent to
-	// */
-	// public void submitSPARULQuery(final String query, final int number) {
-	// this.submitSPARULQuery(query, this.urlsOfEndpoints[number]);
-	// }
 
 	public void submitHBaseTripleToDatabase(final Collection<HBaseTriple> triple) {
 		// TODO: Connection To Hbase + Insert
@@ -154,7 +95,7 @@ public class CloudManagement {
 			}
 			try {
 				HBaseConnection.addRow(item.getTablename(), item.getRow_key(),
-						item.getColumn());
+						item.getColumn(), item.getValue());
 				i++;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -167,407 +108,106 @@ public class CloudManagement {
 			final Collection<HBaseTriple> triple) {
 		// TODO: Connection to HBase + Delete
 		// seinding triple to hbase as row_key, family ...
-//		for (HBaseTriple item : triple) {
-//			try {
-//				HBaseConnection.addRow(item.getTablename(), item.getRow_key(),
-//						item.getColumn());
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//		}
+		// for (HBaseTriple item : triple) {
+		// try {
+		// HBaseConnection.addRow(item.getTablename(), item.getRow_key(),
+		// item.getColumn());
+		// } catch (IOException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
+		// }
 	}
 
-	// /**
-	// * submits asynchronously a SPARUL query to a specific registered SPARQL
-	// * endpoint
-	// *
-	// * @param query
-	// * the query to be submitted
-	// * @param key
-	// * the key container containing the number of the endpoint to
-	// * which the query is sent to
-	// */
-	// public void submitSPARULQuery(final String query,
-	// final KeyContainer<Integer> key) {
-	// this.submitSPARULQuery(query,
-	// CloudManagement.addContext(this.urlsOfEndpoints[key.key], key));
-	// }
+	public QueryResult submitPigQuery(final PigQuery query) {
+		QueryResult result = null;
+		try {
+			System.out.println("PigLatin Script wird ausgeführt...");
+			System.out.println(query.getPigLatin());
+			System.out.println();
+			System.out.println();
+			pigServer.registerQuery(query.getPigLatin());
+			curVariableList = query.getVariableList();
+			pigQueryResult = pigServer.openIterator("X");
+			result = new QueryResult();
+			result = QueryResult
+					.createInstance(new ImmutableIterator<Bindings>() {
+						@Override
+						public boolean hasNext() {
+							return pigQueryResult.hasNext();
+						}
 
-	// /**
-	// * submits asynchronously a SPARUL query to a specific SPARQL endpoint
-	// *
-	// * @param query
-	// * the query to be submitted
-	// * @param url
-	// * the url of the endpoint to which the query is sent to
-	// */
-	// protected void submitSPARULQuery(final String query, final String url) {
-	// final Thread thread = new Thread() {
-	// @Override
-	// public void run() {
-	// try {
-	// CloudManagement.submitSPARQLQuery(url, query);
-	// } catch (final IOException e) {
-	// System.err.println(e);
-	// e.printStackTrace();
-	// }
-	// }
-	// };
-	// this.threadpool.submit(thread);
-	// }
-
-	// /**
-	// * Waits for the thread pool to terminate. This method is to ensure that
-	// all
-	// * the data is inserted at the different endpoints before being queried...
-	// */
-	// public void waitForThreadPool() {
-	// this.threadpool.shutdown();
-	// try {
-	// // just use an extremely high timeout...
-	// this.threadpool.awaitTermination(7, TimeUnit.DAYS);
-	// this.threadpool = Executors.newCachedThreadPool();
-	// } catch (final InterruptedException e) {
-	// System.err.println(e);
-	// e.printStackTrace();
-	// }
-	// }
-
-	// /**
-	// * submits a SPARQL query to a specific registered SPARQL endpoint
-	// *
-	// * @param query
-	// * the given query to be submitted
-	// * @param number
-	// * the number of the endpoint to which the query is sent to
-	// * @return the query result of the submitted query
-	// */
-	// public QueryResult submitSPARQLQuery(final String query, final int
-	// number) {
-	// final String url = this.urlsOfEndpoints[number];
-	// try {
-	// return CloudManagement.submitSPARQLQuery(url, query);
-	// } catch (final IOException e) {
-	// System.err.println(e);
-	// e.printStackTrace();
-	// return null;
-	// }
-	// }
-
-	public QueryResult submitPigQuery(final String query) {
-		// TODO: Pig Nachricht an Cloud senden und Ergebnis entgegen nehmen
-		System.out.println("bla: " + query);
-		return null;
+						@Override
+						public Bindings next() {
+							if (this.hasNext()) {
+								try {
+									final Bindings result = Bindings
+											.createNewInstance();
+									Tuple tuple = pigQueryResult.next();
+									int i = 0;
+									for (String var : curVariableList) {
+										String curTupel = tuple.get(i)
+												.toString();
+										if (curTupel.toString().startsWith("<")) {
+											result.add(
+													new Variable(var),
+													LiteralFactory
+															.createURILiteral(tuple
+																	.get(i)
+																	.toString()));
+										} else if (curTupel.startsWith("\"")) {
+											String content = curTupel.substring(
+													curTupel.indexOf("\""),
+													curTupel.lastIndexOf("\"") + 1);
+											String type = curTupel.substring(
+													curTupel.indexOf("<"),
+													curTupel.indexOf(">") + 1);
+											result.add(
+													new Variable(var),
+													LiteralFactory
+															.createTypedLiteral(
+																	content,
+																	type));
+										} else if (curTupel.startsWith("_:")) {
+											result.add(
+													new Variable(var),
+													LiteralFactory
+															.createAnonymousLiteral(curTupel));
+										} else if (curTupel.startsWith("_:")) {
+											result.add(
+													new Variable(var),
+													LiteralFactory
+															.createAnonymousLiteral(curTupel));
+										} else {
+											result.add(
+													new Variable(var),
+													LiteralFactory
+															.createLiteral(tuple
+																	.get(i)
+																	.toString()));
+										}
+										i++;
+									}
+									return result;
+								} catch (Exception e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+									return null;
+								}
+							} else {
+								return null;
+							}
+						}
+					});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println("fertig!");
+		return result;
 	}
 
 	public QueryResult submitSubgraphQuery(String subgraphSerializedAsJSON) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	// /**
-	// * submits a SPARQL query to a specific registered SPARQL endpoint
-	// *
-	// * @param query
-	// * the given query to be submitted
-	// * @param key
-	// * the key container containing the the number of the endpoint to
-	// * which the query is sent to
-	// * @return the query result of the submitted query
-	// */
-	// public QueryResult submitSPARQLQuery(final String query,
-	// final KeyContainer<Integer> key) {
-	// final String url = CloudManagement.addContext(
-	// this.urlsOfEndpoints[key.key], key);
-	// try {
-	// return CloudManagement.submitSPARQLQuery(url, query);
-	// } catch (final IOException e) {
-	// System.err.println(e);
-	// e.printStackTrace();
-	// return null;
-	// }
-	// }
-
-	// /**
-	// * submits a subgraph to a specific registered SPARQL endpoint
-	// *
-	// * @param subgraph
-	// * the given subgraph to be submitted
-	// * @param key
-	// * the key container containing the the number of the endpoint to
-	// * which the query is sent to
-	// * @return the query result of the submitted subgraph
-	// */
-	// public QueryResult submitSubgraphQuery(final String subgraph,
-	// final KeyContainer<Integer> key) {
-	// final String url = CloudManagement.addContext(CloudManagement
-	// .addContext(this.urlsOfEndpoints[key.key], "subgraph/"), key);
-	// try {
-	// return CloudManagement.submitSPARQLQuery(url, subgraph);
-	// } catch (final IOException e) {
-	// System.err.println(e);
-	// e.printStackTrace();
-	// return null;
-	// }
-	// }
-
-	// /**
-	// * submits a histogram request to a specific registered SPARQL endpoint
-	// *
-	// * @param histogram
-	// * the given subgraph to be submitted
-	// * @param key
-	// * the key container containing the the number of the endpoint to
-	// * which the query is sent to
-	// * @return the query result of the submitted subgraph
-	// */
-	// public String submitHistogramRequest(final String histogram,
-	// final KeyContainer<Integer> key) {
-	// final String url = CloudManagement.addContext(CloudManagement
-	// .addContext(this.urlsOfEndpoints[key.key], "histogram/"), key);
-	// return CloudManagement.submitHistogramRequest(histogram, url);
-	// }
-
-	// /**
-	// * Submits a histogram request to a given url
-	// *
-	// * @param histogram
-	// * the histogram request
-	// * @param url
-	// * the url to which the request is sent to
-	// * @return the response of the histogram request
-	// */
-	// public static String submitHistogramRequest(final String histogram,
-	// final String url) {
-	// try {
-	// final Tuple<String, InputStream> response = Client
-	// .submitQueryAndRetrieveStream(url, histogram,
-	// "application/sparql-results+json"); // mime type
-	// // would be
-	// // better
-	// // application/json,
-	// // but for that
-	// // we do not
-	// // have
-	// // registered
-	// // formatter,
-	// // such that
-	// // errors would
-	// // occur
-	// return CloudManagement.getStringFromInputStream(response
-	// .getSecond());
-	// } catch (final IOException e) {
-	// System.err.println(e);
-	// e.printStackTrace();
-	// return null;
-	// }
-	// }
-
-	// /**
-	// * Reads an UTF-8 encoded string from an input stream and returns it
-	// *
-	// * @param in
-	// * the input stream from which the string is read
-	// * @return the string
-	// * @throws IOException
-	// */
-	// public static String getStringFromInputStream(final InputStream in)
-	// throws IOException {
-	// final ByteArrayOutputStream out = new ByteArrayOutputStream();
-	// int next;
-	// while ((next = in.read()) >= 0) {
-	// out.write(next);
-	// }
-	// in.close();
-	// out.close();
-	//
-	// return new String(out.toByteArray(), "UTF-8");
-	// }
-
-	// /**
-	// * submits a query parallel to all registered endpoints
-	// *
-	// * @param query
-	// * the query to be submitted
-	// * @return the query result containing the result of all endpoints
-	// * (collected in an asynchronous way)
-	// */
-	// public QueryResult submitSPARQLQuery(final String query) {
-	// return CloudManagement.submitSPARQLQuery(query, this.urlsOfEndpoints);
-	// }
-
-	// /**
-	// * submits a query parallel to all given endpoints
-	// *
-	// * @param query
-	// * the query to be submitted
-	// * @param urlsOfEndpoints
-	// * the urls of the endpoints to which the query will be submitted
-	// * @return the query result containing the result of all given endpoints
-	// * (collected in an asynchronous way)
-	// */
-	// protected static QueryResult submitSPARQLQuery(final String query,
-	// final String[] urlsOfEndpoints) {
-	// final ResultCollector resultCollector = new ResultCollector();
-	// resultCollector.setNumberOfThreads(urlsOfEndpoints.length);
-	// for (final String url : urlsOfEndpoints) {
-	// final Thread thread = new Thread() {
-	// @Override
-	// public void run() {
-	// try {
-	// resultCollector.process(
-	// CloudManagement.submitSPARQLQuery(url, query),
-	// 0);
-	// } catch (final IOException e) {
-	// System.err.println(e);
-	// e.printStackTrace();
-	// }
-	// resultCollector.incNumberOfThreads();
-	// }
-	// };
-	// thread.start();
-	// }
-	// return resultCollector.getResult();
-	// }
-
-	// /**
-	// * Submits a histogram request to all registered endpoints
-	// *
-	// * @param histogram
-	// * the histogram request to be submitted to all endpoints
-	// * @return the histograms of all endpoints
-	// */
-	// public String[] submitHistogramRequest(final String histogram) {
-	// final String[] urlsWithContext = new String[this.urlsOfEndpoints.length];
-	// for (int i = 0; i < this.urlsOfEndpoints.length; i++) {
-	// urlsWithContext[i] = CloudManagement.addContext(
-	// this.urlsOfEndpoints[i], "histogram/");
-	// }
-	// return CloudManagement.submitHistogramRequest(histogram,
-	// urlsWithContext);
-	// }
-
-	// /**
-	// * submits histogram requests in parallel to all given endpoints
-	// *
-	// * @param histogram
-	// * the histogram request to be submitted
-	// * @param urlsOfEndpoints
-	// * the endpoints to be queries
-	// * @return the result of all the endpoints
-	// */
-	// protected static String[] submitHistogramRequest(final String histogram,
-	// final String[] urlsOfEndpoints) {
-	// final Thread[] threads = new Thread[urlsOfEndpoints.length];
-	// final String[] result = new String[urlsOfEndpoints.length];
-	// // ask nodes in parallel for their histograms
-	// for (int i = 0; i < urlsOfEndpoints.length; i++) {
-	// final int index = i;
-	//
-	// threads[index] = new Thread() {
-	// @Override
-	// public void run() {
-	// result[index] = CloudManagement.submitHistogramRequest(
-	// histogram, urlsOfEndpoints[index]);
-	// }
-	// };
-	//
-	// threads[index].start();
-	// }
-	// for (final Thread thread : threads) {
-	// try {
-	// thread.join();
-	// } catch (final InterruptedException e) {
-	// System.err.println(e);
-	// e.printStackTrace();
-	// }
-	// }
-	// return result;
-	// }
-
-	// /**
-	// * submits histogram requests in parallel to all given endpoints according
-	// * to a given key type
-	// *
-	// * @param histogram
-	// * the histogram request
-	// * @param keyType
-	// * the key type
-	// * @return the result of the addressed endpoints
-	// */
-	// public String[] submitHistogramRequestWithKeyType(final String histogram,
-	// final String keyType) {
-	// final String[] urls = new String[this.urlsOfEndpoints.length];
-	// for (int i = 0; i < this.urlsOfEndpoints.length; i++) {
-	// urls[i] = CloudManagement.addContext(CloudManagement.addContext(
-	// this.urlsOfEndpoints[i], "histogram/"), keyType);
-	// }
-	// return CloudManagement.submitHistogramRequest(histogram, urls);
-	// }
-
-	// /**
-	// * submits a query parallel to all registered endpoints (according to one
-	// * key type to avoid duplicates)
-	// *
-	// * @param query
-	// * the query to be submitted
-	// * @param keyType
-	// * the key type to be used
-	// * @return the query result containing the result of all endpoints
-	// * (collected in an asynchronous way)
-	// */
-	// public QueryResult submitSPARQLQueryWithKeyType(final String query,
-	// final String keyType) {
-	// final String[] urls = new String[this.urlsOfEndpoints.length];
-	// for (int i = 0; i < this.urlsOfEndpoints.length; i++) {
-	// urls[i] = CloudManagement.addContext(this.urlsOfEndpoints[i],
-	// keyType);
-	// }
-	// return CloudManagement.submitSPARQLQuery(query, urls);
-	// }
-
-	// /**
-	// * submits a query to a SPARQL endpoint with a given url
-	// *
-	// * @param url
-	// * the url of the SPARQL endpoint
-	// * @param query
-	// * the query to be submitted
-	// * @return the retrieved query result
-	// * @throws IOException
-	// * in case of any errors
-	// */
-	// private final static QueryResult submitSPARQLQuery(final String url,
-	// final String query) throws IOException {
-	// return Client.submitQuery(url, query);
-	// }
-
-	// /**
-	// * Adds the context according to the key type to a given url
-	// *
-	// * @param url
-	// * the url of the SPARQL endpoint
-	// * @param key
-	// * the key container with the key type
-	// * @return url/key type
-	// */
-	// private static String addContext(final String url,
-	// final KeyContainer<Integer> key) {
-	// return url + key.type;
-	// }
-
-	// /**
-	// * Adds the context according to the key type to a given url
-	// *
-	// * @param url
-	// * the url of the SPARQL endpoint
-	// * @param keyType
-	// * the key type
-	// * @return url/key type
-	// */
-	// private static String addContext(final String url, final String keyType)
-	// {
-	// return url + keyType;
-	// }
 }

@@ -93,8 +93,9 @@ public class Storage_DE extends BlockUpdatesStorage {
 	public boolean containsTripleAfterAdding(final Triple triple) {
 		// return
 		// !this.cloudManagement.submitSPARQLQuery(CloudQueryBuilder.buildQuery(triple)).isEmpty();
-		return !this.cloudManagement.submitPigQuery(
-				CloudQueryBuilder.buildQuery(triple)).isEmpty();
+//		return !this.cloudManagement.submitPigQuery(
+//				CloudQueryBuilder.buildQuery(triple)).isEmpty();
+		return true;
 	}
 
 	@Override

@@ -24,6 +24,7 @@
 package lupos.cloud.operator.format;
 
 import lupos.cloud.operator.format.OperatorFormatter;
+import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.sparql1_1.ParseException;
@@ -44,13 +45,13 @@ public class FilterFormatter implements OperatorFormatter {
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public String serialize(final BasicOperator operator, final int node_id)
+	public PigQuery serialize(final BasicOperator operator, final int node_id)
 			 {
 		final JSONObject json = new JSONObject();
 //		json.put("type", Filter.class.getName());
 //		json.put("node_id", node_id);
 //		json.put("expression", operator.toString());
-		return "";
+		return new PigQuery();
 	}
 
 	/*

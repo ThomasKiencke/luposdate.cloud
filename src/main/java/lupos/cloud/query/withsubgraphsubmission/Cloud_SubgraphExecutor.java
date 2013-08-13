@@ -24,6 +24,7 @@
 package lupos.cloud.query.withsubgraphsubmission;
 
 import lupos.cloud.operator.ICloudSubgraphExecutor;
+import lupos.cloud.pig.PigQuery;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.queryresult.QueryResult;
 import lupos.distributed.operator.ISubgraphExecutor;
@@ -38,7 +39,7 @@ public class Cloud_SubgraphExecutor implements ICloudSubgraphExecutor {
 	}
 
 	@Override
-	public QueryResult evaluate(String cloudSubgraphAsPig) {
+	public QueryResult evaluate(PigQuery cloudSubgraphAsPig) {
 		return this.cloudManagement.submitPigQuery(cloudSubgraphAsPig);
 	}
 }

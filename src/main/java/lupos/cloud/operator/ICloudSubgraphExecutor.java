@@ -23,6 +23,7 @@
  */
 package lupos.cloud.operator;
 
+import lupos.cloud.pig.PigQuery;
 import lupos.datastructures.queryresult.QueryResult;
 
 /**
@@ -37,5 +38,5 @@ public interface ICloudSubgraphExecutor {
 	 * @param subgraphSeriliazedAsJSON the subgraph serialized as JSON string
 	 * @return the retrieved query result
 	 */
-	public QueryResult evaluate(String cloudSubgraphAsPig);
+	public QueryResult evaluate(PigQuery cloudSubgraphAsPig);
 }

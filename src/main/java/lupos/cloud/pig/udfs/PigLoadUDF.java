@@ -47,50 +47,6 @@ public class PigLoadUDF extends HBaseStorage {
 		this(columnList, "");
 	}
 
-//	@Override
-//	public Tuple getNext() throws IOException {
-//		Tuple input = super.getNext();
-//		// DefaultTuple result = new DefaultTuple();
-//		Tuple result = TupleFactory.getInstance().newTuple(3);
-//		
-//		// get rowkey
-//		result.set(0, new DataByteArray(input.get(0).toString()));
-//		String[] columns = input.get(1).toString().split(",");
-//		StringBuilder sb1 = new StringBuilder();
-//		StringBuilder sb2 = new StringBuilder();
-//		Map<String, DataByteArray> cfMap1 = new HashMap<String, DataByteArray>();
-//		Map<String, DataByteArray> cfMap2 = new HashMap<String, DataByteArray>();
-//
-//		for (int i = 0; i < columns.length; i++) {
-//			// if (i > 0) {
-//			// sb1.append("#,");
-//			// sb2.append("#,");
-//			// }
-//			// sb1.append(columns[i].subSequence(columns[i].indexOf('<'),
-//			// columns[i].indexOf('>') + 1));
-//			cfMap1.put(
-//					columns[i].subSequence(columns[i].indexOf('<'),
-//							columns[i].indexOf('>') + 1).toString(),
-//					new DataByteArray(""));
-//			// sb2.append(columns[i].subSequence(columns[i].lastIndexOf('<'),
-//			// columns[i].lastIndexOf('>') + 1));
-//			cfMap2.put(
-//					columns[i].subSequence(columns[i].lastIndexOf('<'),
-//							columns[i].lastIndexOf('>') + 1).toString(),
-//					new DataByteArray(""));
-//		}
-//
-//		// column key bag 1 und bag 2
-//		// result.append("[" + sb1.toString() + "]");
-//		result.set(1, cfMap1);
-//		// result.append("[" + sb2.toString() + "]");
-//		result.set(2, cfMap2);
-//
-//		// result.
-//		return result;
-//		// return super.getNext();
-//	}
-
 	 @Override
 	public Tuple getNext() throws IOException {
 		try {

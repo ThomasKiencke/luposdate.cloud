@@ -10,7 +10,7 @@ import org.stringtemplate.v4.compiler.CodeGenerator.includeExpr_return;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
-public class PigIndexScanParser {
+public class IndexScanToPigQuery {
 	SortedSet<String> joinVariables = new TreeSet<String>();
 	// HashMap<String, ArrayList<String>> intermediateJoins = new
 	// HashMap<String, ArrayList<String>>();
@@ -27,22 +27,39 @@ public class PigIndexScanParser {
 				+ "' "
 				+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('VALUE', '-loadKey true') as (rowkey:chararray, columncontent:map[]);"
 				+ "\n");
-		result.append("PATTERN_" + curPattern.getPatternId() + " = FILTER "
-				+ curPattern.getName() + "_DATA BY $0 == '"
-				+ curPattern.getLiterals() + "';" + "\n");
-		result.append("INTERMEDIATE_BAG_"
-				+ curPattern.getPatternId()
-				+ " = foreach PATTERN_"
-				+ curPattern.getPatternId()
-				+ " generate flatten(lupos.cloud.pig.udfs.MapToBag($1)) as "
-				+ ((curPattern.getJoinElements().size() == 1) ? "(output:chararray);"
-						: "(output1:chararray, output2:chararray); ") + "\n");
 
+		/** Für Triplepattern ?s ?p ?o */
+		if (curPattern.allElementsAreVariables()) {
+			result.append("INTERMEDIATE_BAG_"
+					+ curPattern.getPatternId()
+					+ " = foreach "
+					+ curPattern.getName()
+					+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBag($1));\n");
+		} else {
+			/** Für alle anderen Triplepattern */
+			result.append("PATTERN_" + curPattern.getPatternId() + " = FILTER "
+					+ curPattern.getName() + "_DATA BY $0 == '"
+					+ curPattern.getLiterals() + "';" + "\n");
+			result.append("INTERMEDIATE_BAG_"
+					+ curPattern.getPatternId()
+					+ " = foreach PATTERN_"
+					+ curPattern.getPatternId()
+					+ " generate flatten(lupos.cloud.pig.udfs.MapToBag($1)) as "
+					+ ((curPattern.getJoinElements().size() == 1) ? "(output:chararray);"
+							: "(output1:chararray, output2:chararray); ")
+					+ "\n");
+		}
 		intermediateJoins.add(curPattern);
 		return result.toString();
 	}
 
 	public String getJoinQuery() {
+		String result = multiJoin();
+
+		return result;
+	}
+	
+	private String multiJoin() {
 		StringBuilder result = new StringBuilder();
 
 		while (intermediateJoins.size() > 1) {
@@ -139,8 +156,13 @@ public class PigIndexScanParser {
 		case 1:
 			result = new JoinInformation(triplePattern, "PO_S");
 			break;
+		case 111:
+			// Wenn alles Variablen sind kann eine beliebige Tabelle verwendet
+			// werdens
+			result = new JoinInformation(triplePattern, "S_PO");
+			break;
 		default:
-			// TODO: SPO und ??? fehlen
+			// TODO: SPO
 			break;
 		}
 
@@ -161,7 +183,7 @@ public class PigIndexScanParser {
 			if (existMap.get(element) == null) {
 				existMap.put(element, true);
 				keepList.add(i);
-				optimizedList.add(element);
+				optimizedList.add(element.replace("?", ""));
 			}
 			i++;
 		}

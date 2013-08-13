@@ -149,7 +149,7 @@ public class HBaseConnection {
 		}
 	}
 
-	public static void addRow(String tablename, String row_key, String column)
+	public static void addRow(String tablename, String row_key, String column, String value)
 			throws IOException {
 		// byte[] databytes = Bytes.toBytes("data");
 		// p1.add(databytes, Bytes.toBytes("1"), Bytes.toBytes("value1"));
@@ -161,7 +161,7 @@ public class HBaseConnection {
 		}
 		Put row = new Put(Bytes.toBytes(row_key));
 		row.add(Bytes.toBytes(COLUMN_FAMILY), Bytes.toBytes(column),
-				Bytes.toBytes(""));
+				Bytes.toBytes(value));
 		table.put(row);
 	}
 

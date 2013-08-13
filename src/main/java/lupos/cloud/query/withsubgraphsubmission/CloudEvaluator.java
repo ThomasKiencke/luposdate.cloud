@@ -105,9 +105,12 @@ public class CloudEvaluator extends QueryClient {
 		 * IndexScanOperator in verschiedene Operatoren aufzuteilen beim Cloud
 		 * Ansatz!
 		 */
+		
+		// TODO: Filter in Subgraphcontainer?!
+		
 		// if (this.histogramExecutor == null) {
 		// // make binary joins such that subgraphs can be identified...
-		// this.opt = BasicIndexScan.BINARYSTATICANALYSIS;
+		 this.opt = BasicIndexScan.NONE;
 		// } else {
 		// // use histograms to find best join order
 		// this.opt = BasicIndexScan.BINARY;

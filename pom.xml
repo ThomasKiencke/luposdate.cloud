@@ -71,6 +71,12 @@
 			<version>4.1</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.linkedin.datafu</groupId>
+			<artifactId>datafu</artifactId>
+			<version>0.0.9</version>
+		</dependency>
+
 		<!-- "Failed to set setXIncludeAware(true) for parser" FIX -->
 		<dependency>
 			<groupId>xerces</groupId>

@@ -23,6 +23,7 @@
  */
 package lupos.cloud.operator.format;
 
+import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.BasicOperator;
 
 import org.json.JSONException;
@@ -41,7 +42,7 @@ public interface OperatorFormatter {
 	 * @return the jSON object
 	 * @throws JSONException the jSON exception
 	 */
-	public String serialize(BasicOperator operator, int node_id);
+	public PigQuery serialize(BasicOperator operator, int node_id);
 
 	/**
 	 * Deserialize.

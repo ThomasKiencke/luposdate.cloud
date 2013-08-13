@@ -24,6 +24,7 @@
 package lupos.cloud.operator.format;
 
 import lupos.cloud.operator.format.OperatorFormatter;
+import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.application.Application;
 import lupos.engine.operators.application.CollectResult;
@@ -74,7 +75,7 @@ public class ResultFormatter implements OperatorFormatter {
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public String serialize(final BasicOperator operator, final int node_id)  {
+	public PigQuery serialize(final BasicOperator operator, final int node_id)  {
 		final JSONObject json = new JSONObject();
 		final Result result = (Result) operator;
 		try {
@@ -85,7 +86,7 @@ public class ResultFormatter implements OperatorFormatter {
 			System.err.println(e);
 			e.printStackTrace();
 		}
-		return "";
+		return new PigQuery();
 	}
 
 	/*

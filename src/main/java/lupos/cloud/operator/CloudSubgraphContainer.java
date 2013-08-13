@@ -24,7 +24,8 @@
 package lupos.cloud.operator;
 
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
-import lupos.cloud.pig.PigIndexScanParser;
+import lupos.cloud.pig.IndexScanToPigQuery;
+import lupos.cloud.pig.PigQuery;
 import lupos.datastructures.queryresult.QueryResult;
 import lupos.distributed.operator.ISubgraphExecutor;
 import lupos.engine.operators.RootChild;
@@ -88,9 +89,10 @@ public class CloudSubgraphContainer<K> extends RootChild {
 		final CloudSubgraphContainerFormatter pigParser = new CloudSubgraphContainerFormatter();
 		// final JSONObject serializedGraph =
 		// serializer.serialize(this.rootNodeOfSubGraph, 0);
-		final String pigQuery = pigParser.serialize(this.rootNodeOfSubGraph, 0);
+		final PigQuery pigQuery = pigParser.serialize(this.rootNodeOfSubGraph, 0);
 		final QueryResult result = this.cloudSubgraphExecutor
 				.evaluate(pigQuery);
+		result.materialize();
 		// result.materialize(); // just for now read all from the stream sent
 		// by
 		// the endpoint, otherwise it may be blocked!

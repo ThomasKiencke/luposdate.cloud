@@ -27,7 +27,7 @@ public class JoinInformation {
 			}
 		}
 	}
-	
+
 	public JoinInformation(String name) {
 	}
 
@@ -66,7 +66,7 @@ public class JoinInformation {
 		}
 		return result.toString();
 	}
-	
+
 	public ArrayList<String> getVariables() {
 		ArrayList<String> result = new ArrayList<String>();
 		for (Item item : triplePattern.getItems()) {
@@ -79,5 +79,14 @@ public class JoinInformation {
 
 	public Integer getItemPos(String itemID) {
 		return this.joinElements.indexOf(itemID);
+	}
+
+	public boolean allElementsAreVariables() {
+		for (Item item : triplePattern.getItems()) {
+			if (!item.isVariable()) {
+				return false;
+			}
+		}
+		return true;
 	}
 }
