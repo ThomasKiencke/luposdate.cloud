@@ -1,17 +1,21 @@
 package lupos.cloud.hbase;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Scanner;
 
-import lupos.misc.FileHelper;
+import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.TableExistsException;
+import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
@@ -19,8 +23,16 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
+import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+import au.com.bytecode.opencsv.CSVWriter;
 
 public class HBaseConnection {
 	static Configuration configuration = null;
@@ -28,11 +40,21 @@ public class HBaseConnection {
 	static boolean message = false;
 	static String COLUMN_FAMILY = "VALUE";
 	static HashMap<String, HTable> hTables = new HashMap<String, HTable>();
+	static HashMap<String, CSVWriter> csvwriter = new HashMap<String, CSVWriter>();
+	static int rowCounter = 0;
+	public static final int ROW_BUFFER_SIZE = 60000;
+	public static final String WORKING_DIR = "bulkLoadDirectory"
+			+ File.separator;
+	public static final String BUFFER_FILE_NAME = "rowBufferFile";
+	public static final String BUFFER_HFILE_NAME = "rowBufferHFile";
+	static int file_counter = 0;
+	static final boolean MAP_REDUCE_BULK_LOAD = false;
 
 	public static void init() throws IOException {
 		if (configuration == null || admin == null) {
 			configuration = HBaseConfiguration.create();
 			admin = new HBaseAdmin(configuration);
+			new File(WORKING_DIR).mkdir();
 		}
 	}
 
@@ -64,7 +86,7 @@ public class HBaseConnection {
 		if (message) {
 			System.out.println("Spalte \"" + columnname
 					+ "\" wurde in die Tabelle \"" + tablename
-					+ "\" hinzugef�gt!");
+					+ "\" hinzugefügt!");
 		}
 	}
 
@@ -112,8 +134,7 @@ public class HBaseConnection {
 		admin.disableTable(tablename);
 		admin.deleteTable(tablename);
 		if (message) {
-			System.out
-					.println("Tabelle \"" + tablename + "\" wurde gel�scht");
+			System.out.println("Tabelle \"" + tablename + "\" wurde gelöscht");
 		}
 	}
 
@@ -129,8 +150,8 @@ public class HBaseConnection {
 	public static boolean checkTable(String tablename) throws IOException {
 		init();
 		if (!admin.isTableAvailable(tablename)) {
-			System.out.println("Tabelle \"" + tablename
-					+ "\" nicht verf�gbar!");
+			System.out
+					.println("Tabelle \"" + tablename + "\" nicht verfügbar!");
 			return false;
 		}
 		return true;
@@ -149,20 +170,106 @@ public class HBaseConnection {
 		}
 	}
 
-	public static void addRow(String tablename, String row_key, String column, String value)
-			throws IOException {
+	public static void addRow(String tablename, String row_key, String columnFamily, String column,
+			String value) throws IOException {
 		// byte[] databytes = Bytes.toBytes("data");
 		// p1.add(databytes, Bytes.toBytes("1"), Bytes.toBytes("value1"));
 		// table.put(p1);
-		HTable table = hTables.get(tablename);
-		if (table == null) {
-			table = new HTable(configuration, tablename);
-			hTables.put(tablename, table);
+
+		if (MAP_REDUCE_BULK_LOAD) {
+			// schnellere Variante zum einlesen von Tripel 
+			if (csvwriter.get(tablename) == null) {
+				csvwriter.put(tablename, new CSVWriter(new FileWriter(
+						WORKING_DIR + tablename + "_" + BUFFER_FILE_NAME + "_"
+								+ file_counter + ".csv"), '\t'));
+			}
+			// Schreibe die Zeile in auf den Festplattenpuffer
+			String[] entries = { columnFamily , row_key, column, value };
+			csvwriter.get(tablename).writeNext(entries);
+			rowCounter++;
+
+			if (rowCounter == ROW_BUFFER_SIZE) {
+				rowCounter = 0;
+				for (String key : csvwriter.keySet()) {
+					csvwriter.get(key).close();
+					bulkLoad(key);
+					// Scanner sc = new Scanner(System.in);
+					// new File(WORKING_DIR + tablename + "_" +
+					// BUFFER_FILE_NAME)
+					// .delete();
+					// new File(WORKING_DIR + tablename + "_" +
+					// BUFFER_FILE_NAME)
+					// .delete();
+				}
+				csvwriter = new HashMap<String, CSVWriter>();
+				file_counter++;
+			}
+
+		} else {
+			// Einlesen per Tripel per HBase API (sehr langsam bei großen Datenmengen)
+			HTable table = hTables.get(tablename);
+			if (table == null) {
+				table = new HTable(configuration, tablename);
+				hTables.put(tablename, table);
+			}
+			Put row = new Put(Bytes.toBytes(row_key));
+			row.add(Bytes.toBytes(COLUMN_FAMILY), Bytes.toBytes(column),
+					Bytes.toBytes(value));
+			table.put(row);
 		}
-		Put row = new Put(Bytes.toBytes(row_key));
-		row.add(Bytes.toBytes(COLUMN_FAMILY), Bytes.toBytes(column),
-				Bytes.toBytes(value));
-		table.put(row);
+	}
+
+	private static void bulkLoad(String tablename) {
+		try {
+			// conf.setInt("epoch.seconds.tipoff", 1275613200);
+			configuration.set("hbase.table.name", tablename);
+
+			// Load hbase-site.xml
+			// HBaseConfiguration.addHbaseResources(conf);
+
+			Job job = new Job(configuration, "HBase Bulk Import for "
+					+ tablename + "(" + file_counter + ")");
+			job.setJarByClass(HBaseKVMapper.class);
+
+			job.setMapperClass(HBaseKVMapper.class);
+			job.setMapOutputKeyClass(ImmutableBytesWritable.class);
+			job.setMapOutputValueClass(KeyValue.class);
+			job.setOutputFormatClass(HFileOutputFormat.class);
+
+			job.setInputFormatClass(TextInputFormat.class);
+
+			// Configuration hConf = HBaseConfiguration.create(configuration);
+			// hConf.set("hbase.zookeeper.quorum", "127.0.0.1");
+			// hConf.set("hbase.zookeeper.property.clientPort",
+			// "2181");
+			HTable hTable = new HTable(configuration, tablename);
+
+			// Auto configure partitioner and reducer
+			HFileOutputFormat.configureIncrementalLoad(job, hTable);
+
+			FileInputFormat.addInputPath(job, new Path(WORKING_DIR + tablename
+					+ "_" + BUFFER_FILE_NAME + "_" + file_counter + ".csv"));
+			FileOutputFormat.setOutputPath(job, new Path(WORKING_DIR
+					+ tablename + "_" + BUFFER_HFILE_NAME + "_" + file_counter
+					+ ".csv"));
+
+			job.waitForCompletion(true);
+
+			// Load generated HFiles into table
+			LoadIncrementalHFiles loader = new LoadIncrementalHFiles(
+					configuration);
+			loader.doBulkLoad(new Path(WORKING_DIR + tablename + "_"
+					+ BUFFER_HFILE_NAME + "_" + file_counter + ".csv"), hTable);
+		} catch (TableNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public static void getRow(final String tablename, final String row_key) {

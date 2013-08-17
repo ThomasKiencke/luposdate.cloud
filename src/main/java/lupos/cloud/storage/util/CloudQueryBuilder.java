@@ -28,6 +28,7 @@ import java.util.Collection;
 
 import lupos.cloud.hbase.HBaseTableStrategy;
 import lupos.cloud.hbase.HBaseTriple;
+import lupos.cloud.hbase.Strategy1HBaseTableStrategy;
 import lupos.datastructures.items.Triple;
 import lupos.datastructures.items.Variable;
 import lupos.datastructures.items.literal.AnonymousLiteral;
@@ -66,9 +67,8 @@ public class CloudQueryBuilder {
 		// !!! EDIT !!! ... statt dem SPARQL Query wird nun eine Liste von HBase
 		// Tripeln erzeugt
 		ArrayList<HBaseTriple> hbaseTripleList = new ArrayList<HBaseTriple>();
-
 		for (Triple triple : toBeAdded) {
-			for (HBaseTriple ht : HBaseTableStrategy
+			for (HBaseTriple ht : HBaseTableStrategy.getTableInstance()
 					.generateSixIndecesTriple(triple))
 				hbaseTripleList.add(ht);
 		}

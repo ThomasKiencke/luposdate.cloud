@@ -24,8 +24,8 @@
 package lupos.cloud.operator;
 
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
-import lupos.cloud.pig.IndexScanToPigQuery;
 import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.operator.IndexScanToPigQuery;
 import lupos.datastructures.queryresult.QueryResult;
 import lupos.distributed.operator.ISubgraphExecutor;
 import lupos.engine.operators.RootChild;

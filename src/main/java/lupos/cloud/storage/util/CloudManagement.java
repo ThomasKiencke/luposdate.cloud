@@ -61,6 +61,7 @@ public class CloudManagement {
 	protected String[] urlsOfEndpoints;
 
 	public static final boolean enableHbase = true;
+	public static int countTriple = 0;
 	static PigServer pigServer = null;
 	Iterator<Tuple> pigQueryResult = null;
 	ArrayList<String> curVariableList = null;
@@ -71,12 +72,12 @@ public class CloudManagement {
 	 * endpoint.
 	 */
 	public CloudManagement() {
-
+		
 		try {
 			HBaseConnection.init();
 			pigServer = new PigServer(ExecType.MAPREDUCE);
 
-			for (String tablename : HBaseTableStrategy.TABLE_NAMES) {
+			for (String tablename : HBaseTableStrategy.getTableInstance().getTableNames()) {
 				HBaseConnection.createTable(tablename, "VALUE");
 			}
 		} catch (IOException e) {
@@ -87,16 +88,15 @@ public class CloudManagement {
 	public void submitHBaseTripleToDatabase(final Collection<HBaseTriple> triple) {
 		// TODO: Connection To Hbase + Insert
 		// seinding triple to hbase as row_key, family ...
-		long i = 0;
 		for (HBaseTriple item : triple) {
 			// TODO: HBase Connection herstellen + Tripel in die DB laden
-			if (i % 500 == 0) {
-				System.out.println(i + " HBaseTripel importiert!");
+			if (countTriple % 500 == 0) {
+				System.out.println(countTriple + " HBaseTripel importiert!");
 			}
 			try {
-				HBaseConnection.addRow(item.getTablename(), item.getRow_key(),
+				HBaseConnection.addRow(item.getTablename(), item.getRow_key(), item.getColumnFamily(), 
 						item.getColumn(), item.getValue());
-				i++;
+				countTriple++;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -121,11 +121,12 @@ public class CloudManagement {
 
 	public QueryResult submitPigQuery(final PigQuery query) {
 		QueryResult result = null;
+		long start = System.currentTimeMillis();
 		try {
-			System.out.println("PigLatin Script wird ausgeführt...");
+			System.out.println("Generated PigLatin Program:");
 			System.out.println(query.getPigLatin());
 			System.out.println();
-			System.out.println();
+			System.out.println("PigLatin Programm wird ausgeführt...");
 			pigServer.registerQuery(query.getPigLatin());
 			curVariableList = query.getVariableList();
 			pigQueryResult = pigServer.openIterator("X");
@@ -202,7 +203,8 @@ public class CloudManagement {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.out.println("fertig!");
+		long stop = System.currentTimeMillis();
+		System.out.println("PigLatin Programm erfolgreich in " + ((stop - start) / 1000) + "s ausgeführt!");
 		return result;
 	}
 

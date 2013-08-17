@@ -1,4 +1,4 @@
-package lupos.cloud.pig;
+package lupos.cloud.pig.operator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,6 +7,8 @@ import java.util.TreeSet;
 
 import org.stringtemplate.v4.compiler.CodeGenerator.includeExpr_return;
 
+import lupos.cloud.hbase.HBaseTableStrategy;
+import lupos.cloud.pig.JoinInformation;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
@@ -20,26 +22,42 @@ public class IndexScanToPigQuery {
 		StringBuilder result = new StringBuilder();
 		JoinInformation curPattern = getHBaseTable(triplePattern);
 
-		result.append(curPattern.getName()
-				+ "_DATA = "
-				+ "load 'hbase://"
-				+ curPattern.getName()
-				+ "' "
-				+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('VALUE', '-loadKey true') as (rowkey:chararray, columncontent:map[]);"
-				+ "\n");
-
 		/** Für Triplepattern ?s ?p ?o */
 		if (curPattern.allElementsAreVariables()) {
+			result.append(curPattern.getName()
+					+ "_DATA = "
+					+ "load 'hbase://"
+					+ curPattern.getName()
+					+ "' "
+					+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('"
+					+ HBaseTableStrategy.getTableInstance()
+							.getColumnFamilyName()
+					+ "', '-loadKey true') as (rowkey:chararray, columncontent:map[]);"
+					+ "\n");
+
 			result.append("INTERMEDIATE_BAG_"
 					+ curPattern.getPatternId()
 					+ " = foreach "
 					+ curPattern.getName()
 					+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBag($1));\n");
 		} else {
+			result.append(
 			/** Für alle anderen Triplepattern */
-			result.append("PATTERN_" + curPattern.getPatternId() + " = FILTER "
-					+ curPattern.getName() + "_DATA BY $0 == '"
-					+ curPattern.getLiterals() + "';" + "\n");
+			"PATTERN_"
+					+ curPattern.getPatternId()
+					+ " = "
+					+ "load 'hbase://"
+					+ curPattern.getName()
+					+ "' "
+					+ "using lupos.cloud.pig.udfs.PigLoadUDF('VALUE', '-loadKey true','"
+					+ curPattern.getLiterals()
+					+ "') as (rowkey:chararray, columncontent:map[]);" + "\n");
+
+			// result.append("PATTERN_" + curPattern.getPatternId() +
+			// " = FILTER "
+			// + curPattern.getName() + "_DATA BY $0 == '"
+			// + curPattern.getLiterals() + "';" + "\n");
+
 			result.append("INTERMEDIATE_BAG_"
 					+ curPattern.getPatternId()
 					+ " = foreach PATTERN_"
@@ -58,7 +76,7 @@ public class IndexScanToPigQuery {
 
 		return result;
 	}
-	
+
 	private String multiJoin() {
 		StringBuilder result = new StringBuilder();
 

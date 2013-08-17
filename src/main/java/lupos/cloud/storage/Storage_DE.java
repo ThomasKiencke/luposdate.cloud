@@ -49,7 +49,6 @@ import lupos.engine.operators.tripleoperator.TriplePattern;
  */
 public class Storage_DE extends BlockUpdatesStorage {
 
-	public static int countTriple;
 	/**
 	 * for managing the registered endpoints and submitting queries to them
 	 */
@@ -59,9 +58,9 @@ public class Storage_DE extends BlockUpdatesStorage {
 	 * this flag is true if data has been inserted, otherwise it is false
 	 */
 	protected boolean insertedData = false;
-	
+
 	public static Storage_DE storageInstance = null;
-	
+
 	public static Storage_DE getInstance() {
 		if (storageInstance == null) {
 			storageInstance = new Storage_DE();
@@ -76,14 +75,14 @@ public class Storage_DE extends BlockUpdatesStorage {
 	public Storage_DE() {
 		this.cloudManagement = new CloudManagement();
 	}
-	
+
 	public CloudManagement getCloudManagement() {
 		return cloudManagement;
 	}
 
 	@Override
 	public void blockInsert() {
-		countTriple += toBeAdded.size();
+//		CloudManagement.countTriple = CloudManagement.countTriple + toBeAdded.size();
 		this.cloudManagement.submitHBaseTripleToDatabase(CloudQueryBuilder
 				.buildInputHBaseTriple(this.toBeAdded));
 		this.insertedData = true;
@@ -93,8 +92,8 @@ public class Storage_DE extends BlockUpdatesStorage {
 	public boolean containsTripleAfterAdding(final Triple triple) {
 		// return
 		// !this.cloudManagement.submitSPARQLQuery(CloudQueryBuilder.buildQuery(triple)).isEmpty();
-//		return !this.cloudManagement.submitPigQuery(
-//				CloudQueryBuilder.buildQuery(triple)).isEmpty();
+		// return !this.cloudManagement.submitPigQuery(
+		// CloudQueryBuilder.buildQuery(triple)).isEmpty();
 		return true;
 	}
 
@@ -103,7 +102,7 @@ public class Storage_DE extends BlockUpdatesStorage {
 		// this.cloudManagement.submitSPARULQuery(CloudQueryBuilder.buildDeleteQuery(triple));
 		// this.cloudManagement.waitForThreadPool();
 		this.cloudManagement.deleteHBaseTripleFromDatabase(HBaseTableStrategy
-				.generateSixIndecesTriple(triple));
+				.getTableInstance().generateSixIndecesTriple(triple));
 	}
 
 	@Override
@@ -111,8 +110,8 @@ public class Storage_DE extends BlockUpdatesStorage {
 			final TriplePattern triplePattern) {
 		// return
 		// this.cloudManagement.submitSPARQLQuery(CloudQueryBuilder.buildQuery(triplePattern));
-//		return this.cloudManagement.submitPigQuery((CloudQueryBuilder
-//				.buildQuery(triplePattern)));
+		// return this.cloudManagement.submitPigQuery((CloudQueryBuilder
+		// .buildQuery(triplePattern)));
 		return null;
 	}
 
@@ -120,11 +119,11 @@ public class Storage_DE extends BlockUpdatesStorage {
 	public void endImportData() {
 		if (!this.toBeAdded.isEmpty()) {
 			super.endImportData();
-			System.out.println(countTriple + " Tripel importiert!");
-//			for (String tablename : HBaseTableStrategy.TABLE_NAMES) {
-//				HBaseConnection.flush(tablename);
-//			}
-//			countTriple = 0;
+//			System.out.println(CloudManagement.countTriple + " Tripel importiert!");
+			// for (String tablename : HBaseTableStrategy.TABLE_NAMES) {
+			// HBaseConnection.flush(tablename);
+			// }
+			// countTriple = 0;
 		}
 		// this.cloudManagement.waitForThreadPool();
 		if (this.insertedData) {
