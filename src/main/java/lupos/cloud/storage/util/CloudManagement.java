@@ -87,7 +87,7 @@ public class CloudManagement {
 
 			for (String tablename : HBaseTableStrategy.getTableInstance()
 					.getTableNames()) {
-				HBaseConnection.createTable(tablename, "VALUE");
+				HBaseConnection.createTable(tablename, HBaseTableStrategy.getTableInstance().getColumnFamilyName());
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

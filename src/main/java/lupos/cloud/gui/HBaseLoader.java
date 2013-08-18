@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
 
+import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.query.withsubgraphsubmission.CloudEvaluator;
 import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.datastructures.items.literal.URILiteral;
@@ -62,5 +63,7 @@ public class HBaseLoader {
 
 		}
 		br.close();
+		
+		HBaseConnection.flush();
 	}
 }
