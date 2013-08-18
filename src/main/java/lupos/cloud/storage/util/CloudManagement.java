@@ -30,6 +30,7 @@ import java.util.ArrayList;
 //import java.io.InputStream;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Properties;
 
 import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
@@ -37,6 +38,7 @@ import org.apache.pig.data.Tuple;
 //import java.util.concurrent.TimeUnit;
 
 //import org.apache.hadoop.hbase.thrift.generated.Hbase;
+
 
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseTableStrategy;
@@ -72,12 +74,19 @@ public class CloudManagement {
 	 * endpoint.
 	 */
 	public CloudManagement() {
-		
+
 		try {
 			HBaseConnection.init();
-			pigServer = new PigServer(ExecType.MAPREDUCE);
+			// pigServer = new PigServer(ExecType.MAPREDUCE);
+			Properties props = new Properties();
+			props.setProperty("fs.default.name", "hdfs://192.168.2.41:8020");
+			props.setProperty("mapred.job.tracker", "192.168.2.41:8021");
+			props.setProperty("hbase.zookeeper.quorum", "192.168.2.41");
+			props.setProperty("hbase.zookeeper.property.clientPort", "2181");
+			pigServer = new PigServer(ExecType.MAPREDUCE, props);
 
-			for (String tablename : HBaseTableStrategy.getTableInstance().getTableNames()) {
+			for (String tablename : HBaseTableStrategy.getTableInstance()
+					.getTableNames()) {
 				HBaseConnection.createTable(tablename, "VALUE");
 			}
 		} catch (IOException e) {
@@ -94,8 +103,9 @@ public class CloudManagement {
 				System.out.println(countTriple + " HBaseTripel importiert!");
 			}
 			try {
-				HBaseConnection.addRow(item.getTablename(), item.getRow_key(), item.getColumnFamily(), 
-						item.getColumn(), item.getValue());
+				HBaseConnection.addRow(item.getTablename(), item.getRow_key(),
+						item.getColumnFamily(), item.getColumn(),
+						item.getValue());
 				countTriple++;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -204,7 +214,8 @@ public class CloudManagement {
 			e.printStackTrace();
 		}
 		long stop = System.currentTimeMillis();
-		System.out.println("PigLatin Programm erfolgreich in " + ((stop - start) / 1000) + "s ausgeführt!");
+		System.out.println("PigLatin Programm erfolgreich in "
+				+ ((stop - start) / 1000) + "s ausgeführt!");
 		return result;
 	}
 

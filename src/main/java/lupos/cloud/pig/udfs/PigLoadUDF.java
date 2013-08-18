@@ -435,7 +435,7 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 
 	private void initScan(String rowKey) throws IOException {
 		scan = new Scan();
-		scan.setRaw(true);
+//		scan.setRaw(true);
 		
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
