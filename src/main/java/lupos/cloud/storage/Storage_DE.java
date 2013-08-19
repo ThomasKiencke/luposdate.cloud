@@ -25,7 +25,7 @@ package lupos.cloud.storage;
 
 //import org.openrdf.sail.rdbms.evaluation.QueryBuilder;
 
-import org.apache.hadoop.hdfs.server.common.StorageInfo;
+//import org.apache.hadoop.hdfs.server.common.StorageInfo;
 
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseTableStrategy;

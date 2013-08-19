@@ -49,7 +49,9 @@ public class IndexScanToPigQuery {
 					+ "load 'hbase://"
 					+ curPattern.getName()
 					+ "' "
-					+ "using lupos.cloud.pig.udfs.PigLoadUDF('VALUE', '-loadKey true','"
+					+ "using lupos.cloud.pig.udfs.PigLoadUDF('"
+					+ HBaseTableStrategy.getTableInstance()
+							.getColumnFamilyName() + "', '-loadKey true','"
 					+ curPattern.getLiterals()
 					+ "') as (rowkey:chararray, columncontent:map[]);" + "\n");
 
