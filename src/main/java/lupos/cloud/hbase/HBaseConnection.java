@@ -66,7 +66,7 @@ public class HBaseConnection {
 	static int file_counter = 0;
 	static final boolean MAP_REDUCE_BULK_LOAD = false;
 	static FileSystem hdfs_fileSystem = null;
-
+	
 	public static void init() throws IOException {
 		if (configuration == null || admin == null) {
 			configuration = HBaseConfiguration.create();
@@ -104,6 +104,7 @@ public class HBaseConnection {
 //			 deleteTable(tablename);
 			HTableDescriptor descriptor = new HTableDescriptor(
 					Bytes.toBytes(tablename));
+//			 deleteTable(tablename);
 			descriptor.addFamily(new HColumnDescriptor(familyname));
 			admin.createTable(descriptor);
 			if (message) {
@@ -314,10 +315,10 @@ public class HBaseConnection {
 			job.setOutputFormatClass(HFileOutputFormat.class);
 			job.setPartitionerClass(TotalOrderPartitioner.class);
 			job.setInputFormatClass(TextInputFormat.class);
+			
 			TableMapReduceUtil.addDependencyJars(job);
 			TableMapReduceUtil.addDependencyJars(configuration,
 					HBaseKVMapper.class);
-
 			// DistributedCache.addFileToClassPath(new
 			// Path("/tmp/hbase-0.94.6-cdh4.3.0.jar"), job.getConfiguration());
 			// Configuration hConf = HBaseConfiguration.create(configuration);
