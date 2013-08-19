@@ -39,10 +39,14 @@ import org.apache.pig.data.Tuple;
 
 //import org.apache.hadoop.hbase.thrift.generated.Hbase;
 
+
+
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseTableStrategy;
 import lupos.cloud.hbase.HBaseTriple;
 import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.udfs.MapToBag;
+import lupos.cloud.pig.udfs.PigLoadUDF;
 import lupos.cloud.testing.JarGetter;
 import lupos.datastructures.bindings.Bindings;
 import lupos.datastructures.items.Variable;
@@ -85,7 +89,8 @@ public class CloudManagement {
 			// props.setProperty("hbase.zookeeper.property.clientPort", "2181");
 			// pigServer = new PigServer(ExecType.MAPREDUCE, props);
 			pigServer = new PigServer(ExecType.MAPREDUCE);
-			pigServer.registerJar("pigUDFJars.jar");
+			pigServer.registerJar(JarGetter.getJar(PigLoadUDF.class));
+			pigServer.registerJar(JarGetter.getJar(MapToBag.class));
 			pigServer.registerJar(JarGetter.getJar(com.google.protobuf.Message.class));
 			for (String tablename : HBaseTableStrategy.getTableInstance()
 					.getTableNames()) {

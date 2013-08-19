@@ -2,6 +2,6 @@
 <configuration>
      <property>
          <name>mapred.job.tracker</name>
-         <value>localhost:8021</value>
+         <value>192.168.2.41:8021</value>
      </property>
 </configuration>

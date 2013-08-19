@@ -3,12 +3,12 @@
 <configuration>
 	<property>
 		<name>fs.defaultFS</name>
-		<value>hdfs://localhost:8020</value>
+		<value>hdfs://192.168.2.41:8020</value>
 	</property>
-	<property>
-		<name>fs.default.name</name>
-		<value>hdfs://localhost:8020</value>
-	</property>
+<!-- 	<property> -->
+<!-- 		<name>fs.default.name</name> -->
+<!-- 		<value>hdfs://192.168.2.41:8020</value> -->
+<!-- 	</property> -->
 <!-- 	<property> -->
 <!-- 		<name>mapred.job.tracker</name> -->
 <!-- 		<value>localhost:8021</value> -->

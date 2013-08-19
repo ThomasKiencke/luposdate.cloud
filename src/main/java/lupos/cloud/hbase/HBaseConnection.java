@@ -59,7 +59,7 @@ public class HBaseConnection {
 	static HashMap<String, HTable> hTables = new HashMap<String, HTable>();
 	static HashMap<String, CSVWriter> csvwriter = new HashMap<String, CSVWriter>();
 	static int rowCounter = 0;
-	public static final int ROW_BUFFER_SIZE = 10000000;
+	public static final int ROW_BUFFER_SIZE = 1000;
 	public static final String WORKING_DIR = "bulkLoadDirectory";
 	public static final String BUFFER_FILE_NAME = "rowBufferFile";
 	public static final String BUFFER_HFILE_NAME = "rowBufferHFile";
@@ -80,12 +80,13 @@ public class HBaseConnection {
 			// configuration.set("tmpjars",
 			// "hdfs://192.168.2.41:8020/tmp/hbase-0.94.6-cdh4.3.0.jar");
 			// TableMapReduceUtil.addDependencyJars(configuration,
+//			TableMapReduceUtil.addDependencyJars(arg0);
 			// HFileOutputFormat.class);
 			admin = new HBaseAdmin(configuration);
 			if (MAP_REDUCE_BULK_LOAD) {
 				// Configuration hdfsConf = new Configuration();
 				TableMapReduceUtil.addDependencyJars(configuration,
-						HBaseKVMapper.class, CSVParser.class);
+						HBaseKVMapper.class, CSVParser.class, HFileOutputFormat.class);
 				// configuration.set("fs.defaultFS", "hdfs://localhost:8020/");
 				hdfs_fileSystem = FileSystem.get(configuration);
 				hdfs_fileSystem.delete(new Path("/tmp/" + WORKING_DIR), true);
@@ -316,9 +317,9 @@ public class HBaseConnection {
 			job.setPartitionerClass(TotalOrderPartitioner.class);
 			job.setInputFormatClass(TextInputFormat.class);
 			
-			TableMapReduceUtil.addDependencyJars(job);
-			TableMapReduceUtil.addDependencyJars(configuration,
-					HBaseKVMapper.class);
+//			TableMapReduceUtil.addDependencyJars(job);
+//			TableMapReduceUtil.addDependencyJars(configuration,
+//					HBaseKVMapper.class);
 			// DistributedCache.addFileToClassPath(new
 			// Path("/tmp/hbase-0.94.6-cdh4.3.0.jar"), job.getConfiguration());
 			// Configuration hConf = HBaseConfiguration.create(configuration);
