@@ -78,7 +78,7 @@
 <!-- 	</property> -->
 	<property>
 		<name>hbase.zookeeper.quorum</name>
-		<value>192.168.2.41</value>
+		<value>localhost</value>
 	</property>
 	<property>
 		<name>hbase.zookeeper.property.clientPort</name>

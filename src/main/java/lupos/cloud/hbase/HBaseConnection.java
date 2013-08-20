@@ -64,7 +64,7 @@ public class HBaseConnection {
 	public static final String BUFFER_FILE_NAME = "rowBufferFile";
 	public static final String BUFFER_HFILE_NAME = "rowBufferHFile";
 	static int file_counter = 0;
-	static final boolean MAP_REDUCE_BULK_LOAD = false;
+	static final boolean MAP_REDUCE_BULK_LOAD = true;
 	static FileSystem hdfs_fileSystem = null;
 	
 	public static void init() throws IOException {
@@ -85,6 +85,7 @@ public class HBaseConnection {
 			admin = new HBaseAdmin(configuration);
 			if (MAP_REDUCE_BULK_LOAD) {
 				// Configuration hdfsConf = new Configuration();
+				configuration.set("libjars", "libjars/");
 				TableMapReduceUtil.addDependencyJars(configuration,
 						HBaseKVMapper.class, CSVParser.class, HFileOutputFormat.class);
 				// configuration.set("fs.defaultFS", "hdfs://localhost:8020/");
