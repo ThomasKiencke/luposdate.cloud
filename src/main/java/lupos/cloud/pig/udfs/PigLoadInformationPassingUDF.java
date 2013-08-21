@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -149,10 +150,11 @@ import com.google.common.collect.Lists;
  * <code>buddies</code> column family in the <code>SampleTableCopy</code> table.
  * 
  */
-public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
-		LoadPushDown, OrderedLoadFunc {
+public class PigLoadInformationPassingUDF extends LoadFunc implements
+		StoreFuncInterface, LoadPushDown, OrderedLoadFunc {
 
-	private static final Log LOG = LogFactory.getLog(PigLoadUDF.class);
+	private static final Log LOG = LogFactory
+			.getLog(PigLoadInformationPassingUDF.class);
 
 	private final static String STRING_CASTER = "UTF8StorageConverter";
 	private final static String BYTE_CASTER = "HBaseBinaryConverter";
@@ -197,6 +199,8 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 
 	private ResourceSchema schema_;
 	private RequiredFieldList requiredFieldList;
+
+	private Iterator<Tuple> informationPassingIterator;
 
 	private static void populateValidOptions() {
 		validOptions_.addOption("loadKey", false, "Load Key");
@@ -256,9 +260,9 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 	 *             when unable to parse arguments
 	 * @throws IOException
 	 */
-	public PigLoadUDF(String columnList, String rowKey) throws ParseException,
-			IOException {
-		this(columnList, "", rowKey);
+	public PigLoadInformationPassingUDF(String columnList, String rowKey)
+			throws ParseException, IOException {
+		this(columnList, "", null);
 	}
 
 	/**
@@ -295,10 +299,9 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 	 * @throws ParseException
 	 * @throws IOException
 	 */
-	public PigLoadUDF(String columnList, String optString, String rowKey)
-			throws ParseException, IOException {
+	public PigLoadInformationPassingUDF(String columnList, String optString,
+			DataBag toJoin) throws ParseException, IOException {
 		populateValidOptions();
-		
 		String[] optsArr = optString.split(" ");
 		try {
 			configuredOptions_ = parser_.parse(validOptions_, optsArr);
@@ -378,7 +381,7 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 			timestamp_ = 0;
 		}
 
-		initScan(rowKey);
+		initScan(toJoin);
 	}
 
 	/**
@@ -434,10 +437,15 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 		return columnInfo;
 	}
 
-	private void initScan(String rowKey) throws IOException {
+	private void initScan(DataBag toJoin) throws IOException {
 		scan = new Scan();
-//		scan.setRaw(true);
-		
+		// scan.setRaw(true);
+		if (toJoin != null) {
+			this.informationPassingIterator = toJoin.iterator();
+		}
+
+		String rowKey = informationPassingIterator.next().get(0).toString();
+
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
 			// add random string because stopRow is exclusiv
@@ -716,6 +724,7 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 					}
 				}
 
+				initScan(null);
 				return tuple;
 			}
 		} catch (InterruptedException e) {
