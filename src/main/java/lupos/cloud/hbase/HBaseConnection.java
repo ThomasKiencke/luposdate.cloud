@@ -59,12 +59,12 @@ public class HBaseConnection {
 	static HashMap<String, HTable> hTables = new HashMap<String, HTable>();
 	static HashMap<String, CSVWriter> csvwriter = new HashMap<String, CSVWriter>();
 	static int rowCounter = 0;
-	public static final int ROW_BUFFER_SIZE = 1000;
+	public static final int ROW_BUFFER_SIZE = 20000000;
 	public static final String WORKING_DIR = "bulkLoadDirectory";
 	public static final String BUFFER_FILE_NAME = "rowBufferFile";
 	public static final String BUFFER_HFILE_NAME = "rowBufferHFile";
-	static int file_counter = 0;
-	static final boolean MAP_REDUCE_BULK_LOAD = true;
+//	static int file_counter = 0;
+	static final boolean MAP_REDUCE_BULK_LOAD = false;
 	static FileSystem hdfs_fileSystem = null;
 	
 	public static void init() throws IOException {
@@ -125,9 +125,9 @@ public class HBaseConnection {
 			try {
 				hdfs_fileSystem.copyFromLocalFile(true, true, new Path(
 						WORKING_DIR + File.separator + key + "_"
-								+ BUFFER_FILE_NAME + "_" + file_counter
+								+ BUFFER_FILE_NAME
 								+ ".csv"), new Path("/tmp/" + WORKING_DIR + "/"
-						+ key + "_" + BUFFER_FILE_NAME + "_" + file_counter
+						+ key + "_" + BUFFER_FILE_NAME  
 						+ ".csv"));
 				csvwriter.get(key).close();
 				bulkLoad(key);
@@ -137,7 +137,6 @@ public class HBaseConnection {
 			}
 		}
 		csvwriter = new HashMap<String, CSVWriter>();
-		file_counter++;
 	}
 
 	public static void addColumn(String tablename, String columnname)
@@ -246,7 +245,7 @@ public class HBaseConnection {
 			if (csvwriter.get(tablename) == null) {
 				csvwriter.put(tablename, new CSVWriter(new FileWriter(
 						WORKING_DIR + File.separator + tablename + "_"
-								+ BUFFER_FILE_NAME + "_" + file_counter
+								+ BUFFER_FILE_NAME
 								+ ".csv"), '\t'));
 			}
 			// Schreibe die Zeile in auf den Festplattenpuffer
@@ -259,10 +258,10 @@ public class HBaseConnection {
 				for (String key : csvwriter.keySet()) {
 					hdfs_fileSystem.copyFromLocalFile(true, true, new Path(
 							WORKING_DIR + File.separator + key + "_"
-									+ BUFFER_FILE_NAME + "_" + file_counter
+									+ BUFFER_FILE_NAME 
 									+ ".csv"), new Path("/tmp/" + WORKING_DIR
-							+ "/" + key + "_" + BUFFER_FILE_NAME + "_"
-							+ file_counter + ".csv"));
+							+ "/" + key + "_" + BUFFER_FILE_NAME
+							+ ".csv"));
 					csvwriter.get(key).close();
 					bulkLoad(key);
 					// Scanner sc = new Scanner(System.in);
@@ -276,7 +275,8 @@ public class HBaseConnection {
 					// .delete();
 				}
 				csvwriter = new HashMap<String, CSVWriter>();
-				file_counter++;
+				hdfs_fileSystem.delete(new Path("/tmp/" + WORKING_DIR), true);
+				hdfs_fileSystem.mkdirs(new Path("/tmp/" + WORKING_DIR));
 			}
 
 		} else {
@@ -306,10 +306,11 @@ public class HBaseConnection {
 			// HBaseConfiguration.addHbaseResources(conf);
 
 			Job job = new Job(configuration, "HBase Bulk Import for "
-					+ tablename + "(" + file_counter + ")");
+					+ tablename);
 			// createJarForClass(HBaseKVMapper.class);
 			job.setJarByClass(HBaseKVMapper.class);
 			// job.setJarByClass(HFileOutputFormat.class);
+			
 
 			job.setMapperClass(HBaseKVMapper.class);
 			job.setMapOutputKeyClass(ImmutableBytesWritable.class);
@@ -318,7 +319,7 @@ public class HBaseConnection {
 			job.setPartitionerClass(TotalOrderPartitioner.class);
 			job.setInputFormatClass(TextInputFormat.class);
 			
-//			TableMapReduceUtil.addDependencyJars(job);
+			TableMapReduceUtil.addDependencyJars(job);
 //			TableMapReduceUtil.addDependencyJars(configuration,
 //					HBaseKVMapper.class);
 			// DistributedCache.addFileToClassPath(new
@@ -338,11 +339,9 @@ public class HBaseConnection {
 			HFileOutputFormat.configureIncrementalLoad(job, hTable);
 
 			FileInputFormat.addInputPath(job, new Path("/tmp/" + WORKING_DIR
-					+ "/" + tablename + "_" + BUFFER_FILE_NAME + "_"
-					+ file_counter + ".csv"));
+					+ "/" + tablename + "_" + BUFFER_FILE_NAME + ".csv"));
 			FileOutputFormat.setOutputPath(job, new Path("/tmp/" + WORKING_DIR
-					+ "/" + tablename + "_" + BUFFER_HFILE_NAME + "_"
-					+ file_counter));
+					+ "/" + tablename + "_" + BUFFER_HFILE_NAME ));
 
 			// TableMapReduceUtil.addDependencyJars(job);
 			// TableMapReduceUtil.addDependencyJars(job.getConfiguration(),
@@ -353,7 +352,7 @@ public class HBaseConnection {
 			LoadIncrementalHFiles loader = new LoadIncrementalHFiles(
 					configuration);
 			loader.doBulkLoad(new Path("/tmp/" + WORKING_DIR + "/" + tablename
-					+ "_" + BUFFER_HFILE_NAME + "_" + file_counter), hTable);
+					+ "_" + BUFFER_HFILE_NAME), hTable);
 		} catch (TableNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

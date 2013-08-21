@@ -35,13 +35,15 @@ public class HBaseLoader {
 			prefix.append(curLine);
 			curLine = br.readLine();
 		}
-
+		long startTime = System.currentTimeMillis();
+		long tripleAnzahl = 0;
 		boolean run = true;
 		while (run) {
 			StringBuilder inputCache = new StringBuilder();
 			curLine = br.readLine();
 
 			for (int i = 0; i < 1000 && curLine != null; i++) {
+				tripleAnzahl++;
 				inputCache.append(curLine);
 				curLine = br.readLine();
 			}
@@ -65,5 +67,7 @@ public class HBaseLoader {
 		br.close();
 		
 		HBaseConnection.flush();
+		long stopTime = System.currentTimeMillis();
+		System.out.println("Import ist beendet Triple: " + tripleAnzahl + " Dauer: " + (stopTime - startTime) / 1000 + "s");
 	}
 }

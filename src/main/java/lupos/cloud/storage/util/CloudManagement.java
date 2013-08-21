@@ -107,7 +107,7 @@ public class CloudManagement {
 		// seinding triple to hbase as row_key, family ...
 		for (HBaseTriple item : triple) {
 			// TODO: HBase Connection herstellen + Tripel in die DB laden
-			if (countTriple % 500 == 0) {
+			if (countTriple % 10000 == 0) {
 				System.out.println(countTriple + " HBaseTripel importiert!");
 			}
 			try {

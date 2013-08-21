@@ -8,7 +8,7 @@ import lupos.datastructures.items.Triple;
 
 public class Strategy1HBaseTableStrategy extends HBaseTableStrategy {
 	public static final int STRAGEGY_ID = 1;
-	public static final String COLUMN_FAMILY = "STRATEGY1";
+	public static final String COLUMN_FAMILY = "VALUE";
 
 	public String[] getTableNames() {
 		String[] result = { "S_PO", "P_SO", "O_SP", "PS_O", "SO_P", "PO_S" };
