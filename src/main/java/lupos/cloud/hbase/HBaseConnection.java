@@ -365,8 +365,9 @@ public class HBaseConnection {
 		}
 	}
 
-	public static void getRow(final String tablename, final String row_key) {
+	public static Result getRow(final String tablename, final String row_key) {
 		try {
+			init();
 			HTable table = hTables.get(tablename);
 			if (table == null) {
 				table = new HTable(configuration, tablename);
@@ -374,12 +375,15 @@ public class HBaseConnection {
 			}
 			Get g = new Get(Bytes.toBytes(row_key));
 			Result result = table.get(g);
-			if (result != null)
-				System.out.println("Get: " + result);
+			if (result != null) {
+//				System.out.println("Get: " + result);
+				return result;
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return null;
 	}
 
 	public static void printTable(String tablename) throws IOException {
@@ -394,5 +398,9 @@ public class HBaseConnection {
 		} finally {
 			scanner.close();
 		}
+	}
+	
+	public static Configuration getConfiguration() {
+		return configuration;
 	}
 }

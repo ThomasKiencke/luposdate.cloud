@@ -25,10 +25,10 @@ public class Test {
 		pigServer = new PigServer(ExecType.MAPREDUCE);
 		pigServer
 				.registerQuery("PATTERN_0 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.PigLoadUDF('VALUE', '-loadKey true','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>,<http://localhost/vocabulary/bench/Journal>') as (rowkey:chararray, columncontent:map[]);");
+//		pigServer
+//				.registerQuery("INTERMEDIATE_BAG_0 = foreach PATTERN_0 generate flatten(lupos.cloud.pig.udfs.MapToBag($1)) as (output:chararray);");
 		pigServer
-				.registerQuery("INTERMEDIATE_BAG_0 = foreach PATTERN_0 generate flatten(lupos.cloud.pig.udfs.MapToBag($1)) as (output:chararray);");
-		pigServer
-				.registerQuery("X = load 'hbase://P_SO' using lupos.cloud.pig.udfs.PigLoadInformationPassingUDF('VALUE', '-loadKey true', 'output') as (rowkey:chararray, columncontent:map[]);");
+				.registerQuery("X = load 'hbase://P_SO' using lupos.cloud.pig.udfs.PigLoadInformationPassingUDF('VALUE', '-loadKey true', columncontent) as (rowkey:chararray, columncontent:map[]);");
 
 		printAlias("INTERMEDIATE_BAG_0");
 		

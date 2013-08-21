@@ -37,8 +37,9 @@ import java.util.NavigableMap;
 import java.util.HashMap;
 import java.util.Properties;
 
-import org.joda.time.DateTime;
+import lupos.cloud.hbase.HBaseConnection;
 
+import org.joda.time.DateTime;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -300,7 +301,8 @@ public class PigLoadInformationPassingUDF extends LoadFunc implements
 	 * @throws IOException
 	 */
 	public PigLoadInformationPassingUDF(String columnList, String optString,
-			DataBag toJoin) throws ParseException, IOException {
+			Map<String, Object> map ) throws ParseException, IOException {
+		DataBag toJoin = null;
 		populateValidOptions();
 		String[] optsArr = optString.split(" ");
 		try {
@@ -651,11 +653,16 @@ public class PigLoadInformationPassingUDF extends LoadFunc implements
 	@Override
 	public Tuple getNext() throws IOException {
 		try {
-			if (reader.nextKeyValue()) {
-				ImmutableBytesWritable rowKey = (ImmutableBytesWritable) reader
-						.getCurrentKey();
-				Result result = (Result) reader.getCurrentValue();
+			if (informationPassingIterator.hasNext()) {
+				Tuple curTuple = informationPassingIterator.next();
+				String tablename = curTuple.get(0).toString();
+				String rowKey = curTuple.get(1).toString();
+//				ImmutableBytesWritable rowKey = (ImmutableBytesWritable) reader
+//						.getCurrentKey();
+//				Result result = (Result) reader.getCurrentValue();
 
+				Result result = (Result) HBaseConnection.getRow(tablename, rowKey);
+				
 				int tupleSize = columnInfo_.size();
 
 				// use a map of families -> qualifiers with the most recent
@@ -671,7 +678,7 @@ public class PigLoadInformationPassingUDF extends LoadFunc implements
 
 				int startIndex = 0;
 				if (loadRowKey_) {
-					tuple.set(0, new DataByteArray(rowKey.get()));
+					tuple.set(0, new DataByteArray(rowKey.getBytes()));
 					startIndex++;
 				}
 				for (int i = 0; i < columnInfo_.size(); ++i) {
@@ -727,7 +734,7 @@ public class PigLoadInformationPassingUDF extends LoadFunc implements
 				initScan(null);
 				return tuple;
 			}
-		} catch (InterruptedException e) {
+		} catch (Exception e) {
 			throw new IOException(e);
 		}
 		return null;

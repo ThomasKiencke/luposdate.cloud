@@ -58,8 +58,6 @@ public class HBaseLoader {
 			LinkedList<URILiteral> defaultGraphs = new LinkedList<URILiteral>();
 			defaultGraphs.add(rdfURL);
 
-			// evaluation.prepareInputData(this.defaultGraphs, new
-			// LinkedList<URILiteral>());
 			evaluator.prepareInputData(defaultGraphs,
 					new LinkedList<URILiteral>());
 
