@@ -8,10 +8,12 @@ import java.util.Properties;
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.misc.FileHelper;
 
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.filter.ColumnPrefixFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.pig.ExecType;
 import org.apache.pig.FuncSpec;
@@ -28,24 +30,34 @@ public class Test2 {
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException {
-		HBaseConnection.init();
+//		HBaseConnection.init();
 		
 		String tablename = "P_SO";
 		String rowKey = "<http://purl.org/dc/terms/issued>";
 		HBaseConnection.init();
 		HTable table = new HTable(HBaseConnection.getConfiguration(), tablename);
 
-		Scan scan = new Scan();
-		if (rowKey != null) {
-			scan.setStartRow(Bytes.toBytes(rowKey));
-			// add random string because stopRow is exclusiv
-			scan.setStopRow(Bytes.toBytes(rowKey + "z"));
-		}
-		scan.setCacheBlocks(false);
-		ResultScanner scanner = table.getScanner(scan);
-		DataBag result = BagFactory.getInstance().newDefaultBag();
+		String cf = "VALUE";
+		String column = "<http://localhost/publications/journals/Journal1/1940>";
 		
-		Result result2 = scanner.next();
+		Get g = new Get(Bytes.toBytes(rowKey));
+		g.addFamily(cf.getBytes());
+		g.setFilter(new ColumnPrefixFilter(column.getBytes()));
+		
+		Result result = table.get(g);
+
+		System.out.println(result.toString());
+//		Scan scan = new Scan();
+//		if (rowKey != null) {
+//			scan.setStartRow(Bytes.toBytes(rowKey));
+//			// add random string because stopRow is exclusiv
+//			scan.setStopRow(Bytes.toBytes(rowKey + "z"));
+//		}
+//		scan.setCacheBlocks(false);
+//		ResultScanner scanner = table.getScanner(scan);
+//		DataBag result = BagFactory.getInstance().newDefaultBag();
+//		
+//		Result result2 = scanner.next();
 
 	}
 

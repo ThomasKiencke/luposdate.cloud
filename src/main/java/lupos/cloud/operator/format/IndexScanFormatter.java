@@ -31,6 +31,7 @@ import lupos.cloud.operator.format.Helper;
 import lupos.cloud.operator.format.OperatorFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.cloud.pig.operator.IndexScanToPigQuery;
+import lupos.cloud.pig.operator.IndexScanToPigQueryWithSIP;
 import lupos.cloud.storage.util.CloudQueryBuilder;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.BasicIndexScan;
@@ -47,6 +48,8 @@ public class IndexScanFormatter implements OperatorFormatter {
 
 	/** The index collection. */
 	private Root root;
+
+	private boolean SIP_ACTIVE = true;
 
 	/**
 	 * the operator creator for creating the index scan operator
@@ -82,13 +85,23 @@ public class IndexScanFormatter implements OperatorFormatter {
 
 		Collection<TriplePattern> tp = indexScan.getTriplePattern();
 		PigQuery result = new PigQuery();
-		IndexScanToPigQuery pigQuery = new IndexScanToPigQuery();
-		for (TriplePattern t : tp) {
-			result.appendPigLatin(pigQuery.buildQuery(t));
+		if (SIP_ACTIVE) {
+			IndexScanToPigQueryWithSIP pigQuery = new IndexScanToPigQueryWithSIP();
+			for (TriplePattern t : tp) {
+				result.appendPigLatin(pigQuery.buildQuery(t));
+			}
+			result.appendPigLatin(pigQuery.getJoinQuery());
+			result.appendPigLatin(pigQuery.optimizeResultOrder());
+			result.setVariableList(pigQuery.getResultOrder());
+		} else {
+			IndexScanToPigQuery pigQuery = new IndexScanToPigQuery();
+			for (TriplePattern t : tp) {
+				result.appendPigLatin(pigQuery.buildQuery(t));
+			}
+			result.appendPigLatin(pigQuery.getJoinQuery());
+			result.appendPigLatin(pigQuery.optimizeResultOrder());
+			result.setVariableList(pigQuery.getResultOrder());
 		}
-		result.appendPigLatin(pigQuery.getJoinQuery());
-		result.appendPigLatin(pigQuery.optimizeResultOrder());
-		result.setVariableList(pigQuery.getResultOrder());
 		return result;
 	}
 
