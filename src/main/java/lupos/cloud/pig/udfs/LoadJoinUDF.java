@@ -31,13 +31,13 @@ public class LoadJoinUDF extends EvalFunc<DataBag> {
 		// System.out.println("a: " + input.get(0) + "b: " + input.get(1));
 		result = bagFactory.newDefaultBag();
 		Tuple curTuple = getTuple(input.get(0).toString(), input.get(1)
-				.toString());
+				.toString(), input.get(2).toString());
 		result.add(curTuple);
 		return result;
 
 	}
 
-	public Tuple getTuple(String tablename, String rowKey) {
+	public Tuple getTuple(String cf, String tablename, String rowKey) {
 		try {
 			// ImmutableBytesWritable rowKey = (ImmutableBytesWritable)
 			// reader
@@ -71,7 +71,7 @@ public class LoadJoinUDF extends EvalFunc<DataBag> {
 			// It's a column family so we need to iterate and set
 			// all
 			// values found
-			NavigableMap<byte[], byte[]> cfResults = resultsMap.get("VALUE"
+			NavigableMap<byte[], byte[]> cfResults = resultsMap.get(cf
 					.getBytes());
 			Map<String, DataByteArray> cfMap = new HashMap<String, DataByteArray>();
 

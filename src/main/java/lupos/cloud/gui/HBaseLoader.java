@@ -1,10 +1,7 @@
 package lupos.cloud.gui;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.LinkedList;
 
 import lupos.cloud.hbase.HBaseConnection;

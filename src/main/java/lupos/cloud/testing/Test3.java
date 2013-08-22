@@ -28,7 +28,7 @@ public class Test3 {
 		pigServer
 				.registerQuery("INTERMEDIATE_BAG_0 = foreach PATTERN_0 generate flatten(lupos.cloud.pig.udfs.MapToBag($1)) as (output:chararray);");
 		pigServer
-				.registerQuery("INTERMEDIATE_BAG_1 = foreach INTERMEDIATE_BAG_0 generate flatten(lupos.cloud.pig.udfs.LoadJoinUDF('S_PO',$0));");
+				.registerQuery("INTERMEDIATE_BAG_1 = foreach INTERMEDIATE_BAG_0 generate flatten(lupos.cloud.pig.udfs.LoadJoinUDF('VALUE','S_PO',$0));");
 		pigServer
 		.registerQuery("X = foreach INTERMEDIATE_BAG_1 generate flatten(lupos.cloud.pig.udfs.MapToBag($0)) as (output:chararray);");
 
