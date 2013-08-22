@@ -35,6 +35,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.filter.ColumnPrefixFilter;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
@@ -374,6 +375,29 @@ public class HBaseConnection {
 				hTables.put(tablename, table);
 			}
 			Get g = new Get(Bytes.toBytes(row_key));
+			Result result = table.get(g);
+			if (result != null) {
+//				System.out.println("Get: " + result);
+				return result;
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static Result getRowWithColumn(final String tablename, final String row_key, final String cf, final String column) {
+		try {
+			init();
+			HTable table = hTables.get(tablename);
+			if (table == null) {
+				table = new HTable(configuration, tablename);
+				hTables.put(tablename, table);
+			}
+			Get g = new Get(Bytes.toBytes(row_key));
+			g.addFamily(cf.getBytes());
+			g.setFilter(new ColumnPrefixFilter(column.getBytes()));
 			Result result = table.get(g);
 			if (result != null) {
 //				System.out.println("Get: " + result);

@@ -31,23 +31,37 @@ public class LoadJoinUDF extends EvalFunc<DataBag> {
 		// System.out.println("a: " + input.get(0) + "b: " + input.get(1));
 		result = bagFactory.newDefaultBag();
 		Tuple curTuple = getTuple(input.get(0).toString(), input.get(1)
-				.toString(), input.get(2).toString());
-		result.add(curTuple);
+				.toString(), input.get(2).toString(), input.get(3).toString(),
+				(input.size() == 6) ? input.get(4).toString()
+						+ input.get(5).toString() : input.get(4).toString());
+		if (curTuple != null) {
+			result.add(curTuple);
+		}
 		return result;
 
 	}
 
-	public Tuple getTuple(String cf, String tablename, String rowKey) {
+	public Tuple getTuple(String printRowKey, String cf, String tablename,
+			String rowKey, String sideWayInformation) {
 		try {
 			// ImmutableBytesWritable rowKey = (ImmutableBytesWritable)
 			// reader
 			// .getCurrentKey();
 			// Result result = (Result) reader.getCurrentValue();
 
-			Result result = (Result) HBaseConnection.getRow(tablename, rowKey);
+			Result result = (Result) HBaseConnection.getRowWithColumn(
+					tablename, rowKey, cf, sideWayInformation);
+			if (result.isEmpty()) {
+				return null;
+			}
 
+			int tupleSize = -1;
 			// int tupleSize = columnInfo_.size();
-			int tupleSize = 2;
+			if (printRowKey.equals("true")) {
+				tupleSize = 2;
+			} else {
+				tupleSize = 1;
+			}
 
 			// use a map of families -> qualifiers with the most recent
 			// version of the cell. Fetching multiple vesions could be a
@@ -58,19 +72,8 @@ public class LoadJoinUDF extends EvalFunc<DataBag> {
 			if (true) {
 				tupleSize++;
 			}
-			Tuple tuple = TupleFactory.getInstance().newTuple(1);
+			Tuple tuple = TupleFactory.getInstance().newTuple(tupleSize);
 
-//			int startIndex = 0;
-			// if (true) {
-			// tuple.set(0, new DataByteArray(rowKey.getBytes()));
-			// startIndex++;
-			// }
-			// for (int i = 0; i < 2; ++i) {
-//			int currentIndex = startIndex + i;
-
-			// It's a column family so we need to iterate and set
-			// all
-			// values found
 			NavigableMap<byte[], byte[]> cfResults = resultsMap.get(cf
 					.getBytes());
 			Map<String, DataByteArray> cfMap = new HashMap<String, DataByteArray>();
@@ -84,7 +87,12 @@ public class LoadJoinUDF extends EvalFunc<DataBag> {
 
 				}
 			}
-			tuple.set(0, cfMap);
+			if (printRowKey.equals("true")) {
+				tuple.set(0, rowKey);
+				tuple.set(1, cfMap);
+			} else {
+				tuple.set(0, cfMap);
+			}
 
 			return tuple;
 			// }
