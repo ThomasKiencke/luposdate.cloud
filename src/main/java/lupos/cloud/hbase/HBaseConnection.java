@@ -1,35 +1,26 @@
 package lupos.cloud.hbase;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Scanner;
-import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
 
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
-import lupos.cloud.pig.udfs.MapToBag;
-import lupos.cloud.pig.udfs.PigLoadUDF;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableExistsException;
+import org.apache.hadoop.hbase.TableNotEnabledException;
 import org.apache.hadoop.hbase.TableNotFoundException;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
@@ -37,77 +28,126 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.ColumnPrefixFilter;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.ipc.SecureRpcEngine.Server;
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.hadoopbackport.TotalOrderPartitioner;
-import org.apache.hadoop.hbase.thrift.generated.Hbase;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-import au.com.bytecode.opencsv.CSVParser;
 import au.com.bytecode.opencsv.CSVWriter;
 
+// TODO: Auto-generated Javadoc
+/**
+ * Diese Klasse stellt die Verbindung mit HBase her. In erster Linie wird sie
+ * genutzt um die Verbindung mit HBase herzustellen, die notwendigen Tabellen zu
+ * erzeugen und zum hinzufügen von "rows". Beim laden in HBase gibt es zwei
+ * Mögliche Modi die mit der Variable MAP_REDUCE_BULK_LOAD definiert werden. Bei
+ * größeren Datenmengen bietet sich der "BulkLoad"-Modus an indem die Tripel
+ * erst lokal gecacht, und anschließend per Map Reduce Job auf die verschiedenen
+ * Knoten verteilt werden.
+ */
 public class HBaseConnection {
+
+	/** The configuration. */
 	static Configuration configuration = null;
+
+	/** The admin. */
 	static HBaseAdmin admin = null;
-	static boolean message = false;
-	static String COLUMN_FAMILY = HBaseTableStrategy.getTableInstance()
-			.getColumnFamilyName();
+
+	/** The message. */
+	static boolean message = true;
+
+	/** The column family. */
+	// static String COLUMN_FAMILY =
+	// HBaseDistributionStrategy.getTableInstance()
+	// .getColumnFamilyName();
+
+	/** The h tables. */
 	static HashMap<String, HTable> hTables = new HashMap<String, HTable>();
+
+	/** The csvwriter. */
 	static HashMap<String, CSVWriter> csvwriter = new HashMap<String, CSVWriter>();
+
+	/** The row counter. */
 	static int rowCounter = 0;
+
+	/** The Constant ROW_BUFFER_SIZE. */
 	public static final int ROW_BUFFER_SIZE = 20000000;
+
+	/** The Constant WORKING_DIR. */
 	public static final String WORKING_DIR = "bulkLoadDirectory";
+
+	/** The Constant BUFFER_FILE_NAME. */
 	public static final String BUFFER_FILE_NAME = "rowBufferFile";
+
+	/** The Constant BUFFER_HFILE_NAME. */
 	public static final String BUFFER_HFILE_NAME = "rowBufferHFile";
-//	static int file_counter = 0;
-	static final boolean MAP_REDUCE_BULK_LOAD = true;
+
+	/** The map reduce bulk load. */
+	public static boolean MAP_REDUCE_BULK_LOAD = false;
+
+	/** The hdfs_file system. */
 	static FileSystem hdfs_fileSystem = null;
-	
+
+	/** The delete table on creation. */
+	private static boolean deleteTableOnCreation = false;
+
+	/**
+	 * Initialisierung der Verbindung und erstellen der Arbeitsverzeichnisse auf
+	 * dem verteilten Dateisystem.
+	 * 
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static void init() throws IOException {
 		if (configuration == null || admin == null) {
+			System.out.println("Verbindung wird aufgebaut ...");
 			configuration = HBaseConfiguration.create();
-			// configuration = new Configuration(false);
-			// configuration.set("fs.defaultFS", "hdfs://localhost:8020");
-			// configuration.set("fs.default.name", "hdfs://localhost:8020");
-			// configuration.set("mapred.job.tracker", "localhost:8021");
-			// configuration.set("hbase.zookeeper.quorum", "localhost");
-			// configuration.set("hbase.zookeeper.property.clientPort", "2181");
-
-			// configuration.set("tmpjars",
-			// "hdfs://192.168.2.41:8020/tmp/hbase-0.94.6-cdh4.3.0.jar");
-			// TableMapReduceUtil.addDependencyJars(configuration,
-//			TableMapReduceUtil.addDependencyJars(arg0);
-			// HFileOutputFormat.class);
 			admin = new HBaseAdmin(configuration);
-			if (MAP_REDUCE_BULK_LOAD) {
-				// Configuration hdfsConf = new Configuration();
-				configuration.set("libjars", "libjars/");
-				TableMapReduceUtil.addDependencyJars(configuration,
-						HBaseKVMapper.class, CSVParser.class, HFileOutputFormat.class);
-				// configuration.set("fs.defaultFS", "hdfs://localhost:8020/");
-				hdfs_fileSystem = FileSystem.get(configuration);
-				hdfs_fileSystem.delete(new Path("/tmp/" + WORKING_DIR), true);
-				hdfs_fileSystem.mkdirs(new Path("/tmp/" + WORKING_DIR));
-
-				// hdfsConf.set("hadoop.job.ugi", "hbase");
-				new File(WORKING_DIR).mkdir();
+			System.out
+					.print("Verbindung zum Cluster wurde hergestellt. Knoten: ");
+			for (ServerName serv : admin.getClusterStatus().getServers()) {
+				System.out.print(serv.getHostname() + " ");
 			}
+			System.out.println();
 		}
+
+		if (MAP_REDUCE_BULK_LOAD == true && hdfs_fileSystem == null) {
+
+			hdfs_fileSystem = FileSystem.get(configuration);
+			hdfs_fileSystem.delete(new Path("/tmp/" + WORKING_DIR), true);
+			hdfs_fileSystem.mkdirs(new Path("/tmp/" + WORKING_DIR));
+
+			new File(WORKING_DIR).mkdir();
+
+		}
+
 	}
 
+	/**
+	 * Erzeugen einer Tabelle.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @param familyname
+	 *            the familyname
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static void createTable(String tablename, String familyname)
 			throws IOException {
 		init();
 		try {
-//			 deleteTable(tablename);
+			if (deleteTableOnCreation) {
+				deleteTable(tablename);
+			}
 			HTableDescriptor descriptor = new HTableDescriptor(
 					Bytes.toBytes(tablename));
-//			 deleteTable(tablename);
 			descriptor.addFamily(new HColumnDescriptor(familyname));
 			admin.createTable(descriptor);
 			if (message) {
@@ -115,31 +155,45 @@ public class HBaseConnection {
 						+ "\" wurde erzeugt");
 			}
 		} catch (TableExistsException e) {
-			System.out.println("Tabelle \"" + tablename
-					+ "\" existiert bereits!");
+			if (message) {
+				System.out.println("Tabelle \"" + tablename
+						+ "\" existiert bereits!");
+			}
 		}
 	}
 
+	/**
+	 * Die Tripel in dem lokalen TripelCache werden in HBase geladen (nur für
+	 * den BulkLoad).
+	 */
 	public static void flush() {
 		rowCounter = 0;
 		for (String key : csvwriter.keySet()) {
 			try {
 				hdfs_fileSystem.copyFromLocalFile(true, true, new Path(
 						WORKING_DIR + File.separator + key + "_"
-								+ BUFFER_FILE_NAME
-								+ ".csv"), new Path("/tmp/" + WORKING_DIR + "/"
-						+ key + "_" + BUFFER_FILE_NAME  
+								+ BUFFER_FILE_NAME + ".csv"), new Path("/tmp/"
+						+ WORKING_DIR + "/" + key + "_" + BUFFER_FILE_NAME
 						+ ".csv"));
 				csvwriter.get(key).close();
 				bulkLoad(key);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 		csvwriter = new HashMap<String, CSVWriter>();
 	}
 
+	/**
+	 * Fügt eine Spalte zu einer Tballe hinzu.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @param columnname
+	 *            the columnname
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static void addColumn(String tablename, String columnname)
 			throws IOException {
 		init();
@@ -154,19 +208,40 @@ public class HBaseConnection {
 		}
 	}
 
-	public static void deleteColumn(String tablename, String colunmnname)
-			throws IOException {
+	/**
+	 * Entfernt ein HBase Triple.
+	 *
+	 * @param tablename the tablename
+	 * @param columnFamily the column family
+	 * @param rowKey the row key
+	 * @param colunmnname the colunmnname
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public static void deleteRow(String tablename, String columnFamily,
+			String rowKey, String colunmnname) throws IOException {
 		init();
-		if (!checkTable(tablename))
-			return;
-
-		admin.deleteColumn(tablename, colunmnname);
+		HTable table = hTables.get(tablename);
+		if (table == null) {
+			table = new HTable(configuration, tablename);
+			hTables.put(tablename, table);
+		}
+		Delete row = new Delete(rowKey.getBytes());
+		row.deleteColumn(columnFamily.getBytes(), colunmnname.getBytes());
+		table.delete(row);
 		if (message) {
-			System.out.println("Deleted column : " + colunmnname
-					+ "from table " + tablename);
+			System.out.println(rowKey + " und Spalte " + colunmnname
+					+ " wurden gelöscht");
 		}
 	}
 
+	/**
+	 * Deaktivieren einer Tabelle.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static void disableTable(String tablename) throws IOException {
 		init();
 		if (!checkTable(tablename))
@@ -179,6 +254,14 @@ public class HBaseConnection {
 		}
 	}
 
+	/**
+	 * Aktivieren einer Tabelle.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static void enableTable(String tablename) throws IOException {
 		init();
 		if (!checkTable(tablename))
@@ -190,18 +273,37 @@ public class HBaseConnection {
 		}
 	}
 
+	/**
+	 * Löschen einer Tabelle. Dazu wird sie erste deaktiviert und anschließend
+	 * gelöscht.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static void deleteTable(String tablename) throws IOException {
 		init();
 		if (!checkTable(tablename))
 			return;
 
-		admin.disableTable(tablename);
+		try {
+			admin.disableTable(tablename);
+		} catch (TableNotEnabledException e) {
+			// ignore
+		}
 		admin.deleteTable(tablename);
 		if (message) {
 			System.out.println("Tabelle \"" + tablename + "\" wurde gelöscht");
 		}
 	}
 
+	/**
+	 * Gibt alle Tabellen zurück.
+	 * 
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static void listAllTables() throws IOException {
 		init();
 		HTableDescriptor[] list = admin.listTables();
@@ -211,6 +313,15 @@ public class HBaseConnection {
 		}
 	}
 
+	/**
+	 * Prüft obn eine Tabelle verfügbar ist.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @return true, if successful
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static boolean checkTable(String tablename) throws IOException {
 		init();
 		if (!admin.isTableAvailable(tablename)) {
@@ -221,33 +332,31 @@ public class HBaseConnection {
 		return true;
 	}
 
-	public static void flush(String tablename) {
-		try {
-			init();
-			admin.flush(tablename);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
+	/**
+	 * Fügt eine Reihe (=row) hinzu.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @param row_key
+	 *            the row_key
+	 * @param columnFamily
+	 *            the column family
+	 * @param column
+	 *            the column
+	 * @param value
+	 *            the value
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static void addRow(String tablename, String row_key,
 			String columnFamily, String column, String value)
 			throws IOException {
-		// byte[] databytes = Bytes.toBytes("data");
-		// p1.add(databytes, Bytes.toBytes("1"), Bytes.toBytes("value1"));
-		// table.put(p1);
-
+		// schnellere Variante zum einlesen von Tripel
 		if (MAP_REDUCE_BULK_LOAD) {
-			// schnellere Variante zum einlesen von Tripel
 			if (csvwriter.get(tablename) == null) {
 				csvwriter.put(tablename, new CSVWriter(new FileWriter(
 						WORKING_DIR + File.separator + tablename + "_"
-								+ BUFFER_FILE_NAME
-								+ ".csv"), '\t'));
+								+ BUFFER_FILE_NAME + ".csv"), '\t'));
 			}
 			// Schreibe die Zeile in auf den Festplattenpuffer
 			String[] entries = { columnFamily, row_key, column, value };
@@ -259,21 +368,11 @@ public class HBaseConnection {
 				for (String key : csvwriter.keySet()) {
 					hdfs_fileSystem.copyFromLocalFile(true, true, new Path(
 							WORKING_DIR + File.separator + key + "_"
-									+ BUFFER_FILE_NAME 
-									+ ".csv"), new Path("/tmp/" + WORKING_DIR
-							+ "/" + key + "_" + BUFFER_FILE_NAME
-							+ ".csv"));
+									+ BUFFER_FILE_NAME + ".csv"), new Path(
+							"/tmp/" + WORKING_DIR + "/" + key + "_"
+									+ BUFFER_FILE_NAME + ".csv"));
 					csvwriter.get(key).close();
 					bulkLoad(key);
-					// Scanner sc = new Scanner(System.in);
-					// System.out.println("wait for ENTER");
-					// sc.nextLine();
-					// new File(WORKING_DIR + tablename + "_" +
-					// BUFFER_FILE_NAME)
-					// .delete();
-					// new File(WORKING_DIR + tablename + "_" +
-					// BUFFER_FILE_NAME)
-					// .delete();
 				}
 				csvwriter = new HashMap<String, CSVWriter>();
 				hdfs_fileSystem.delete(new Path("/tmp/" + WORKING_DIR), true);
@@ -282,36 +381,34 @@ public class HBaseConnection {
 
 		} else {
 			// Einlesen per Tripel per HBase API (sehr langsam bei großen
-			// Datenmengen)
+			// Datenmengen), da die Tripel einzeln übertragen weden.
 			HTable table = hTables.get(tablename);
 			if (table == null) {
 				table = new HTable(configuration, tablename);
 				hTables.put(tablename, table);
 			}
 			Put row = new Put(Bytes.toBytes(row_key));
-			row.add(Bytes.toBytes(COLUMN_FAMILY), Bytes.toBytes(column),
+			row.add(Bytes.toBytes(columnFamily), Bytes.toBytes(column),
 					Bytes.toBytes(value));
 			table.put(row);
 		}
 	}
 
+	/**
+	 * Lädt eine Tabelle per Map Reduce Bulkload.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 */
 	private static void bulkLoad(String tablename) {
 		try {
-			// conf.setInt("epoch.seconds.tipoff", 1275613200);
+			System.out.println(tablename + " wird übertragen!");
+			// init job
 			configuration.set("hbase.table.name", tablename);
-
-			// TableMapReduceUtil.addDependencyJars(configuration,
-			// HFileOutputFormat.class);
-
-			// Load hbase-site.xml
-			// HBaseConfiguration.addHbaseResources(conf);
 
 			Job job = new Job(configuration, "HBase Bulk Import for "
 					+ tablename);
-			// createJarForClass(HBaseKVMapper.class);
 			job.setJarByClass(HBaseKVMapper.class);
-			// job.setJarByClass(HFileOutputFormat.class);
-			
 
 			job.setMapperClass(HBaseKVMapper.class);
 			job.setMapOutputKeyClass(ImmutableBytesWritable.class);
@@ -319,53 +416,42 @@ public class HBaseConnection {
 			job.setOutputFormatClass(HFileOutputFormat.class);
 			job.setPartitionerClass(TotalOrderPartitioner.class);
 			job.setInputFormatClass(TextInputFormat.class);
-			
 			TableMapReduceUtil.addDependencyJars(job);
-//			TableMapReduceUtil.addDependencyJars(configuration,
-//					HBaseKVMapper.class);
-			// DistributedCache.addFileToClassPath(new
-			// Path("/tmp/hbase-0.94.6-cdh4.3.0.jar"), job.getConfiguration());
-			// Configuration hConf = HBaseConfiguration.create(configuration);
-			// hConf.set("hbase.zookeeper.quorum", "127.0.0.1");
-			// hConf.set("hbase.zookeeper.property.clientPort",
-			// "2181");
 
-			// TableMapReduceUtil.initTableReducerJob(tablename, null, job);
-			// TableMapReduceUtil.addDependencyJars(job);
-			// TableMapReduceUtil.addDependencyJars(job.getConfiguration());
-
+			// generiere HFiles auf dem verteilten Dateisystem
 			HTable hTable = new HTable(configuration, tablename);
-
-			// Auto configure partitioner and reducer
 			HFileOutputFormat.configureIncrementalLoad(job, hTable);
-
 			FileInputFormat.addInputPath(job, new Path("/tmp/" + WORKING_DIR
 					+ "/" + tablename + "_" + BUFFER_FILE_NAME + ".csv"));
 			FileOutputFormat.setOutputPath(job, new Path("/tmp/" + WORKING_DIR
-					+ "/" + tablename + "_" + BUFFER_HFILE_NAME ));
+					+ "/" + tablename + "_" + BUFFER_HFILE_NAME));
 
-			// TableMapReduceUtil.addDependencyJars(job);
-			// TableMapReduceUtil.addDependencyJars(job.getConfiguration(),
-			// org.apache.hadoop.hbase.mapreduce.HFileOutputFormat.class);
 			job.waitForCompletion(true);
 
-			// Load generated HFiles into table
+			// Lade generierte HFiles in HBase
 			LoadIncrementalHFiles loader = new LoadIncrementalHFiles(
 					configuration);
 			loader.doBulkLoad(new Path("/tmp/" + WORKING_DIR + "/" + tablename
 					+ "_" + BUFFER_HFILE_NAME), hTable);
+
 		} catch (TableNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Gibt eine Zeile anhand des rowKeys zurück.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @param row_key
+	 *            the row_key
+	 * @return the row
+	 */
 	public static Result getRow(final String tablename, final String row_key) {
 		try {
 			init();
@@ -377,17 +463,29 @@ public class HBaseConnection {
 			Get g = new Get(Bytes.toBytes(row_key));
 			Result result = table.get(g);
 			if (result != null) {
-//				System.out.println("Get: " + result);
 				return result;
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
 	}
-	
-	public static Result getRowWithColumn(final String tablename, final String row_key, final String cf, final String column) {
+
+	/**
+	 * Gibt eine Zeile anhand des rowkeys und den Prefix einer Spalte zurück.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @param row_key
+	 *            the row_key
+	 * @param cf
+	 *            the cf
+	 * @param column
+	 *            the column
+	 * @return the row with column
+	 */
+	public static Result getRowWithColumn(final String tablename,
+			final String row_key, final String cf, final String column) {
 		try {
 			init();
 			HTable table = hTables.get(tablename);
@@ -400,16 +498,22 @@ public class HBaseConnection {
 			g.setFilter(new ColumnPrefixFilter(column.getBytes()));
 			Result result = table.get(g);
 			if (result != null) {
-//				System.out.println("Get: " + result);
 				return result;
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
 	}
 
+	/**
+	 * Gibt eine Tabelle aus.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static void printTable(String tablename) throws IOException {
 		init();
 		HTable table = new HTable(configuration, tablename);
@@ -423,7 +527,12 @@ public class HBaseConnection {
 			scanner.close();
 		}
 	}
-	
+
+	/**
+	 * Gibt das Konfigurationsobjekt zurück.
+	 * 
+	 * @return the configuration
+	 */
 	public static Configuration getConfiguration() {
 		return configuration;
 	}

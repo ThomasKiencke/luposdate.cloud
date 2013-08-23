@@ -25,9 +25,7 @@ package lupos.cloud.operator;
 
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
 import lupos.cloud.pig.PigQuery;
-import lupos.cloud.pig.operator.IndexScanToPigQuery;
 import lupos.datastructures.queryresult.QueryResult;
-import lupos.distributed.operator.ISubgraphExecutor;
 import lupos.engine.operators.RootChild;
 import lupos.engine.operators.index.Dataset;
 import lupos.engine.operators.index.Root;
@@ -36,7 +34,6 @@ import lupos.engine.operators.messages.Message;
 import lupos.rdf.Prefix;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * This container contains all operators that shall be send to a node for
@@ -87,17 +84,10 @@ public class CloudSubgraphContainer<K> extends RootChild {
 	@Override
 	public QueryResult process(final Dataset dataset) {
 		final CloudSubgraphContainerFormatter pigParser = new CloudSubgraphContainerFormatter();
-		// final JSONObject serializedGraph =
-		// serializer.serialize(this.rootNodeOfSubGraph, 0);
-		final PigQuery pigQuery = pigParser.serialize(this.rootNodeOfSubGraph, 0);
+		final PigQuery pigQuery = pigParser.serialize(this.rootNodeOfSubGraph);
 		final QueryResult result = this.cloudSubgraphExecutor
 				.evaluate(pigQuery);
-		result.materialize();
-		// result.materialize(); // just for now read all from the stream sent
-		// by
-		// the endpoint, otherwise it may be blocked!
-		// (may be removed if each endpoint can work
-		// completely in parallel!)
+		// result.materialize();
 		return result;
 	}
 

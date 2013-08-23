@@ -26,46 +26,11 @@ package lupos.cloud.operator.format;
 import lupos.cloud.operator.format.OperatorFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.BasicOperator;
-import lupos.engine.operators.application.Application;
-import lupos.engine.operators.application.CollectResult;
-import lupos.engine.operators.singleinput.Result;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * Implements the formatter for the result operator.
  */
 public class ResultFormatter implements OperatorFormatter {
-
-	/** The request_id. */
-	private int request_id;
-
-	private Application application;
-
-	/**
-	 * Use: public ResultSerializer(String dest_ip, int request_id).
-	 */
-	public ResultFormatter(final Application p2pApplication) {
-		this.application = p2pApplication;
-		this.request_id = 0;
-	}
-
-	public ResultFormatter() {
-	}
-
-	/**
-	 * Instantiates a new result formatter.
-	 *
-	 * @param dest_ip
-	 *            the dest_ip
-	 * @param request_id
-	 *            the request_id
-	 */
-	public ResultFormatter(final Application application, final int request_id) {
-		this.application = application;
-		this.request_id = request_id;
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -75,35 +40,7 @@ public class ResultFormatter implements OperatorFormatter {
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public PigQuery serialize(final BasicOperator operator, final int node_id)  {
-		final JSONObject json = new JSONObject();
-		final Result result = (Result) operator;
-		try {
-			json.put("type", result.getClass().getName());
-			json.put("node_id", node_id);
-			json.put("request_id", this.request_id);
-		} catch (final JSONException e) {
-			System.err.println(e);
-			e.printStackTrace();
-		}
+	public PigQuery serialize(final BasicOperator operator)  {
 		return new PigQuery();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * luposdate.operators.formatter.OperatorFormatter#deserialize(org.json.
-	 * JSONObject)
-	 */
-	@Override
-	public BasicOperator deserialize(final JSONObject serializedOperator) throws JSONException {
-		final Result result = new Result();
-		if (this.application == null) {
-			this.application = new CollectResult(false);
-		}
-		result.addApplication(this.application);
-		return result;
-
 	}
 }

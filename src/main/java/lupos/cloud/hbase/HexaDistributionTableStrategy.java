@@ -6,16 +6,39 @@ import java.util.TreeMap;
 
 import lupos.datastructures.items.Triple;
 
-public class Strategy1HBaseTableStrategy extends HBaseTableStrategy {
+/**
+ * Die konkrete Implementierung einer Verteilungsstrategie. Bei dieser Strategie
+ * wird jedes Tripel nach 6 unterschiedlichen Indizierungsschlüsseln in Tabellen
+ * eingeordnet. Dabei ist der Schlüssel jeweils der rowKey und der Wert wird als
+ * Spaltenname gespeichert. Der eigentliceh Zellenwert in der HBase Tabelle
+ * bleibt leer.
+ */
+public class HexaDistributionTableStrategy extends HBaseDistributionStrategy {
+
+	/** The Constant STRAGEGY_ID. */
 	public static final int STRAGEGY_ID = 1;
+
+	/** The Constant COLUMN_FAMILY. */
 	public static final String COLUMN_FAMILY = "VALUE";
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see lupos.cloud.hbase.HBaseDistributionStrategy#getTableNames()
+	 */
 	public String[] getTableNames() {
 		String[] result = { "S_PO", "P_SO", "O_SP", "PS_O", "SO_P", "PO_S" };
 		return result;
 	}
 
-	public Collection<HBaseTriple> generateSixIndecesTriple(final Triple triple) {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.cloud.hbase.HBaseDistributionStrategy#generateIndecesTriple(lupos
+	 * .datastructures.items.Triple)
+	 */
+	public Collection<HBaseTriple> generateIndecesTriple(final Triple triple) {
 		ArrayList<HBaseTriple> result = new ArrayList<HBaseTriple>();
 		for (String tablename : getTableNames()) {
 			String row_key_string = tablename.substring(0,
@@ -50,6 +73,13 @@ public class Strategy1HBaseTableStrategy extends HBaseTableStrategy {
 		return result;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.cloud.hbase.HBaseDistributionStrategy#getInputValue(java.lang.String
+	 * , lupos.datastructures.items.Triple)
+	 */
 	public TreeMap<Integer, Object> getInputValue(String elements, Triple triple) {
 		TreeMap<Integer, Object> tm = new TreeMap<Integer, Object>();
 		int subject = elements.indexOf('S');
@@ -64,11 +94,23 @@ public class Strategy1HBaseTableStrategy extends HBaseTableStrategy {
 		return tm;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.cloud.hbase.HBaseDistributionStrategy#generateHBaseTriple(java.
+	 * lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
 	public HBaseTriple generateHBaseTriple(final String tablename,
 			final String row_key, final String column, final String value) {
 		return new HBaseTriple(tablename, row_key, COLUMN_FAMILY, column, value);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see lupos.cloud.hbase.HBaseDistributionStrategy#getColumnFamilyName()
+	 */
 	@Override
 	public String getColumnFamilyName() {
 		return COLUMN_FAMILY;

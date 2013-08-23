@@ -28,10 +28,6 @@ import lupos.cloud.operator.format.OperatorFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.Dataset;
-import lupos.engine.operators.index.Root;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * Implements the formatter for the root operator
@@ -81,26 +77,8 @@ public class RootFormatter implements OperatorFormatter {
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public PigQuery serialize(final BasicOperator operator, final int node_id) {
-		final JSONObject json = new JSONObject();
-
-//		json.put("type", Root.class.getName());
-//		json.put("node_id", node_id);
-//		json.put("root", true);
-
+	public PigQuery serialize(final BasicOperator operator) {
 		return new PigQuery();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * luposdate.operators.formatter.OperatorFormatter#deserialize(org.json.
-	 * JSONObject)
-	 */
-	@Override
-	public BasicOperator deserialize(final JSONObject serializedOperator)
-			throws JSONException {
-		return this.operatorCreator.createRoot(this.dataset);
-	}
 }

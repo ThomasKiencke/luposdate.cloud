@@ -21,49 +21,35 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.query.withoutsubgraphsubmission;
+package lupos.cloud.query;
 
-//import lupos.cloud.gui.Start_Demo_Applet_DE;
-//import lupos.cloud.storage.HistogramExecutor;
-import lupos.cloud.storage.Storage_DE;
-import lupos.datastructures.bindings.Bindings;
-import lupos.datastructures.bindings.BindingsMap;
-import lupos.datastructures.items.literal.LiteralFactory;
-import lupos.distributed.query.QueryClient;
+import lupos.cloud.operator.ICloudSubgraphExecutor;
+import lupos.cloud.pig.PigQuery;
+import lupos.cloud.storage.util.CloudManagement;
+import lupos.datastructures.queryresult.QueryResult;
 
 /**
- * This class is the query evaluator for querying distributed SPARQL endpoints.
- * All registered endpoints are asked for the evaluation of the triple patterns within a SPARQL query.
- * It is assumed that the data is not distributed in an intelligent way and that any registered endpoint
- * can have data for any triple pattern.
- * Also non-luposdate SPARQL endpoints are supported.
- * It uses the super and helper classes of the distributed module for a first and simple example of a distributed scenario.
+ * The Class Cloud_SubgraphExecutor.
  */
-public class QueryClient_Cloud extends QueryClient {
+public class Cloud_SubgraphExecutor implements ICloudSubgraphExecutor {
 
-	public QueryClient_Cloud() throws Exception {
-		super(new Storage_DE());
-//		this.askForHistogramRequests();
+	/** The cloud management. */
+	protected final CloudManagement cloudManagement;
+
+	/**
+	 * Instantiates a new cloud_ subgraph executor.
+	 *
+	 * @param cloudManagement the cloud management
+	 */
+	public Cloud_SubgraphExecutor(final CloudManagement cloudManagement) {
+		this.cloudManagement = cloudManagement;
 	}
 
-	public QueryClient_Cloud(final String[] args) throws Exception {
-		super(new Storage_DE(), args);
-//		this.askForHistogramRequests();
-	}
-
-//	private void askForHistogramRequests(){
-//		if(Start_Demo_Applet_DE.askForHistogramRequests()){
-//			this.histogramExecutor = new HistogramExecutor(((Storage_DE)this.storage).getEndpointManagement());
-//			this.initOptimization();
-//		}
-//	}
-
-
+	/* (non-Javadoc)
+	 * @see lupos.cloud.operator.ICloudSubgraphExecutor#evaluate(lupos.cloud.pig.PigQuery)
+	 */
 	@Override
-	public void init() throws Exception {
-		// just for avoiding problems in distributed scenarios
-		Bindings.instanceClass = BindingsMap.class;
-		LiteralFactory.setType(LiteralFactory.MapType.NOCODEMAP);
-		super.init();
+	public QueryResult evaluate(PigQuery cloudSubgraphAsPig) {
+		return this.cloudManagement.submitPigQuery(cloudSubgraphAsPig);
 	}
 }

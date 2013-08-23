@@ -49,7 +49,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
@@ -105,49 +104,10 @@ import org.apache.pig.impl.util.UDFContext;
 import com.google.common.collect.Lists;
 
 /**
- * A HBase implementation of LoadFunc and StoreFunc.
- * <P>
- * Below is an example showing how to load data from HBase:
- * 
- * <pre>
- * {@code
- * raw = LOAD 'hbase://SampleTable'
- *       USING org.apache.pig.backend.hadoop.hbase.HBaseStorage(
- *       'info:first_name info:last_name friends:* info:*', '-loadKey true -limit 5')
- *       AS (id:bytearray, first_name:chararray, last_name:chararray, friends_map:map[], info_map:map[]);
- * }
- * </pre>
- * 
- * This example loads data redundantly from the info column family just to
- * illustrate usage. Note that the row key is inserted first in the result
- * schema. To load only column names that start with a given prefix, specify the
- * column name with a trailing '*'. For example passing
- * <code>friends:bob_*</code> to the constructor in the above example would
- * cause only columns that start with <i>bob_</i> to be loaded.
- * <P>
- * Note that when using a prefix like <code>friends:bob_*</code>, explicit HBase
- * filters are set for all columns and prefixes specified. Querying HBase with
- * many filters can cause performance degredation. This is typically seen when
- * mixing one or more prefixed descriptors with a large list of columns. In that
- * case better perfomance will be seen by either loading the entire family via
- * <code>friends:*</code> or by specifying explicit column descriptor names.
- * <P>
- * Below is an example showing how to store data into HBase:
- * 
- * <pre>
- * {@code
- * copy = STORE raw INTO 'hbase://SampleTableCopy'
- *       USING org.apache.pig.backend.hadoop.hbase.HBaseStorage(
- *       'info:first_name info:last_name friends:* info:*');
- * }
- * </pre>
- * 
- * Note that STORE will expect the first value in the tuple to be the row key.
- * Scalars values need to map to an explicit column descriptor and maps need to
- * map to a column family name. In the above examples, the <code>friends</code>
- * column family data from <code>SampleTable</code> will be written to a
- * <code>buddies</code> column family in the <code>SampleTableCopy</code> table.
- * 
+ * Diese UDF Funktion ist eine angepasste Variante der originalen HBaseStorage()
+ * UDF Funktion. Diese wurde zum größten Teil übernommen und an einigen Stellen
+ * angepasst. Eine wichtige erweiterung ist die Möglichkeit nur einen bestimmten
+ * rowKey zu laden, anstatt den gesamten Datenbestand einer Tabelle.
  */
 public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 		LoadPushDown, OrderedLoadFunc {
@@ -298,7 +258,7 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 	public PigLoadUDF(String columnList, String optString, String rowKey)
 			throws ParseException, IOException {
 		populateValidOptions();
-		
+
 		String[] optsArr = optString.split(" ");
 		try {
 			configuredOptions_ = parser_.parse(validOptions_, optsArr);
@@ -436,8 +396,8 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 
 	private void initScan(String rowKey) throws IOException {
 		scan = new Scan();
-//		scan.setRaw(true);
-		
+		// scan.setRaw(true);
+
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
 			// add random string because stopRow is exclusiv

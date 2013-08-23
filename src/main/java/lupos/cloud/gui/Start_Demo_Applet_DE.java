@@ -23,36 +23,11 @@
  */
 package lupos.cloud.gui;
 
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
-import javax.swing.JButton;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTextArea;
 
-import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_Cloud;
-import lupos.cloud.query.withsubgraphsubmission.CloudEvaluator;
-//import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_DE_OneKeyDistribution;
-//import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_DE_OneToThreeKeysDistribution;
-//import lupos.cloud.query.withoutsubgraphsubmission.QueryClient_DE_TwoKeysDistribution;
-//import lupos.cloud.query.withsubgraphsubmission.QueryClient_DE_SG_OneKeyDistribution;
-//import lupos.cloud.query.withsubgraphsubmission.QueryClient_DE_SG_OneToThreeKeysDistribution;
-//import lupos.cloud.query.withsubgraphsubmission.QueryClient_DE_SG_TwoKeysDistribution;
+
+import lupos.cloud.query.CloudEvaluator;
 import lupos.gui.Demo_Applet;
-import lupos.gui.anotherSyntaxHighlighting.LuposDocument;
-import lupos.gui.anotherSyntaxHighlighting.LuposDocumentReader;
-import lupos.gui.anotherSyntaxHighlighting.LuposJTextPane;
-import lupos.gui.anotherSyntaxHighlighting.javacc.TurtleParser;
-import lupos.gui.operatorgraph.viewer.ViewerPrefix;
-import lupos.gui.operatorgraph.visualeditor.dataeditor.DataEditor;
-import lupos.gui.operatorgraph.visualeditor.dataeditor.datageneralizer.CondensedViewToolBar;
-import lupos.gui.operatorgraph.visualeditor.dataeditor.datageneralizer.CondensedViewViewer;
-
 /**
  * This class is just for starting the Demo_Applet with our new distributed
  * query evaluators (without and with different distribution strategies)...
@@ -62,33 +37,6 @@ public class Start_Demo_Applet_DE {
 	public static void main(final String[] args) throws ClassNotFoundException {
 		Demo_Applet.registerEvaluator("Cloud SubGraph Evaluator",
 				CloudEvaluator.class);
-		Demo_Applet.registerEvaluator("Cloud Evaluator",
-				QueryClient_Cloud.class);
-		// Demo_Applet.registerEvaluator("Distributed Evaluator (one key distribution)",
-		// QueryClient_DE_OneKeyDistribution.class);
-		// Demo_Applet.registerEvaluator("Distributed Evaluator (two keys distribution)",
-		// QueryClient_DE_TwoKeysDistribution.class);
-		// Demo_Applet.registerEvaluator("Distributed Evaluator (one to three keys distribution)",
-		// QueryClient_DE_OneToThreeKeysDistribution.class);
-		// Demo_Applet.registerEvaluator("Distributed Evaluator with subgraph submission (one key distribution)",
-		// QueryClient_DE_SG_OneKeyDistribution.class);
-		// Demo_Applet.registerEvaluator("Distributed Evaluator with subgraph submission (two keys distribution)",
-		// QueryClient_DE_SG_TwoKeysDistribution.class);
-		// Demo_Applet.registerEvaluator("Distributed Evaluator with subgraph submission (one to three keys distribution)",
-		// QueryClient_DE_SG_OneToThreeKeysDistribution.class);
 		Demo_Applet.main(args);
-	}
-
-	public static boolean askForHistogramRequests() {
-		final Object[] options = { "Histogram Requests", "Static Analysis" };
-		final int ret = JOptionPane
-				.showOptionDialog(
-						null,
-						"Use histogram requests during join order optimization\n(leads to better optimization results, but also to more messages)\nor a static analysis (no extra messages)",
-						"Histogram requests or static analysis",
-						JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-						null, options, options[0]);
-
-		return (ret == JOptionPane.YES_OPTION);
 	}
 }

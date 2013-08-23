@@ -1,14 +1,9 @@
 package lupos.cloud.testing;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Properties;
-
-import lupos.misc.FileHelper;
 
 import org.apache.pig.ExecType;
-import org.apache.pig.FuncSpec;
 import org.apache.pig.PigServer;
 import org.apache.pig.data.Tuple;
 

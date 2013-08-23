@@ -42,14 +42,5 @@ public interface OperatorFormatter {
 	 * @return the jSON object
 	 * @throws JSONException the jSON exception
 	 */
-	public PigQuery serialize(BasicOperator operator, int node_id);
-
-	/**
-	 * Deserialize.
-	 *
-	 * @param serializedOperator the serialiezed operator
-	 * @return the basic operator
-	 * @throws JSONException the jSON exception
-	 */
-	public BasicOperator deserialize(JSONObject serializedOperator) throws JSONException;
+	public PigQuery serialize(BasicOperator operator);
 }

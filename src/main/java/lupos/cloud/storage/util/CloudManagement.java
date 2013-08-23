@@ -23,92 +23,74 @@
  */
 package lupos.cloud.storage.util;
 
-//import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-//import java.io.IOException;
-//import java.io.InputStream;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Properties;
 
 import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.util.JarManager;
-//import java.util.concurrent.TimeUnit;
-
-//import org.apache.hadoop.hbase.thrift.generated.Hbase;
-
-
 
 import lupos.cloud.hbase.HBaseConnection;
-import lupos.cloud.hbase.HBaseTableStrategy;
+import lupos.cloud.hbase.HBaseDistributionStrategy;
 import lupos.cloud.hbase.HBaseTriple;
 import lupos.cloud.pig.PigQuery;
-import lupos.cloud.pig.udfs.MapToBag;
-import lupos.cloud.pig.udfs.PigLoadUDF;
 import lupos.datastructures.bindings.Bindings;
+import lupos.datastructures.items.Triple;
 import lupos.datastructures.items.Variable;
 import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.datastructures.queryresult.QueryResult;
-//import lupos.distributed.storage.distributionstrategy.tripleproperties.KeyContainer;
-//import lupos.endpoint.client.Client;
-//import lupos.engine.operators.multiinput.join.parallel.ResultCollector;
 import lupos.misc.util.ImmutableIterator;
 
-//import lupos.misc.Tuple;
-
+/**
+ * Diese Klasse ist für die Kommunikation mit der Cloud zuständig (sowohl HBase als auch MapReduce/Pig).
+ */
 public class CloudManagement {
-
-	/**
-	 * contains the registered SPARQL endpoints...
-	 */
-	protected String[] urlsOfEndpoints;
-
-	public static final boolean enableHbase = true;
+	
+	/** The count triple. */
 	public static int countTriple = 0;
+	
+	/** The pig server. */
 	static PigServer pigServer = null;
+	
+	/** The pig query result. */
 	Iterator<Tuple> pigQueryResult = null;
+	
+	/** The cur variable list. */
 	ArrayList<String> curVariableList = null;
 
 	/**
-	 * Reads in the registered SPARQL endpoints from the configuration file
-	 * /endpoints.txt. Each line of this file must contain the URL of a SPARQL
-	 * endpoint.
+	 * Instantiates a new cloud management.
 	 */
 	public CloudManagement() {
 
 		try {
 			HBaseConnection.init();
-			// pigServer = new PigServer(ExecType.MAPREDUCE);
-			// Properties props = new Properties();
-			// props.setProperty("fs.default.name", "hdfs://localhost:8020");
-			// props.setProperty("mapred.job.tracker", "localhost:8021");
-			// props.setProperty("hbase.zookeeper.quorum", "localhost");
-			// props.setProperty("hbase.zookeeper.property.clientPort", "2181");
-			// pigServer = new PigServer(ExecType.MAPREDUCE, props);
 			pigServer = new PigServer(ExecType.MAPREDUCE);
-//			pigServer.registerJar(JarManager.findContainingJar(PigLoadUDF.class));
-//			pigServer.registerJar(JarGetter.getJar(MapToBag.class));
-//			pigServer.registerJar(JarGetter.getJar(com.google.protobuf.Message.class));
-			for (String tablename : HBaseTableStrategy.getTableInstance()
-					.getTableNames()) {
-				HBaseConnection.createTable(tablename, HBaseTableStrategy
-						.getTableInstance().getColumnFamilyName());
+			for (String tablename : HBaseDistributionStrategy
+					.getTableInstance().getTableNames()) {
+				HBaseConnection.createTable(tablename,
+						HBaseDistributionStrategy.getTableInstance()
+								.getColumnFamilyName());
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Submit h base triple to database.
+	 *
+	 * @param triple the triple
+	 */
 	public void submitHBaseTripleToDatabase(final Collection<HBaseTriple> triple) {
-		// TODO: Connection To Hbase + Insert
-		// seinding triple to hbase as row_key, family ...
 		for (HBaseTriple item : triple) {
-			// TODO: HBase Connection herstellen + Tripel in die DB laden
 			if (countTriple % 10000 == 0) {
-				System.out.println(countTriple + " HBaseTripel importiert!");
+				if (countTriple != 0) {
+					System.out
+							.println(countTriple + " HBaseTripel importiert!");
+				}
 			}
 			try {
 				HBaseConnection.addRow(item.getTablename(), item.getRow_key(),
@@ -116,27 +98,35 @@ public class CloudManagement {
 						item.getValue());
 				countTriple++;
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
 
+	/**
+	 * Delete h base triple from database.
+	 *
+	 * @param triple the triple
+	 */
 	public void deleteHBaseTripleFromDatabase(
 			final Collection<HBaseTriple> triple) {
-		// TODO: Connection to HBase + Delete
-		// seinding triple to hbase as row_key, family ...
-		// for (HBaseTriple item : triple) {
-		// try {
-		// HBaseConnection.addRow(item.getTablename(), item.getRow_key(),
-		// item.getColumn());
-		// } catch (IOException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-		// }
+		try {
+			for (HBaseTriple item : triple) {
+				HBaseConnection.deleteRow(item.getTablename(),
+						item.getColumnFamily(), item.getRow_key(),
+						item.getColumn());
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
+	/**
+	 * Submit pig query.
+	 *
+	 * @param query the query
+	 * @return the query result
+	 */
 	public QueryResult submitPigQuery(final PigQuery query) {
 		QueryResult result = null;
 		long start = System.currentTimeMillis();
@@ -178,15 +168,27 @@ public class CloudManagement {
 											String content = curTupel.substring(
 													curTupel.indexOf("\""),
 													curTupel.lastIndexOf("\"") + 1);
-											String type = curTupel.substring(
-													curTupel.indexOf("<"),
-													curTupel.indexOf(">") + 1);
-											result.add(
-													new Variable(var),
-													LiteralFactory
-															.createTypedLiteral(
-																	content,
-																	type));
+											int startIndex = curTupel
+													.indexOf("<");
+											int stopIndex = curTupel
+													.indexOf(">") + 1;
+											if (startIndex != -1
+													&& stopIndex != -1) {
+												String type = curTupel
+														.substring(startIndex,
+																stopIndex);
+												result.add(
+														new Variable(var),
+														LiteralFactory
+																.createTypedLiteral(
+																		content,
+																		type));
+											} else {
+												result.add(
+														new Variable(var),
+														LiteralFactory
+																.createLiteral(content));
+											}
 										} else if (curTupel.startsWith("_:")) {
 											result.add(
 													new Variable(var),
@@ -209,7 +211,6 @@ public class CloudManagement {
 									}
 									return result;
 								} catch (Exception e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 									return null;
 								}
@@ -225,10 +226,5 @@ public class CloudManagement {
 		System.out.println("PigLatin Programm erfolgreich in "
 				+ ((stop - start) / 1000) + "s ausgeführt!");
 		return result;
-	}
-
-	public QueryResult submitSubgraphQuery(String subgraphSerializedAsJSON) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 }

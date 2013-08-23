@@ -21,7 +21,7 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.query.withsubgraphsubmission;
+package lupos.cloud.query;
 
 import java.util.Date;
 import java.util.List;
@@ -30,9 +30,7 @@ import lupos.cloud.operator.ICloudSubgraphExecutor;
 import lupos.cloud.optimizations.logical.rules.generated.AddCloudSubGraphContainerRule;
 import lupos.cloud.optimizations.logical.rules.generated.CloudRulePackage;
 import lupos.distributed.query.operator.histogramsubmission.IHistogramExecutor;
-import lupos.distributed.query.operator.histogramsubmission.QueryClientRootWithHistogramSubmission;
-import lupos.distributed.query.operator.withouthistogramsubmission.QueryClientRoot;
-import lupos.cloud.storage.Storage_DE;
+import lupos.cloud.storage.Storage_Cloud;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.bindings.Bindings;
 import lupos.datastructures.bindings.BindingsMap;
@@ -40,37 +38,69 @@ import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.distributed.query.QueryClient;
 import lupos.distributed.storage.IStorage;
 import lupos.engine.operators.index.BasicIndexScan;
-import lupos.engine.operators.index.Root;
 import lupos.misc.debug.BasicOperatorByteArray;
 import lupos.optimizations.logical.rules.DebugContainer;
 import lupos.optimizations.logical.rules.generated.DistributedRulePackage;
 import lupos.rdf.Prefix;
 
+/**
+ * The Class CloudEvaluator.
+ */
 public class CloudEvaluator extends QueryClient {
 
 	// public final IDistribution<K> distribution;
+	/** The cloud management. */
 	public final CloudManagement cloudManagement;
 
+	/** The subgraph executor. */
 	public final ICloudSubgraphExecutor subgraphExecutor;
 
+	/**
+	 * Instantiates a new cloud evaluator.
+	 *
+	 * @throws Exception the exception
+	 */
 	public CloudEvaluator() throws Exception {
-		this(Storage_DE.getInstance(), Storage_DE.getInstance()
-				.getCloudManagement(), new Cloud_SubgraphExecutor(Storage_DE
+		this(Storage_Cloud.getInstance(), Storage_Cloud.getInstance()
+				.getCloudManagement(), new Cloud_SubgraphExecutor(Storage_Cloud
 				.getInstance().getCloudManagement()));
 	}
 
+	/**
+	 * Instantiates a new cloud evaluator.
+	 *
+	 * @param args the args
+	 * @throws Exception the exception
+	 */
 	public CloudEvaluator(final String[] args) throws Exception {
-		this(Storage_DE.getInstance(), Storage_DE.getInstance()
-				.getCloudManagement(), new Cloud_SubgraphExecutor(Storage_DE
+		this(Storage_Cloud.getInstance(), Storage_Cloud.getInstance()
+				.getCloudManagement(), new Cloud_SubgraphExecutor(Storage_Cloud
 				.getInstance().getCloudManagement()), args);
 	}
 
+	/**
+	 * Instantiates a new cloud evaluator.
+	 *
+	 * @param storage the storage
+	 * @param cloudManagement the cloud management
+	 * @param subgraphExecutor the subgraph executor
+	 * @throws Exception the exception
+	 */
 	public CloudEvaluator(final IStorage storage,
 			final CloudManagement cloudManagement,
 			final ICloudSubgraphExecutor subgraphExecutor) throws Exception {
 		this(storage, null, cloudManagement, subgraphExecutor);
 	}
 
+	/**
+	 * Instantiates a new cloud evaluator.
+	 *
+	 * @param storage the storage
+	 * @param histogramExecutor the histogram executor
+	 * @param cloudManagement the cloud management
+	 * @param subgraphExecutor the subgraph executor
+	 * @throws Exception the exception
+	 */
 	public CloudEvaluator(final IStorage storage,
 			final IHistogramExecutor histogramExecutor,
 			final CloudManagement cloudManagement,
@@ -80,6 +110,15 @@ public class CloudEvaluator extends QueryClient {
 		this.subgraphExecutor = subgraphExecutor;
 	}
 
+	/**
+	 * Instantiates a new cloud evaluator.
+	 *
+	 * @param storage the storage
+	 * @param cloudManagement the cloud management
+	 * @param subgraphExecutor the subgraph executor
+	 * @param args the args
+	 * @throws Exception the exception
+	 */
 	public CloudEvaluator(final IStorage storage,
 			final CloudManagement cloudManagement,
 			final ICloudSubgraphExecutor subgraphExecutor, final String[] args)
@@ -87,6 +126,16 @@ public class CloudEvaluator extends QueryClient {
 		this(storage, null, cloudManagement, subgraphExecutor, args);
 	}
 
+	/**
+	 * Instantiates a new cloud evaluator.
+	 *
+	 * @param storage the storage
+	 * @param histogramExecutor the histogram executor
+	 * @param cloudManagement the cloud management
+	 * @param subgraphExecutor the subgraph executor
+	 * @param args the args
+	 * @throws Exception the exception
+	 */
 	public CloudEvaluator(final IStorage storage,
 			final IHistogramExecutor histogramExecutor,
 			final CloudManagement cloudManagement,
@@ -97,6 +146,9 @@ public class CloudEvaluator extends QueryClient {
 		this.subgraphExecutor = subgraphExecutor;
 	}
 
+	/* (non-Javadoc)
+	 * @see lupos.distributed.query.QueryClient#initOptimization()
+	 */
 	@Override
 	protected void initOptimization() {
 
@@ -117,6 +169,9 @@ public class CloudEvaluator extends QueryClient {
 		// }
 	}
 
+	/* (non-Javadoc)
+	 * @see lupos.engine.evaluators.BasicIndexQueryEvaluator#logicalOptimization()
+	 */
 	@Override
 	public long logicalOptimization() {
 		final long start = new Date().getTime();
@@ -132,6 +187,9 @@ public class CloudEvaluator extends QueryClient {
 		return new Date().getTime() - start;
 	}
 
+	/* (non-Javadoc)
+	 * @see lupos.engine.evaluators.BasicIndexQueryEvaluator#logicalOptimizationDebugByteArray(lupos.rdf.Prefix)
+	 */
 	@Override
 	public List<DebugContainer<BasicOperatorByteArray>> logicalOptimizationDebugByteArray(
 			final Prefix prefixInstance) {
@@ -152,6 +210,9 @@ public class CloudEvaluator extends QueryClient {
 		return result;
 	}
 
+	/* (non-Javadoc)
+	 * @see lupos.engine.evaluators.BasicIndexQueryEvaluator#init()
+	 */
 	@Override
 	public void init() throws Exception {
 		// just for avoiding problems in distributed scenarios

@@ -25,12 +25,11 @@ package lupos.cloud.optimizations.logical.rules.generated;
 
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 import lupos.optimizations.logical.rules.generated.runtime.RulePackage;
-import lupos.optimizations.logical.rules.generated.runtime.RulePackageWithStartNodeMap;
 
 public class CloudRulePackage extends RulePackage {
-    public CloudRulePackage() {
-        this.rules = new Rule[] {
-		        new AddCloudSubGraphContainerRule()
-        };
-    }
+	public CloudRulePackage() {
+		this.rules = new Rule[] { 
+				new AddCloudSubGraphContainerRule()
+				};
+	}
 }

@@ -45,32 +45,9 @@ public class FilterFormatter implements OperatorFormatter {
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public PigQuery serialize(final BasicOperator operator, final int node_id)
+	public PigQuery serialize(final BasicOperator operator)
 			 {
-		final JSONObject json = new JSONObject();
-//		json.put("type", Filter.class.getName());
-//		json.put("node_id", node_id);
-//		json.put("expression", operator.toString());
 		System.out.println("ich war hier!");
 		return new PigQuery();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * luposdate.operators.formatter.OperatorFormatter#deserialize(org.json.JSONObject)
-	 */
-	@Override
-	public BasicOperator deserialize(final JSONObject serializedOperator) throws JSONException {
-		final JSONObject json = serializedOperator;
-		String filtername =  json.getString("expression");
-		filtername = filtername.substring(0,filtername.length()-3);
-		try {
-			return new Filter(filtername);
-		} catch (final ParseException e) {
-			e.printStackTrace();
-		}
-		return null;
 	}
 }
