@@ -44,21 +44,24 @@ import lupos.datastructures.queryresult.QueryResult;
 import lupos.misc.util.ImmutableIterator;
 
 /**
- * Diese Klasse ist für die Kommunikation mit der Cloud zuständig (sowohl HBase als auch MapReduce/Pig).
+ * Diese Klasse ist für die Kommunikation mit der Cloud zuständig (sowohl HBase
+ * als auch MapReduce/Pig).
  */
 public class CloudManagement {
-	
+
 	/** The count triple. */
 	public static int countTriple = 0;
-	
+
 	/** The pig server. */
 	static PigServer pigServer = null;
-	
+
 	/** The pig query result. */
 	Iterator<Tuple> pigQueryResult = null;
-	
+
 	/** The cur variable list. */
 	ArrayList<String> curVariableList = null;
+
+	boolean PRINT_PIGLATIN_PROGRAMM = true;
 
 	/**
 	 * Instantiates a new cloud management.
@@ -81,8 +84,9 @@ public class CloudManagement {
 
 	/**
 	 * Submit h base triple to database.
-	 *
-	 * @param triple the triple
+	 * 
+	 * @param triple
+	 *            the triple
 	 */
 	public void submitHBaseTripleToDatabase(final Collection<HBaseTriple> triple) {
 		for (HBaseTriple item : triple) {
@@ -105,8 +109,9 @@ public class CloudManagement {
 
 	/**
 	 * Delete h base triple from database.
-	 *
-	 * @param triple the triple
+	 * 
+	 * @param triple
+	 *            the triple
 	 */
 	public void deleteHBaseTripleFromDatabase(
 			final Collection<HBaseTriple> triple) {
@@ -123,17 +128,20 @@ public class CloudManagement {
 
 	/**
 	 * Submit pig query.
-	 *
-	 * @param query the query
+	 * 
+	 * @param query
+	 *            the query
 	 * @return the query result
 	 */
 	public QueryResult submitPigQuery(final PigQuery query) {
 		QueryResult result = null;
 		long start = System.currentTimeMillis();
 		try {
-			System.out.println("Generated PigLatin Program:");
-			System.out.println(query.getPigLatin());
-			System.out.println();
+			if (PRINT_PIGLATIN_PROGRAMM) {
+				System.out.println("Generated PigLatin Program:");
+				System.out.println(query.getPigLatin());
+				System.out.println();
+			}
 			System.out.println("PigLatin Programm wird ausgeführt...");
 			pigServer.registerQuery(query.getPigLatin());
 			curVariableList = query.getVariableList();

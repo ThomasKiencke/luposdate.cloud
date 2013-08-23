@@ -54,7 +54,7 @@ public class IndexScanToPigQuery {
 					+ curPattern.getPatternId()
 					+ " = foreach "
 					+ curPattern.getName()
-					+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBag($1));\n");
+					+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1));\n");
 		} else if (curPattern.allElementsAreLiterals()) {
 			// do nothing
 			return "";
@@ -70,7 +70,7 @@ public class IndexScanToPigQuery {
 					+ "load 'hbase://"
 					+ curPattern.getName()
 					+ "' "
-					+ "using lupos.cloud.pig.udfs.PigLoadUDF('"
+					+ "using lupos.cloud.pig.udfs.HBaseLoadUDF('"
 					+ HBaseDistributionStrategy.getTableInstance()
 							.getColumnFamilyName() + "', '','"
 					+ curPattern.getLiterals() + "') as (columncontent:map[]);"
@@ -80,7 +80,7 @@ public class IndexScanToPigQuery {
 					+ curPattern.getPatternId()
 					+ " = foreach PATTERN_"
 					+ curPattern.getPatternId()
-					+ " generate flatten(lupos.cloud.pig.udfs.MapToBag($0)) as "
+					+ " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as "
 					+ ((curPattern.getJoinElements().size() == 1) ? "(output:chararray);"
 							: "(output1:chararray, output2:chararray); ")
 					+ "\n");

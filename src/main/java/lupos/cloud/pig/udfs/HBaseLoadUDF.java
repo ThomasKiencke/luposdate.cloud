@@ -109,10 +109,10 @@ import com.google.common.collect.Lists;
  * angepasst. Eine wichtige erweiterung ist die Möglichkeit nur einen bestimmten
  * rowKey zu laden, anstatt den gesamten Datenbestand einer Tabelle.
  */
-public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
+public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		LoadPushDown, OrderedLoadFunc {
 
-	private static final Log LOG = LogFactory.getLog(PigLoadUDF.class);
+	private static final Log LOG = LogFactory.getLog(HBaseLoadUDF.class);
 
 	private final static String STRING_CASTER = "UTF8StorageConverter";
 	private final static String BYTE_CASTER = "HBaseBinaryConverter";
@@ -216,7 +216,7 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 	 *             when unable to parse arguments
 	 * @throws IOException
 	 */
-	public PigLoadUDF(String columnList, String rowKey) throws ParseException,
+	public HBaseLoadUDF(String columnList, String rowKey) throws ParseException,
 			IOException {
 		this(columnList, "", rowKey);
 	}
@@ -255,7 +255,7 @@ public class PigLoadUDF extends LoadFunc implements StoreFuncInterface,
 	 * @throws ParseException
 	 * @throws IOException
 	 */
-	public PigLoadUDF(String columnList, String optString, String rowKey)
+	public HBaseLoadUDF(String columnList, String optString, String rowKey)
 			throws ParseException, IOException {
 		populateValidOptions();
 

@@ -14,7 +14,7 @@ import org.apache.pig.data.TupleFactory;
  * UDF Funktion für Pig. In dieser Klasse wird eine eingehen Map in eine "Bag"
  * überführt um diese dann weiter zu verarbeiten.
  */
-public class MapToBag extends EvalFunc<DataBag> {
+public class MapToBagUDF extends EvalFunc<DataBag> {
 
 	/** The Constant bagFactory. */
 	private static final BagFactory bagFactory = BagFactory.getInstance();
