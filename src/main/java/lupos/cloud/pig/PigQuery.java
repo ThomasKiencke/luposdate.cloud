@@ -2,6 +2,10 @@ package lupos.cloud.pig;
 
 import java.util.ArrayList;
 
+import lupos.cloud.pig.operator.FilterToPigQuery;
+import lupos.cloud.pig.operator.IndexScanToPigQuery;
+import lupos.engine.operators.singleinput.filter.expressionevaluation.EvaluationVisitorImplementation.GetResult;
+
 /**
  * In dieser Klassen werden Informationen über das PigQuery abgespeichert z.B.
  * das PigLatin Programm selbst sowie die zu erwartende Variablenliste.
@@ -13,6 +17,9 @@ public class PigQuery {
 
 	/** The variable list. */
 	ArrayList<String> variableList = new ArrayList<String>();
+
+	private IndexScanToPigQuery indexScanPigOp;
+	private FilterToPigQuery filterPigOp;
 
 	/**
 	 * Instantiates a new pig query.
@@ -83,6 +90,37 @@ public class PigQuery {
 	 */
 	public void setVariableList(ArrayList<String> variableList) {
 		this.variableList = variableList;
+	}
+
+	public void setIndexScan(IndexScanToPigQuery pigQuery) {
+		this.indexScanPigOp = pigQuery;
+	}
+
+	public IndexScanToPigQuery getIndexScanToPigQuery() {
+		return indexScanPigOp;
+	}
+
+	public void applyJoins() {
+		this.pigLatin.append(indexScanPigOp.getJoinQuery());
+	}
+
+	public void optimizeResultOrder() {
+		this.pigLatin.append(((filterPigOp == null) ? "X" : "NOFILTER") + indexScanPigOp.optimizeResultOrder() + "\n");
+	}
+
+	public void setResultOrder() {
+		this.setVariableList(indexScanPigOp.getResultOrder());
+	}
+
+	public void applyFilter() {
+		if (filterPigOp != null) {
+			this.pigLatin
+					.append((filterPigOp.getPigLatinProgramm(this.getVariableList())));
+		}
+	}
+
+	public void setFilter(FilterToPigQuery pigFilter) {
+		this.filterPigOp = pigFilter;
 	}
 
 }

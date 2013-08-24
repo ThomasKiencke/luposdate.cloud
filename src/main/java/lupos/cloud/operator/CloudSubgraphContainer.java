@@ -43,7 +43,12 @@ import org.json.JSONException;
  *            the type of key used to address the node where this operator graph
  *            is sent to.
  */
-public class CloudSubgraphContainer<K> extends RootChild {
+public class CloudSubgraphContainer extends RootChild {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * The root node of the sub graph.
@@ -84,7 +89,7 @@ public class CloudSubgraphContainer<K> extends RootChild {
 	@Override
 	public QueryResult process(final Dataset dataset) {
 		final CloudSubgraphContainerFormatter pigParser = new CloudSubgraphContainerFormatter();
-		final PigQuery pigQuery = pigParser.serialize(this.rootNodeOfSubGraph);
+		final PigQuery pigQuery = pigParser.serialize(this.rootNodeOfSubGraph, new PigQuery());
 		final QueryResult result = this.cloudSubgraphExecutor
 				.evaluate(pigQuery);
 		// result.materialize();

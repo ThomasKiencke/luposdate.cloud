@@ -100,6 +100,10 @@ public class IndexScanToPigQuery {
 
 		return result;
 	}
+	
+	public ArrayList<JoinInformation> getIntermediateJoins() {
+		return intermediateJoins;
+	}
 
 	/**
 	 * Multi join über alle Tripel-Muster. Dabei wird zuerst über die Variable
@@ -302,9 +306,12 @@ public class IndexScanToPigQuery {
 				list += ", $" + id;
 		}
 
-		result.append("X = FOREACH " + "INTERMEDIATE_BAG_"
+		// alias hass to be added "outsite" of the method
+		result.append(" = FOREACH " + "INTERMEDIATE_BAG_"
 				+ intermediateJoins.get(0).getPatternId() + " GENERATE " + list
 				+ ";");
+		
+		
 		return result.toString();
 	}
 

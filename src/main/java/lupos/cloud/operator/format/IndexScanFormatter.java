@@ -70,21 +70,18 @@ public class IndexScanFormatter implements OperatorFormatter {
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public PigQuery serialize(final BasicOperator operator) {
+	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
 		final BasicIndexScan indexScan = (BasicIndexScan) operator;
-
+//		PigQuery result = new PigQuery();
 		Collection<TriplePattern> tp = indexScan.getTriplePattern();
-		PigQuery result = new PigQuery();
 
 		IndexScanToPigQuery pigQuery = new IndexScanToPigQuery();
+		pigLatin.setIndexScan(pigQuery);
 		for (TriplePattern t : tp) {
-			result.appendPigLatin(pigQuery.buildQuery(t));
+			pigLatin.appendPigLatin(pigQuery.buildQuery(t));
 		}
-		result.appendPigLatin(pigQuery.getJoinQuery());
-		result.appendPigLatin(pigQuery.optimizeResultOrder());
-		result.setVariableList(pigQuery.getResultOrder());
 
-		return result;
+		return pigLatin;
 	}
 
 	/**

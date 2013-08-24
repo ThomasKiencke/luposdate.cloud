@@ -158,8 +158,6 @@ public class CloudEvaluator extends QueryClient {
 		 * Ansatz!
 		 */
 		
-		// TODO: Filter in Subgraphcontainer?!
-		
 		// if (this.histogramExecutor == null) {
 		// // make binary joins such that subgraphs can be identified...
 		 this.opt = BasicIndexScan.NONE;

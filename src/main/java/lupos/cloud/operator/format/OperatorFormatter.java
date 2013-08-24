@@ -42,5 +42,5 @@ public interface OperatorFormatter {
 	 * @return the jSON object
 	 * @throws JSONException the jSON exception
 	 */
-	public PigQuery serialize(BasicOperator operator);
+	public PigQuery serialize(BasicOperator operator, PigQuery pigLatinInput);
 }

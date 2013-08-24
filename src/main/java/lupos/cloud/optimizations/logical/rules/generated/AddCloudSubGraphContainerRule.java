@@ -23,6 +23,7 @@
  */
 package lupos.cloud.optimizations.logical.rules.generated;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,7 +33,6 @@ import lupos.cloud.operator.CloudSubgraphContainer;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
-import lupos.distributed.storage.distributionstrategy.IDistribution;
 import lupos.distributed.storage.distributionstrategy.TriplePatternNotSupportedError;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
@@ -79,6 +79,10 @@ public class AddCloudSubGraphContainerRule extends Rule {
 
         		try {
         			final Root rootNodeOfOuterGraph = indexScan.getRoot();
+        			
+        			// leere Liste einfügen, weil sonst NullpointerException - bug?
+        			rootNodeOfOuterGraph.setUnionVariables(new ArrayList<Variable>());
+        			
         			final Root rootNodeOfSubGraph = rootNodeOfOuterGraph.newInstance(rootNodeOfOuterGraph.dataset);
 
         			// TODO: 1) for several keys: union of different SubgraphContainer!

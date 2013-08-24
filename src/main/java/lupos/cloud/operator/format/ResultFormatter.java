@@ -40,7 +40,7 @@ public class ResultFormatter implements OperatorFormatter {
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public PigQuery serialize(final BasicOperator operator)  {
-		return new PigQuery();
+	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatinInput)  {
+		return pigLatinInput;
 	}
 }

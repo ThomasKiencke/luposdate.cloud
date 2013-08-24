@@ -23,7 +23,6 @@
  */
 package lupos.cloud.operator.format;
 
-
 import lupos.cloud.operator.format.FilterFormatter;
 import lupos.cloud.operator.format.IndexScanFormatter;
 import lupos.cloud.operator.format.OperatorFormatter;
@@ -47,19 +46,18 @@ public class CloudSubgraphContainerFormatter implements OperatorFormatter {
 	}
 
 	@Override
-	public PigQuery serialize(final BasicOperator operator) {
-
-		PigQuery pigLatin = new PigQuery();
-
-		this.serializeNode(new OperatorIDTuple(operator, 0), pigLatin);
-
-		return pigLatin;
+	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
+		PigQuery result = this.serializeNode(new OperatorIDTuple(operator, 0), pigLatin);
+		pigLatin.applyJoins();
+		pigLatin.optimizeResultOrder();
+		pigLatin.setResultOrder();
+		pigLatin.applyFilter();
+		return result;
 	}
 
-	private void serializeNode(final OperatorIDTuple node,
-			PigQuery pigLatin) {
+	private PigQuery serializeNode(final OperatorIDTuple node, PigQuery pigLatin) {
 
-
+		PigQuery result = null;
 		final BasicOperator op = node.getOperator();
 
 		OperatorFormatter serializer;
@@ -75,10 +73,12 @@ public class CloudSubgraphContainerFormatter implements OperatorFormatter {
 			throw new RuntimeException("Something is wrong here. Forgot case?");
 		}
 
-			pigLatin.appendPigLatin(serializer.serialize(op));
+		result = serializer.serialize(op, pigLatin);
 
 		for (final OperatorIDTuple successor : op.getSucceedingOperators()) {
-			this.serializeNode(successor, pigLatin);
+			result = this.serializeNode(successor, result);
 		}
+
+		return result;
 	}
 }

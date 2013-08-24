@@ -25,12 +25,9 @@ package lupos.cloud.operator.format;
 
 import lupos.cloud.operator.format.OperatorFormatter;
 import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.operator.FilterToPigQuery;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.singleinput.filter.Filter;
-import lupos.sparql1_1.ParseException;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * Implements the formatter for the Filter Operator.
@@ -39,15 +36,16 @@ public class FilterFormatter implements OperatorFormatter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * luposdate.operators.formatter.OperatorFormatter#serialize(lupos.engine
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public PigQuery serialize(final BasicOperator operator)
-			 {
-		System.out.println("ich war hier!");
-		return new PigQuery();
+	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
+		Filter filter = (Filter) operator;
+		FilterToPigQuery pigFilter = new FilterToPigQuery(filter);
+		pigLatin.setFilter(pigFilter);
+		return pigLatin;
 	}
 }
