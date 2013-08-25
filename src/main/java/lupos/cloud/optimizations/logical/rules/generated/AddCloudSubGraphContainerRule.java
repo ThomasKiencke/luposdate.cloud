@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import lupos.cloud.operator.CloudSubgraphContainer;
@@ -45,140 +46,192 @@ import lupos.sparql1_1.ParseException;
 
 import org.json.JSONException;
 
-
-
 public class AddCloudSubGraphContainerRule extends Rule {
 
-    	public static CloudManagement cloudManagement;
+	public static CloudManagement cloudManagement;
 
-    	public static ICloudSubgraphExecutor subgraphExecutor;
+	public static ICloudSubgraphExecutor subgraphExecutor;
 
-    	private Filter getFilterFromIndexScan(final BasicOperator root) {
-    		final List<OperatorIDTuple> succs = root.getSucceedingOperators();
-    		if (succs.size() == 1) {
-    			for (final OperatorIDTuple succ : succs) {
-    				final BasicOperator op = succ.getOperator();
-    				if (op instanceof Filter) {
-    					return (Filter) op;
-    				}
-    			}
-    		}
+	/**
+	 * replace index scan operator with SubgraphContainer
+	 * 
+	 * @param indexScan
+	 *            the index scan operator
+	 */
+	private void replaceIndexScanOperatorWithSubGraphContainer(
+			final BasicIndexScan indexScan) {
 
-    		return null;
+		try {
 
-    	}
+			// Neuen Container erzeugen + inneren neuen rootNode
+			final Root rootNodeOfOuterGraph = indexScan.getRoot();
 
-    	/**
-    	 * replace index scan operator with SubgraphContainer
-    	 *
-    	 * @param indexScan
-    	 *            the index scan operator
-    	 */
-    	private void replaceIndexScanOperatorWithSubGraphContainer(
-    			final BasicIndexScan indexScan) {
+			// leere Liste einfügen, weil sonst NullpointerException - bug?
+			rootNodeOfOuterGraph.setUnionVariables(new ArrayList<Variable>());
 
-        		try {
-        			final Root rootNodeOfOuterGraph = indexScan.getRoot();
-        			
-        			// leere Liste einfügen, weil sonst NullpointerException - bug?
-        			rootNodeOfOuterGraph.setUnionVariables(new ArrayList<Variable>());
-        			
-        			final Root rootNodeOfSubGraph = rootNodeOfOuterGraph.newInstance(rootNodeOfOuterGraph.dataset);
+			final Root rootNodeOfSubGraph = rootNodeOfOuterGraph
+					.newInstance(rootNodeOfOuterGraph.dataset);
+			final CloudSubgraphContainer container = new CloudSubgraphContainer(
+					rootNodeOfSubGraph, subgraphExecutor);
+			final HashSet<Variable> variables = new HashSet<Variable>(
+					indexScan.getIntersectionVariables());
 
-        			// TODO: 1) for several keys: union of different SubgraphContainer!
-        			// TODO: 2) catch TriplePatternNotSupportedError and make union of SubgraphContainer to all possible nodes...
-        			final CloudSubgraphContainer container = new CloudSubgraphContainer(rootNodeOfSubGraph, subgraphExecutor);
-        			final HashSet<Variable> variables = new HashSet<Variable>(indexScan.getIntersectionVariables());
+			container.setUnionVariables(variables);
+			container.setIntersectionVariables(variables);
 
-        			container.setUnionVariables(variables);
-        			container.setIntersectionVariables(variables);
+			// alte Verbindungen merken
+			final Collection<BasicOperator> preds = indexScan
+					.getPrecedingOperators();
+			List<OperatorIDTuple> succs = indexScan.getSucceedingOperators();
+			for (final BasicOperator pred : preds) {
+				pred.getOperatorIDTuple(indexScan).setOperator(container);
+			}
 
-        			// remember original connections and connect new graph with these connections
-        			final Collection<BasicOperator> preds = indexScan.getPrecedingOperators();
-        			final List<OperatorIDTuple> succs = indexScan.getSucceedingOperators();
+			// Füge IndexscannOperator zum Caintainerhinzu und lösche alte
+			// Nachfolger vom Indexscan
+			rootNodeOfSubGraph.setSucceedingOperator(new OperatorIDTuple(
+					indexScan, 0));
+			indexScan.setSucceedingOperators(null);
 
-        			for (final BasicOperator pred : preds) {
-        				pred.getOperatorIDTuple(indexScan).setOperator(container);
-        			}
+			// Füge alle Nachfolger des IndexScannOps in eine Liste ein
+			final LinkedHashSet<OperatorIDTuple> allSuccessors = getAllSuccessors(succs);
 
-        			// generate new connections...
+			// Gehe die neue Liste durch und überprüfe ob Operatoren in den
+			// SubGraphContainer verschoben werden können
+			/*
+			 * class lupos.engine.operators.singleinput.filter.Filter class
+			 * lupos.engine.operators.singleinput.Projection class
+			 * lupos.engine.operators.singleinput.modifiers.distinct.Distinct
+			 * class lupos.engine.operators.singleinput.modifiers.Limit class
+			 * lupos.engine.operators.singleinput.Result
+			 */
+			for (OperatorIDTuple curOp : allSuccessors) {
+				if (curOp.getOperator() instanceof Filter) {
+					/*
+					 * Wenn ein direkter Nachfolger des Subgraphcontainer in den
+					 * Container gezogen wird ist der neue Nachfolger des
+					 * Containers, der alte Nachfolger vom verschobenen
+					 * Operators
+					 */
+					if (succs.contains(curOp)) {
+						succs = curOp.getOperator().getSucceedingOperators();
+					}
 
-        			final Filter filter = this.getFilterFromIndexScan(indexScan);
+					addToSubgraphContainerAndRemoveOldOperator(
+							curOp.getOperator(), container, rootNodeOfSubGraph);
+				}
+			}
 
-        			if (filter != null) {
-        				if (indexScan.getUnionVariables().containsAll(
-        						filter.getUsedVariables())) {
-        					Filter newFilter;
-        					try {
-        						newFilter = new Filter(filter.toString().substring(0,
-        								filter.toString().length() - 2));
-        						indexScan.setSucceedingOperator(new OperatorIDTuple(
-        								newFilter, 0));
-        						newFilter.setSucceedingOperator(new OperatorIDTuple(new Result(), 0));
-        					} catch (final ParseException e) {
-        						e.printStackTrace();
-        					}
+			// Füge Resultoperator hinzu
+			getLastOperatorOfContainer(rootNodeOfSubGraph)
+					.setSucceedingOperator(new OperatorIDTuple(new Result(), 0));
 
-        				} else {
-        					indexScan.setSucceedingOperator(new OperatorIDTuple(
-        							new Result(), 0));
-        				}
-        			} else {
-        				indexScan
-        				.setSucceedingOperator(new OperatorIDTuple(new Result(), 0));
-        			}
+			// Container mit den Nachfolgern verbinden
+			container.setSucceedingOperators(succs);
 
-        			// indexScan.setSucceedingOperator(new OperatorIDTuple(new Result(),
-        			// 0));
-        			rootNodeOfSubGraph.setSucceedingOperator(new OperatorIDTuple(indexScan, 0));
+			// iterate through the new predecessors of the successors of the
+			// original index scan operators and set new SubgraphContainer
+			for (final OperatorIDTuple succ : succs) {
+				succ.getOperator().removePrecedingOperator(indexScan);
+				succ.getOperator().addPrecedingOperator(container);
+			}
 
-        			rootNodeOfSubGraph.setParents();
+		} catch (final JSONException e1) {
+			System.err.println(e1);
+			e1.printStackTrace();
+		} catch (final TriplePatternNotSupportedError e1) {
+			System.err.println(e1);
+			e1.printStackTrace();
+		}
+	}
 
-        			// original connections set at new graph
-        			container.setSucceedingOperators(succs);
+	private void addToSubgraphContainerAndRemoveOldOperator(
+			BasicOperator operator, CloudSubgraphContainer container,
+			Root rootNodeOfSubgraph) {
+		Collection<BasicOperator> oldPreds = operator.getPrecedingOperators();
+		List<OperatorIDTuple> oldSuccs = operator.getSucceedingOperators();
 
-        			// iterate through the new predecessors of the successors of the original index scan operators and set new SubgraphContainer
-        			for (final OperatorIDTuple succ : succs) {
-        				succ.getOperator().removePrecedingOperator(indexScan);
-        				succ.getOperator().addPrecedingOperator(container);
-        			}
+		BasicOperator lastOperation = getLastOperatorOfContainer(rootNodeOfSubgraph);
+		ArrayList<OperatorIDTuple> newSucc = new ArrayList<OperatorIDTuple>();
+		newSucc.add(new OperatorIDTuple(operator, 0));
+		lastOperation.setSucceedingOperators(newSucc);
+		operator.setSucceedingOperators(null);
 
-        		} catch (final JSONException e1) {
-        			System.err.println(e1);
-        			e1.printStackTrace();
-        		} catch (final TriplePatternNotSupportedError e1) {
-        			System.err.println(e1);
-        			e1.printStackTrace();
-        		}
-    	}
+		for (final BasicOperator pred : oldPreds) {
+			for (final OperatorIDTuple succ : oldSuccs) {
+				pred.removePrecedingOperator(operator);
+				pred.addPrecedingOperator(succ.getOperator());
+			}
+		}
 
+		for (final OperatorIDTuple succ : oldSuccs) {
+			for (final BasicOperator pred : oldPreds) {
+				succ.getOperator().removePrecedingOperator(operator);
+				succ.getOperator().addPrecedingOperator(pred);
+			}
+		}
 
-    private lupos.engine.operators.index.BasicIndexScan indexScan = null;
+	}
 
-    private boolean _checkPrivate0(final BasicOperator _op) {
-        if(!(_op instanceof lupos.engine.operators.index.BasicIndexScan)) {
-            return false;
-        }
+	private BasicOperator getLastOperatorOfContainer(BasicOperator operator) {
+		BasicOperator result = null;
+		if (operator.getSucceedingOperators() == null) {
+			result = operator;
+		} else {
+			for (OperatorIDTuple elem : operator.getSucceedingOperators()) {
+				result = getLastOperatorOfContainer(elem.getOperator());
+			}
+		}
+		return result;
+	}
 
-        this.indexScan = (lupos.engine.operators.index.BasicIndexScan) _op;
+	private LinkedHashSet<OperatorIDTuple> getAllSuccessors(
+			List<OperatorIDTuple> succs) {
+		final LinkedHashSet<OperatorIDTuple> allSuccessors = new LinkedHashSet<OperatorIDTuple>();
+		ArrayList<OperatorIDTuple> justAdded = new ArrayList<OperatorIDTuple>();
+		for (OperatorIDTuple elem : succs) {
+			allSuccessors.add(elem);
+			justAdded.add(elem);
+		}
+		for (OperatorIDTuple elem : justAdded) {
+			for (OperatorIDTuple elemSucc : getAllSuccessors(elem.getOperator()
+					.getSucceedingOperators())) {
+				allSuccessors.add(elemSucc);
+			}
 
-        return true;
-    }
+		}
 
+		return allSuccessors;
+	}
 
-    public AddCloudSubGraphContainerRule() {
-//        this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
-    	this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
-        this.ruleName = "AddSubGraphContainer";
-    }
+	private lupos.engine.operators.index.BasicIndexScan indexScan = null;
 
-    @Override
+	private boolean _checkPrivate0(final BasicOperator _op) {
+		if (!(_op instanceof lupos.engine.operators.index.BasicIndexScan)) {
+			return false;
+		}
+
+		this.indexScan = (lupos.engine.operators.index.BasicIndexScan) _op;
+
+		return true;
+	}
+
+	public AddCloudSubGraphContainerRule() {
+		// this.startOpClass =
+		// lupos.engine.operators.index.BasicIndexScan.class;
+		this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
+		this.ruleName = "AddSubGraphContainer";
+	}
+
+	@Override
 	protected boolean check(final BasicOperator _op) {
-        return this._checkPrivate0(_op);
-    }
+		return this._checkPrivate0(_op);
+	}
 
-    @Override
-	protected void replace(final HashMap<Class<?>, HashSet<BasicOperator>> _startNodes) {
-        this.replaceIndexScanOperatorWithSubGraphContainer(this.indexScan);
-    }
+	@Override
+	protected void replace(
+			final HashMap<Class<?>, HashSet<BasicOperator>> _startNodes) {
+		this.replaceIndexScanOperatorWithSubGraphContainer(this.indexScan);
+
+	}
 }

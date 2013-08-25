@@ -19,7 +19,8 @@ public class PigQuery {
 	ArrayList<String> variableList = new ArrayList<String>();
 
 	private IndexScanToPigQuery indexScanPigOp;
-	private FilterToPigQuery filterPigOp;
+	private ArrayList<FilterToPigQuery> filterPigOps = new ArrayList<FilterToPigQuery>();
+	private String aliasBeforeFilter = "INTERMEDIATE_FILTER_";
 
 	/**
 	 * Instantiates a new pig query.
@@ -105,7 +106,8 @@ public class PigQuery {
 	}
 
 	public void optimizeResultOrder() {
-		this.pigLatin.append(((filterPigOp == null) ? "X" : "NOFILTER") + indexScanPigOp.optimizeResultOrder() + "\n");
+		this.pigLatin.append(((filterPigOps.size() == 0) ? "X" : "Y")
+				+ indexScanPigOp.optimizeResultOrder() + "\n");
 	}
 
 	public void setResultOrder() {
@@ -113,14 +115,22 @@ public class PigQuery {
 	}
 
 	public void applyFilter() {
-		if (filterPigOp != null) {
-			this.pigLatin
-					.append((filterPigOp.getPigLatinProgramm(this.getVariableList())));
+		if (filterPigOps.size() > 0) {
+			int i = 0;
+			for (FilterToPigQuery curFilter : filterPigOps) {
+				this.pigLatin.append((curFilter.getPigLatinProgramm(
+						(i + 1 == filterPigOps.size()) ? "X"
+								: aliasBeforeFilter + "_" + (i + 1),
+						(i == 0) ? "Y" : aliasBeforeFilter, this
+								.getVariableList())));
+				i++;
+				aliasBeforeFilter = aliasBeforeFilter + "_" + i;
+			}
 		}
 	}
 
-	public void setFilter(FilterToPigQuery pigFilter) {
-		this.filterPigOp = pigFilter;
+	public void addFilter(FilterToPigQuery pigFilter) {
+		this.filterPigOps.add(pigFilter);
 	}
 
 }

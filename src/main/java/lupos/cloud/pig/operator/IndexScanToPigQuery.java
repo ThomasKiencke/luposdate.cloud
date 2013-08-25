@@ -2,8 +2,11 @@ package lupos.cloud.pig.operator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import com.hp.hpl.jena.sparql.pfunction.library.container;
 
 import lupos.cloud.hbase.HBaseDistributionStrategy;
 import lupos.cloud.pig.JoinInformation;
@@ -17,10 +20,11 @@ import lupos.engine.operators.tripleoperator.TriplePattern;
 public class IndexScanToPigQuery {
 
 	/** The join variables. */
-	SortedSet<String> joinVariables = new TreeSet<String>();
+	// SortedSet<String> joinVariables = new TreeSet<String>();
 
 	/** The intermediate joins. */
 	ArrayList<JoinInformation> intermediateJoins = new ArrayList<JoinInformation>();
+	private boolean debug = false;
 
 	/**
 	 * Mit dieser Methode wird das PigLatin-Programm langsam aufgebaut indem die
@@ -33,7 +37,9 @@ public class IndexScanToPigQuery {
 	public String buildQuery(TriplePattern triplePattern) {
 		StringBuilder result = new StringBuilder();
 		JoinInformation curPattern = getHBaseTable(triplePattern);
-
+		if (debug) {
+			result.append("-- TriplePattern: " + triplePattern.toN3String() + "\n");
+		}
 		/**
 		 * Für Triplepattern ?s ?p ?o wird eine beliebige Tabelle komplett
 		 * geladen und alle Informationen zuürck gegeben.
@@ -100,7 +106,7 @@ public class IndexScanToPigQuery {
 
 		return result;
 	}
-	
+
 	public ArrayList<JoinInformation> getIntermediateJoins() {
 		return intermediateJoins;
 	}
@@ -113,71 +119,160 @@ public class IndexScanToPigQuery {
 	 */
 	private String multiJoin() {
 		StringBuilder result = new StringBuilder();
-
 		// suche so lange bis es noch Mengen zum joinen gibt
 		while (intermediateJoins.size() > 1) {
-			ArrayList<JoinInformation> joinAliases = null;
-			ArrayList<ArrayList<JoinInformation>> joinCandidates = new ArrayList<ArrayList<JoinInformation>>();
-			ArrayList<String> joinVariablesCandidates = new ArrayList<String>();
+			String multiJoinOverTwoVars = this.multiJoinOverTwoVariablse();
 
 			/*
-			 * Es wird die Join-Menge gesucht bei dem eine Variable am
-			 * häufigsten vorkommt. Für die Join-Mengen wird dann ein PigLatin
-			 * Join ausgegeben und die Join-Mengen werden zu einer vereinigt.
+			 * Es wird immer erst Tripel-Muster gesucht bei denen über zwei
+			 * Variablen gejoint werden kann und erst dann die Muster wo über
+			 * eine Variable gejoint wird. Beispiel: {?s ?p ?o . <literal> ?p ?o}
 			 */
-			for (JoinInformation curJoin : intermediateJoins) {
-				boolean found = false;
-				String joinVariable = "";
-				joinAliases = new ArrayList<JoinInformation>();
-				// JoinInformation curJoin = intermediateJoins.get(0);
-				joinAliases.add(curJoin);
-				for (int i = 0; i < intermediateJoins.size(); i++) {
-					if (intermediateJoins.get(i).equals(curJoin)) {
-						continue;
+			if (multiJoinOverTwoVars != null) {
+				result.append(multiJoinOverTwoVars);
+			} else {
+				result.append(multiJoinOverOneVariable());
+			}
+		}
+		return result.toString();
+	}
+
+	private String multiJoinOverTwoVariablse() {
+		StringBuilder result = new StringBuilder();
+		HashSet<String> equalVariables = null;
+		HashSet<JoinInformation> toJoin = new HashSet<JoinInformation>();
+		boolean found = false;
+
+		/*
+		 * Es wird die Join-Menge gesucht bei dem eine Variable am häufigsten
+		 * vorkommt. Für die Join-Mengen wird dann ein PigLatin Join ausgegeben
+		 * und die Join-Mengen werden zu einer vereinigt.
+		 */
+		for (JoinInformation curJoin1 : intermediateJoins) {
+			HashSet<String> variables1 = new HashSet<String>();
+
+			// alle Mengen die weniger als 2 variablen haben sind für diesen
+			// Fall nicht interessant
+			if (curJoin1.getVariables().size() < 2 || toJoin.contains(curJoin1)) {
+				continue;
+			}
+
+			// Füge alle Variablen dem Set hinzu
+			for (String var : curJoin1.getVariables()) {
+				variables1.add(var);
+			}
+
+			// Finde eine Menge die die selben Variablen hat
+			for (JoinInformation curJoin2 : intermediateJoins) {
+				HashSet<String> variables2 = new HashSet<String>();
+
+				// Die neue Menge darf nicht die selbe seine wie die erste und
+				// muss auch mehr als eine Variable haben
+				if (curJoin1.equals(curJoin2)
+						|| curJoin2.getVariables().size() < 2 || toJoin.contains(curJoin2)) {
+					continue;
+				}
+
+				// Füge alle Variablen dem Set hinzu
+				for (String var : curJoin2.getVariables()) {
+					variables2.add(var);
+				}
+
+				// Vergleiche Set1 mit Set2 und speicher selbe Variablen ab
+				HashSet<String> tmpEqualVariables = new HashSet<String>();
+				for (String entry1 : variables1) {
+					for (String entry2 : variables2) {
+						if (entry1.equals(entry2)) {
+							tmpEqualVariables.add(entry1);
+						}
 					}
-					for (String variable1 : curJoin.getJoinElements()) {
-						if (found) {
-							variable1 = joinVariable;
-						}
-						for (String variable2 : intermediateJoins.get(i)
-								.getJoinElements()) {
-							if (variable1.equals(variable2)) {
-								found = true;
-								joinVariable = variable1;
-								joinAliases.add(intermediateJoins.get(i));
-								break;
-							}
-						}
-						if (found) {
+				}
+				if (tmpEqualVariables.size() > 1) {
+					equalVariables = tmpEqualVariables;
+					found = true;
+					toJoin.add(curJoin1);
+					toJoin.add(curJoin2);
+				}
+
+			}
+
+		}
+
+		if (!found) {
+			return null;
+		}
+		result.append(getPigMultiJoin(new ArrayList<JoinInformation>(toJoin), new ArrayList<String>(
+				equalVariables)));
+
+		for (JoinInformation toRemove : toJoin) {
+			intermediateJoins.remove(toRemove);
+		}
+		// this.joinVariables.remove(variableToJoin);
+		return result.toString();
+	}
+
+	private String multiJoinOverOneVariable() {
+		StringBuilder result = new StringBuilder();
+		ArrayList<JoinInformation> joinAliases = null;
+		ArrayList<ArrayList<JoinInformation>> joinCandidates = new ArrayList<ArrayList<JoinInformation>>();
+		ArrayList<String> joinVariablesCandidates = new ArrayList<String>();
+
+		/*
+		 * Es wird die Join-Menge gesucht bei dem eine Variable am häufigsten
+		 * vorkommt. Für die Join-Mengen wird dann ein PigLatin Join ausgegeben
+		 * und die Join-Mengen werden zu einer vereinigt.
+		 */
+		for (JoinInformation curJoin : intermediateJoins) {
+			boolean found = false;
+			String joinVariable = "";
+			joinAliases = new ArrayList<JoinInformation>();
+			// JoinInformation curJoin = intermediateJoins.get(0);
+			joinAliases.add(curJoin);
+			for (int i = 0; i < intermediateJoins.size(); i++) {
+				if (intermediateJoins.get(i).equals(curJoin)) {
+					continue;
+				}
+				for (String variable1 : curJoin.getJoinElements()) {
+					if (found) {
+						variable1 = joinVariable;
+					}
+					for (String variable2 : intermediateJoins.get(i)
+							.getJoinElements()) {
+						if (variable1.equals(variable2)) {
+							found = true;
+							joinVariable = variable1;
+							joinAliases.add(intermediateJoins.get(i));
 							break;
 						}
 					}
+					if (found) {
+						break;
+					}
 				}
-
-				joinCandidates.add(joinAliases);
-				joinVariablesCandidates.add(joinVariable);
-
 			}
 
-			ArrayList<JoinInformation> patternToJoin = joinCandidates.get(0);
-			String variableToJoin = joinVariablesCandidates.get(0);
-			int i = 0;
-			for (ArrayList<JoinInformation> curCandidate : joinCandidates) {
-				if (curCandidate.size() > patternToJoin.size()) {
-					patternToJoin = curCandidate;
-					variableToJoin = joinVariablesCandidates.get(i);
-				}
-				i++;
-			}
+			joinCandidates.add(joinAliases);
+			joinVariablesCandidates.add(joinVariable);
 
-			result.append(getPigMultiJoin(patternToJoin, variableToJoin));
-
-			for (JoinInformation toRemove : patternToJoin) {
-				intermediateJoins.remove(toRemove);
-			}
-			this.joinVariables.remove(variableToJoin);
 		}
 
+		ArrayList<JoinInformation> patternToJoin = joinCandidates.get(0);
+		String variableToJoin = joinVariablesCandidates.get(0);
+		int i = 0;
+		for (ArrayList<JoinInformation> curCandidate : joinCandidates) {
+			if (curCandidate.size() > patternToJoin.size()) {
+				patternToJoin = curCandidate;
+				variableToJoin = joinVariablesCandidates.get(i);
+			}
+			i++;
+		}
+
+		result.append(getPigMultiJoin(patternToJoin, variableToJoin));
+
+		for (JoinInformation toRemove : patternToJoin) {
+			intermediateJoins.remove(toRemove);
+		}
+		// this.joinVariables.remove(variableToJoin);
 		return result.toString();
 	}
 
@@ -205,6 +300,35 @@ public class IndexScanToPigQuery {
 			}
 			result.append(" INTERMEDIATE_BAG_" + curPattern.getPatternId()
 					+ " BY $" + curPattern.getItemPos(joinElement));
+			if (i < joinOverItem.size()) {
+				result.append(",");
+			} else {
+				result.append(";\n");
+			}
+		}
+		curJoinInfo.setPatternId(JoinInformation.idCounter);
+		intermediateJoins.add(curJoinInfo);
+		JoinInformation.idCounter++;
+
+		return result.toString();
+	}
+
+	public String getPigMultiJoin(ArrayList<JoinInformation> joinOverItem,
+			ArrayList<String> joinElements) {
+		StringBuilder result = new StringBuilder();
+		result.append("INTERMEDIATE_BAG_" + JoinInformation.idCounter
+				+ " = JOIN");
+		JoinInformation curJoinInfo = new JoinInformation("INTERMEDIATE_BAG_"
+				+ JoinInformation.idCounter);
+		int i = 0;
+		for (JoinInformation curPattern : joinOverItem) {
+			i++;
+			for (String s : curPattern.getJoinElements()) {
+				curJoinInfo.getJoinElements().add(s);
+			}
+			result.append(" INTERMEDIATE_BAG_" + curPattern.getPatternId()
+					+ " BY ($" + curPattern.getItemPos(joinElements.get(0))
+					+ ",$" + curPattern.getItemPos(joinElements.get(1)) + ")");
 			if (i < joinOverItem.size()) {
 				result.append(",");
 			} else {
@@ -267,9 +391,9 @@ public class IndexScanToPigQuery {
 			break;
 		}
 
-		for (String item : result.getVariables()) {
-			joinVariables.add(item);
-		}
+		// for (String item : result.getVariables()) {
+		// joinVariables.add(item);
+		// }
 
 		return result;
 	}
@@ -285,7 +409,7 @@ public class IndexScanToPigQuery {
 		ArrayList<Integer> keepList = new ArrayList<Integer>();
 		ArrayList<String> optimizedList = new ArrayList<String>();
 		int i = 0;
-		
+
 		for (String element : intermediateJoins.get(0).getJoinElements()) {
 			if (existMap.get(element) == null) {
 				existMap.put(element, true);
@@ -310,8 +434,7 @@ public class IndexScanToPigQuery {
 		result.append(" = FOREACH " + "INTERMEDIATE_BAG_"
 				+ intermediateJoins.get(0).getPatternId() + " GENERATE " + list
 				+ ";");
-		
-		
+
 		return result.toString();
 	}
 

@@ -23,14 +23,18 @@
  */
 package lupos.cloud.operator;
 
+import java.util.List;
+
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.datastructures.queryresult.QueryResult;
+import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.RootChild;
 import lupos.engine.operators.index.Dataset;
 import lupos.engine.operators.index.Root;
 import lupos.engine.operators.messages.BoundVariablesMessage;
 import lupos.engine.operators.messages.Message;
+import lupos.engine.operators.tripleoperator.TriplePattern;
 import lupos.rdf.Prefix;
 
 import org.json.JSONException;
@@ -44,7 +48,6 @@ import org.json.JSONException;
  *            is sent to.
  */
 public class CloudSubgraphContainer extends RootChild {
-
 	/**
 	 * 
 	 */
@@ -97,11 +100,6 @@ public class CloudSubgraphContainer extends RootChild {
 	}
 
 	@Override
-	public String toString() {
-		return "SubgraphContainer";
-	}
-
-	@Override
 	public String toString(final Prefix prefixInstance) {
 		return this.toString();
 	}
@@ -115,5 +113,18 @@ public class CloudSubgraphContainer extends RootChild {
 		final BoundVariablesMessage newMsg = new BoundVariablesMessage(msg);
 		newMsg.setVariables(this.getUnionVariables());
 		return newMsg;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+		result.append("--- Cloud SubgraphContainer ---\n");
+		List<OperatorIDTuple> curNode = rootNodeOfSubGraph.getSucceedingOperators();
+		while (curNode != null && curNode.size() != 0) {
+			result.append("\n" + curNode.get(0).getOperator().getClass().getSimpleName());
+			curNode = curNode.get(0).getOperator().getSucceedingOperators();
+		}
+		
+		return result.toString();
 	}
 }

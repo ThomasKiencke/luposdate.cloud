@@ -11,11 +11,12 @@ public class FilterToPigQuery {
 	StringBuilder queryBuild = new StringBuilder();
 	ArrayList<String> sparqlVariableList;
 	Filter filter;
-	boolean closeBracket = false;
 
 	public static Class[] supportedOperations = { ASTLessThanNode.class,
-			ASTNotNode.class, ASTRDFLiteral.class, ASTStringLiteral.class, ASTGreaterThanNode.class};
+			ASTNotNode.class, ASTRDFLiteral.class, ASTStringLiteral.class,
+			ASTGreaterThanNode.class };
 	ArrayList<String> filterListe = new ArrayList<String>();
+	private boolean debug = false;
 
 	public FilterToPigQuery(Filter filter) {
 		this.filter = filter;
@@ -30,13 +31,10 @@ public class FilterToPigQuery {
 			if (node instanceof ASTVar) {
 				ASTVar var = (ASTVar) node;
 				result.append(getPigNameForVariable(var.getName()));
-				if (closeBracket) {
-					this.closeBracket = false;
-					result.append(") ");
-				}
 			} else if (node instanceof ASTStringLiteral) {
 				ASTStringLiteral literal = (ASTStringLiteral) node;
-				result.append(literal.getStringLiteral().replace("\"", "'"));
+				result.append("'"
+						+ literal.getStringLiteral().replace("\"", "") + "'");
 			} else {
 				System.out.println("Not supported leaf Type: "
 						+ node.getClass().getSimpleName());
@@ -45,13 +43,14 @@ public class FilterToPigQuery {
 
 			/** Innere Knoten */
 		} else {
+			boolean closeBracket = false;
 			// z.B. !A
 			if (node.getChildren().length == 1) {
 				filterListe.add(node.toString());
 				if (node instanceof ASTNotNode) {
-					ASTNotNode notNode = (ASTNotNode) node;
+					// ASTNotNode notNode = (ASTNotNode) node;
 					result.append(" NOT(");
-					this.closeBracket = true;
+					closeBracket = true;
 				} else if (node instanceof ASTRDFLiteral) {
 					// ignore, weil StringLiteral verarbeitet wird
 				} else {
@@ -63,6 +62,11 @@ public class FilterToPigQuery {
 				for (Node child : node.getChildren()) {
 					result.append(generateFilterList(child));
 				}
+
+				if (closeBracket) {
+					closeBracket = false;
+					result.append(") ");
+				}
 			} else
 			// z.B. A = B, A != B usw.
 			{
@@ -73,9 +77,15 @@ public class FilterToPigQuery {
 					result.append(" < ");
 				} else
 
-				if (node instanceof ASTGreaterThanNode) {
+				if (node instanceof ASTRegexFuncNode) {
+					// TODO: SPARQL REGEX und Java Regex unterscheiden sich,
+					// muss also noch angepasst werden
+					result.append(" MATCHES ");
+				} else if (node instanceof ASTGreaterThanNode) {
 					result.append(" > ");
-				} else {
+				} else
+
+				{
 					System.out.println("Not supported inner Type 2:  "
 							+ node.getClass().getSimpleName());
 					// result.append("(No Support for: " + node.toString() +
@@ -89,10 +99,14 @@ public class FilterToPigQuery {
 		return result.toString();
 	}
 
-	public String getPigLatinProgramm(ArrayList<String> resultOrder) {
+	public String getPigLatinProgramm(String aliasOutput, String aliasInput,
+			ArrayList<String> resultOrder) {
 		StringBuilder result = new StringBuilder();
+		if (debug ) {
+			result.append("-- Filter: " + filter.toString());
+		}
 		this.sparqlVariableList = resultOrder;
-		result.append("X = FILTER NOFILTER BY ");
+		result.append(aliasOutput + " = FILTER " + aliasInput + " BY ");
 		result.append(generateFilterList(filter.getNodePointer().getChildren()[0]));
 		result.append(";");
 		System.out.println("Liste: " + this.filterListe.toString());
