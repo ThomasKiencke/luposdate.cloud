@@ -25,43 +25,17 @@ package lupos.cloud.operator.format;
 
 import java.util.Collection;
 
-import lupos.cloud.operator.format.operatorcreator.IOperatorCreator;
-import lupos.cloud.operator.format.OperatorFormatter;
+import lupos.cloud.operator.format.IOperatorFormatter;
 import lupos.cloud.pig.PigQuery;
-import lupos.cloud.pig.operator.IndexScanToPigQuery;
+import lupos.cloud.pig.operator.PigIndexScanOperator;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.BasicIndexScan;
-import lupos.engine.operators.index.Root;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 /**
  * Implements the formatter for the index scan operator
  */
-public class IndexScanFormatter implements OperatorFormatter {
-
-	/** The index collection. */
-	private Root root;
-	/**
-	 * the operator creator for creating the index scan operator
-	 */
-	private IOperatorCreator operatorCreator;
-
-	/**
-	 * Instantiates a new index scan formatter.
-	 * 
-	 * @param operatorCreator
-	 *            the operator creator for creating the index scan operator
-	 */
-	public IndexScanFormatter(final IOperatorCreator operatorCreator) {
-		this.operatorCreator = operatorCreator;
-	}
-
-	/**
-	 * Instantiates a new index scan formatter.
-	 */
-	public IndexScanFormatter() {
-	}
-
+public class IndexScanFormatter implements IOperatorFormatter {
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -70,27 +44,13 @@ public class IndexScanFormatter implements OperatorFormatter {
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
+	public PigQuery serialize(final BasicOperator operator, PigQuery pigQuery) {
 		final BasicIndexScan indexScan = (BasicIndexScan) operator;
-//		PigQuery result = new PigQuery();
 		Collection<TriplePattern> tp = indexScan.getTriplePattern();
-
-		IndexScanToPigQuery pigQuery = new IndexScanToPigQuery();
-		pigLatin.setIndexScan(pigQuery);
-		for (TriplePattern t : tp) {
-			pigLatin.appendPigLatin(pigQuery.buildQuery(t));
-		}
-
-		return pigLatin;
+		PigIndexScanOperator pigIndexScan = new PigIndexScanOperator(tp);
+		pigQuery.buildAndAppendQuery(pigIndexScan);
+		pigQuery.setIndexScanOperator(pigIndexScan);
+		return pigQuery;
 	}
 
-	/**
-	 * Sets the index collection.
-	 * 
-	 * @param root
-	 *            the new index collection
-	 */
-	public void setRoot(final Root root) {
-		this.root = root;
-	}
 }

@@ -2,10 +2,12 @@ package lupos.cloud.pig;
 
 import java.util.ArrayList;
 
-import lupos.cloud.pig.operator.FilterToPigQuery;
-import lupos.cloud.pig.operator.IndexScanToPigQuery;
-import lupos.engine.operators.singleinput.Projection;
-import lupos.engine.operators.singleinput.filter.expressionevaluation.EvaluationVisitorImplementation.GetResult;
+import lupos.cloud.pig.operator.PigDistinctOperator;
+import lupos.cloud.pig.operator.PigFilterOperator;
+import lupos.cloud.pig.operator.PigIndexScanOperator;
+import lupos.cloud.pig.operator.IPigOperator;
+import lupos.cloud.pig.operator.PigLimitOperator;
+import lupos.cloud.pig.operator.PigProjectionOperator;
 
 /**
  * In dieser Klassen werden Informationen über das PigQuery abgespeichert z.B.
@@ -16,34 +18,20 @@ public class PigQuery {
 	/** The pig latin. */
 	StringBuilder pigLatin = new StringBuilder();
 
-	/** The variable list. */
-	ArrayList<String> variableList = new ArrayList<String>();
+	private PigProjectionOperator projection = null;
 
-	private IndexScanToPigQuery indexScanPigOp;
-	private ArrayList<FilterToPigQuery> filterPigOps = new ArrayList<FilterToPigQuery>();
-	private String aliasBeforeFilter = "INTERMEDIATE_FILTER_BAG_";
+	private ArrayList<PigFilterOperator> filterPigOps = new ArrayList<PigFilterOperator>();
 
-	private Projection projection = null;
+	private PigIndexScanOperator indexScanOperator = null;
 
-	/**
-	 * Instantiates a new pig query.
-	 * 
-	 * @param pigLatin
-	 *            the pig latin
-	 * @param variableList
-	 *            the variable list
-	 */
-	public PigQuery(String pigLatin, ArrayList<String> variableList) {
-		super();
-		this.pigLatin.append(pigLatin);
-		this.variableList = variableList;
-	}
+	/** The intermediate joins. */
+	ArrayList<JoinInformation> intermediateJoins = new ArrayList<JoinInformation>();
 
-	/**
-	 * Instantiates a new pig query.
-	 */
-	public PigQuery() {
-	}
+	public boolean debug = true;
+
+	private PigDistinctOperator distinctOperator = null;
+
+	private PigLimitOperator limitOperator;
 
 	/**
 	 * Gets the pig latin.
@@ -54,104 +42,131 @@ public class PigQuery {
 		return pigLatin.toString();
 	}
 
-	/**
-	 * Append pig latin.
-	 * 
-	 * @param pigLatin
-	 *            the pig latin
-	 */
-	public void appendPigLatin(String pigLatin) {
-		this.pigLatin.append(pigLatin);
-	}
-
-	/**
-	 * Append pig latin.
-	 * 
-	 * @param pigLatin
-	 *            the pig latin
-	 */
-	public void appendPigLatin(PigQuery pigLatin) {
-		this.pigLatin.append(pigLatin.getPigLatin());
-		if (pigLatin.getVariableList() != null && this.variableList.size() == 0) {
-			this.variableList = pigLatin.getVariableList();
-		}
-	}
-
-	/**
-	 * Gets the variable list.
-	 * 
-	 * @return the variable list
-	 */
-	public ArrayList<String> getVariableList() {
-		return variableList;
-	}
-
-	/**
-	 * Sets the variable list.
-	 * 
-	 * @param variableList
-	 *            the new variable list
-	 */
-	public void setVariableList(ArrayList<String> variableList) {
-		this.variableList = variableList;
-	}
-
-	public void setIndexScan(IndexScanToPigQuery pigQuery) {
-		this.indexScanPigOp = pigQuery;
-	}
-
-	public IndexScanToPigQuery getIndexScanToPigQuery() {
-		return indexScanPigOp;
-	}
-
 	public void applyJoins() {
-		if (projection != null) {
-			indexScanPigOp.setProjection(this.projection);
+		this.multiJoin();
+	}
+
+	public void addFilter(PigFilterOperator pigFilter) {
+		this.filterPigOps.add(pigFilter);
+	}
+
+	public void setProjection(PigProjectionOperator projection) {
+		this.projection = projection;
+	}
+
+	public void finishQuery() {
+
+		// Filter
+		for (PigFilterOperator filter : filterPigOps) {
+			this.buildAndAppendQuery(filter);
 		}
-		this.pigLatin.append(indexScanPigOp.getJoinQuery());
+
+		// Projektion
+		if (projection != null) {
+			this.buildAndAppendQuery(projection);
+		}
+
+		if (distinctOperator != null) {
+			this.buildAndAppendQuery(distinctOperator);
+		}
+
+		if (limitOperator != null) {
+			this.buildAndAppendQuery(limitOperator);
+		}
+		
+		StringBuilder modifiedPigQuery = new StringBuilder();
+		modifiedPigQuery.append(this.pigLatin.toString().replace(
+				this.getFinalAlias(), "X"));
+		this.pigLatin = modifiedPigQuery;
+
 	}
 
-	@Deprecated
-	public void optimizeResultOrder() {
-		this.pigLatin.append(((filterPigOps.size() == 0) ? "X" : "Y")
-				+ indexScanPigOp.optimizeResultOrder() + "\n");
+	public ArrayList<JoinInformation> getIntermediateJoins() {
+		return intermediateJoins;
 	}
 
-	public void setResultOrder() {
-		this.setVariableList(indexScanPigOp.getResultOrder());
+	public boolean isDebug() {
+		return debug;
 	}
 
-	public void applyFilter() {
-		if (filterPigOps.size() > 0) {
-			int i = 0;
-			for (FilterToPigQuery curFilter : filterPigOps) {
-				this.pigLatin.append((curFilter.getPigLatinProgramm(
-						(i + 1 == filterPigOps.size()) ? "X"
-								: aliasBeforeFilter + "_" + (i + 1),
-						(i == 0) ? indexScanPigOp.getFinalAlias()
-								: aliasBeforeFilter, this.getVariableList())));
-				i++;
-				aliasBeforeFilter = aliasBeforeFilter + "_" + i;
+	/**
+	 * Multi join über alle Tripel-Muster. Dabei wird zuerst über die Variable
+	 * gejoint die in den meisten Tripel-Pattern vorkommt usw.
+	 * 
+	 * @return the string
+	 */
+	private void multiJoin() {
+		// suche so lange bis es noch Mengen zum joinen gibt
+		while (intermediateJoins.size() > 1) {
+			/*
+			 * Überprüfe bei jeden durchlauf ob eine Projektion/Filter
+			 * durchgeführt werden kann (Grund: Projektion so früh wie möglich)
+			 */
+
+			for (PigFilterOperator filter : filterPigOps) {
+				this.buildAndAppendQuery(filter);
+			}
+			if (projection != null) {
+				this.buildAndAppendQuery(projection);
+			}
+
+			// System.out.println("size: " + intermediateJoins.size());
+			String multiJoinOverTwoVars = indexScanOperator
+					.multiJoinOverTwoVariablse();
+
+			/*
+			 * Es werden immer erst Tripel-Muster gesucht bei denen über zwei
+			 * Variablen gejoint werden kann und erst dann die Muster wo über
+			 * eine Variable gejoint wird. Beispiel: {?s ?p ?o . <literal> ?p
+			 * ?o}
+			 */
+
+			if (debug) {
+				this.pigLatin.append("-- Join \n");
+			}
+			if (multiJoinOverTwoVars != null) {
+				this.pigLatin.append(multiJoinOverTwoVars);
+			} else {
+				pigLatin.append(indexScanOperator.multiJoinOverOneVariable());
+			}
+
+			if (debug) {
+				this.pigLatin.append("\n");
 			}
 		}
 	}
 
-	public void addFilter(FilterToPigQuery pigFilter) {
-		this.filterPigOps.add(pigFilter);
-	}
-
-	public void setProjection(Projection projection) {
-		this.projection = projection;
-	}
-
-	public void createFinalAlias() {
-		// Am Ende der Filter wird automatisch X als Alias gewählt, sonst
-		if (filterPigOps == null) {
-			StringBuilder modifiedPigQuery = new StringBuilder();
-			modifiedPigQuery.append(this.pigLatin.toString().replace(
-					indexScanPigOp.getFinalAlias(), "X"));
-			this.pigLatin = modifiedPigQuery;
+	/**
+	 * Gibt die Variablenreihenfolge zurück.
+	 * 
+	 * @return the result order
+	 */
+	public ArrayList<String> getVariableList() {
+		ArrayList<String> result = new ArrayList<String>();
+		for (String elem : intermediateJoins.get(0).getJoinElements()) {
+			result.add(elem.replace("?", ""));
 		}
+		return result;
+	}
+
+	public String getFinalAlias() {
+		return intermediateJoins.get(0).getName();
+	}
+
+	public void buildAndAppendQuery(IPigOperator operator) {
+		this.pigLatin.append(operator.buildQuery(this));
+	}
+
+	public void setIndexScanOperator(PigIndexScanOperator pigIndexScan) {
+		this.indexScanOperator = pigIndexScan;
+	}
+
+	public void setDistinctOperator(PigDistinctOperator pigDistinctOperator) {
+		this.distinctOperator = pigDistinctOperator;
+	}
+
+	public void setLimitOperator(PigLimitOperator pigLimitOperator) {
+		this.limitOperator = pigLimitOperator;
 	}
 
 }

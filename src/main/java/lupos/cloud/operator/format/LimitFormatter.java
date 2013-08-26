@@ -23,24 +23,31 @@
  */
 package lupos.cloud.operator.format;
 
+import lupos.cloud.operator.format.IOperatorFormatter;
 import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.operator.PigDistinctOperator;
+import lupos.cloud.pig.operator.PigFilterOperator;
+import lupos.cloud.pig.operator.PigLimitOperator;
 import lupos.engine.operators.BasicOperator;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import lupos.engine.operators.singleinput.filter.Filter;
+import lupos.engine.operators.singleinput.modifiers.Limit;
 
 /**
- * The Interface OperatorFormatter.
+ * Implements the formatter for the Filter Operator.
  */
-public interface OperatorFormatter {
+public class LimitFormatter implements IOperatorFormatter {
 
-	/**
-	 * Serialize.
-	 *
-	 * @param operator the operator
-	 * @param node_id the node_id
-	 * @return the jSON object
-	 * @throws JSONException the jSON exception
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * luposdate.operators.formatter.OperatorFormatter#serialize(lupos.engine
+	 * .operators.BasicOperator, int)
 	 */
-	public PigQuery serialize(BasicOperator operator, PigQuery pigLatinInput);
+	@Override
+	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
+		Limit limitOp = (Limit) operator;
+		pigLatin.setLimitOperator(new PigLimitOperator(limitOp.getLimit()));
+		return pigLatin;
+	}
 }

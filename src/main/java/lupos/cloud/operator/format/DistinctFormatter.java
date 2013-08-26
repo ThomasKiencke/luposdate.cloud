@@ -25,14 +25,15 @@ package lupos.cloud.operator.format;
 
 import lupos.cloud.operator.format.IOperatorFormatter;
 import lupos.cloud.pig.PigQuery;
-import lupos.cloud.pig.operator.PigProjectionOperator;
+import lupos.cloud.pig.operator.PigDistinctOperator;
+import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.engine.operators.BasicOperator;
-import lupos.engine.operators.singleinput.Projection;
+import lupos.engine.operators.singleinput.filter.Filter;
 
 /**
  * Implements the formatter for the Filter Operator.
  */
-public class ProjectionFormatter implements IOperatorFormatter {
+public class DistinctFormatter implements IOperatorFormatter {
 
 	/*
 	 * (non-Javadoc)
@@ -43,8 +44,7 @@ public class ProjectionFormatter implements IOperatorFormatter {
 	 */
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
-		Projection projection = (Projection) operator;
-		pigLatin.setProjection(new PigProjectionOperator(projection));
+		pigLatin.setDistinctOperator(new PigDistinctOperator());
 		return pigLatin;
 	}
 }

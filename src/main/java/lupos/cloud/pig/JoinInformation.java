@@ -1,7 +1,9 @@
 package lupos.cloud.pig;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
+import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.datastructures.items.Item;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
@@ -26,6 +28,8 @@ public class JoinInformation {
 	/** The triple pattern. */
 	TriplePattern triplePattern;
 
+	ArrayList<PigFilterOperator> appliedFilters = new ArrayList<PigFilterOperator>();
+
 	private Object tablename;
 
 	/**
@@ -36,7 +40,8 @@ public class JoinInformation {
 	 * @param name
 	 *            the name
 	 */
-	public JoinInformation(TriplePattern triplePattern, String tablename, String name) {
+	public JoinInformation(TriplePattern triplePattern, String tablename,
+			String name) {
 		super();
 		this.triplePattern = triplePattern;
 		this.patternId = idCounter;
@@ -189,8 +194,46 @@ public class JoinInformation {
 		}
 		return true;
 	}
-	
+
 	public Object getTablename() {
 		return tablename;
+	}
+
+	public void addAppliedFilters(PigFilterOperator appliedFilter) {
+		this.appliedFilters.add(appliedFilter);
+	}
+
+	public void addAppliedFilters(ArrayList<PigFilterOperator> appliedFilters) {
+		for (PigFilterOperator filter : appliedFilters) {
+			this.appliedFilters.add(filter);
+		}
+	}
+
+	public ArrayList<PigFilterOperator> getAppliedFilters() {
+		return appliedFilters;
+	}
+
+	public boolean filterApplied(PigFilterOperator appliedFilter) {
+		return this.appliedFilters.contains(appliedFilter);
+	}
+
+	public static ArrayList<PigFilterOperator> mergeAppliedFilters(
+			ArrayList<JoinInformation> joins) {
+		ArrayList<PigFilterOperator> result = new ArrayList<PigFilterOperator>();
+		for (JoinInformation j1 : joins) {
+			for (PigFilterOperator filter1 : j1.getAppliedFilters()) {
+				boolean filterInEveryJoin = true;
+				for (JoinInformation j2 : joins) {
+					if (!j2.getAppliedFilters().contains(filter1)) {
+						filterInEveryJoin = false;
+					}
+				}
+				if (filterInEveryJoin) {
+					result.add(filter1);
+				}
+
+			}
+		}
+		return result;
 	}
 }

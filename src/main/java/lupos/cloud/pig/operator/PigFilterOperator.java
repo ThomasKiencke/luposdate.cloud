@@ -1,26 +1,79 @@
 package lupos.cloud.pig.operator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import lupos.cloud.pig.JoinInformation;
 import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.sparql1_1.*;
 
-public class FilterToPigQuery {
-	StringBuilder queryBuild = new StringBuilder();
-	ArrayList<String> sparqlVariableList;
+public class PigFilterOperator implements IPigOperator {
+	private ArrayList<JoinInformation> intermediateJoins;
 	Filter filter;
 
 	public static Class[] supportedOperations = { ASTLessThanNode.class,
 			ASTNotNode.class, ASTRDFLiteral.class, ASTStringLiteral.class,
 			ASTGreaterThanNode.class, ASTLessThanEqualsNode.class,
-			ASTGreaterThanEqualsNode.class, ASTEqualsNode.class, ASTNotEqualsNode.class };
+			ASTGreaterThanEqualsNode.class, ASTEqualsNode.class,
+			ASTNotEqualsNode.class };
 	ArrayList<String> filterListe = new ArrayList<String>();
-	private boolean debug = true;
+	private boolean debug;
+	private ArrayList<String> variables = new ArrayList<String>();
+	private String pigFilter = null;
 
-	public FilterToPigQuery(Filter filter) {
+	public PigFilterOperator(Filter filter) {
 		this.filter = filter;
+		pigFilter = generateFilterList(filter.getNodePointer().getChildren()[0]);
+	}
+
+	private String checkIfFilterPossible() {
+		StringBuilder result = new StringBuilder();
+		// Wenn alle Variablen in einer Menge vorkommen, kann der Filter
+		// angewandt weden
+		for (JoinInformation curJoin : intermediateJoins) {
+
+			// Wenn die Menge nicht schon einmal gefiltert wurde
+			if (!curJoin.filterApplied(this)) {
+				boolean varNotFound = false;
+				for (String var : variables) {
+					if (!curJoin.getJoinElements().contains("?" + var)) {
+						varNotFound = true;
+					}
+				}
+				if (!varNotFound) {
+					if (debug) {
+						result.append("-- Filter: " + pigFilter + "\n");
+					}
+
+					JoinInformation newJoin = new JoinInformation(
+							"INTERMEDIATE_BAG_" + JoinInformation.idCounter);
+					
+
+					String pigFilterVarReplaced = pigFilter;
+					for (String var : variables) {
+						pigFilterVarReplaced = pigFilterVarReplaced.replace(var, getPigNameForVariable("?" + var, curJoin.getJoinElements()));
+					}
+					
+					result.append(newJoin.getName() + " = FILTER "
+							+ curJoin.getName() + " BY " + pigFilterVarReplaced + ";\n");
+
+					if (debug) {
+						result.append("\n");
+					}
+
+					newJoin.setPatternId(JoinInformation.idCounter);
+					newJoin.setJoinElements(curJoin.getJoinElements());
+					newJoin.addAppliedFilters(this);
+					newJoin.addAppliedFilters(curJoin.getAppliedFilters());
+					
+					intermediateJoins.remove(curJoin);
+					intermediateJoins.add(newJoin);
+					JoinInformation.idCounter++;
+				}
+			}
+		}
+		return result.toString();
 	}
 
 	private String generateFilterList(Node node) {
@@ -31,7 +84,8 @@ public class FilterToPigQuery {
 			filterListe.add(node.toString());
 			if (node instanceof ASTVar) {
 				ASTVar var = (ASTVar) node;
-				result.append(getPigNameForVariable(var.getName()));
+				result.append((var.getName()));
+				variables.add(var.getName());
 			} else if (node instanceof ASTStringLiteral) {
 				ASTStringLiteral literal = (ASTStringLiteral) node;
 				result.append("'"
@@ -104,25 +158,15 @@ public class FilterToPigQuery {
 		return result.toString();
 	}
 
-	public String getPigLatinProgramm(String aliasOutput, String aliasInput,
-			ArrayList<String> resultOrder) {
+	public String buildQuery(PigQuery pigQuery) {
 		StringBuilder result = new StringBuilder();
-		if (debug) {
-			result.append("-- Filter: " + filter.toString());
-		}
-		this.sparqlVariableList = resultOrder;
-		result.append(aliasOutput + " = FILTER " + aliasInput + " BY ");
-		result.append(generateFilterList(filter.getNodePointer().getChildren()[0]));
-		result.append(";");
-		System.out.println("Liste: " + this.filterListe.toString());
-		
-		if (debug) {
-			result.append("\n");
-		}
+		this.debug = pigQuery.isDebug();
+		this.intermediateJoins = pigQuery.getIntermediateJoins();
+		result.append(this.checkIfFilterPossible());
 		return result.toString();
 	}
 
-	private String getPigNameForVariable(String name) {
+	private String getPigNameForVariable(String name, ArrayList<String> sparqlVariableList) {
 		for (int i = 0; i < sparqlVariableList.size(); i++) {
 			if (sparqlVariableList.get(i).equals(name)) {
 				return "$" + i;
@@ -130,4 +174,5 @@ public class FilterToPigQuery {
 		}
 		return null; // Fall sollte nicht vorkommen
 	}
+
 }

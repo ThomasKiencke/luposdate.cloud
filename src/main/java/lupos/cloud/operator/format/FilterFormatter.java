@@ -23,16 +23,16 @@
  */
 package lupos.cloud.operator.format;
 
-import lupos.cloud.operator.format.OperatorFormatter;
+import lupos.cloud.operator.format.IOperatorFormatter;
 import lupos.cloud.pig.PigQuery;
-import lupos.cloud.pig.operator.FilterToPigQuery;
+import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.singleinput.filter.Filter;
 
 /**
  * Implements the formatter for the Filter Operator.
  */
-public class FilterFormatter implements OperatorFormatter {
+public class FilterFormatter implements IOperatorFormatter {
 
 	/*
 	 * (non-Javadoc)
@@ -44,7 +44,7 @@ public class FilterFormatter implements OperatorFormatter {
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
 		Filter filter = (Filter) operator;
-		FilterToPigQuery pigFilter = new FilterToPigQuery(filter);
+		PigFilterOperator pigFilter = new PigFilterOperator(filter);
 		pigLatin.addFilter(pigFilter);
 		return pigLatin;
 	}

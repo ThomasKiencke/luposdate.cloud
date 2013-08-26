@@ -62,11 +62,6 @@ public class HBaseConnection {
 	/** The message. */
 	static boolean message = true;
 
-	/** The column family. */
-	// static String COLUMN_FAMILY =
-	// HBaseDistributionStrategy.getTableInstance()
-	// .getColumnFamilyName();
-
 	/** The h tables. */
 	static HashMap<String, HTable> hTables = new HashMap<String, HTable>();
 

@@ -32,7 +32,7 @@ import java.util.List;
 
 import lupos.cloud.operator.CloudSubgraphContainer;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.pig.operator.FilterToPigQuery;
+import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
 import lupos.distributed.storage.distributionstrategy.TriplePatternNotSupportedError;
@@ -40,9 +40,12 @@ import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.index.BasicIndexScan;
 import lupos.engine.operators.index.Root;
+import lupos.engine.operators.singleinput.AddBinding;
 import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
+import lupos.engine.operators.singleinput.modifiers.Limit;
+import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 import lupos.sparql1_1.SimpleNode;
 
@@ -101,12 +104,15 @@ public class AddCloudSubGraphContainerRule extends Rule {
 			// Gehe die neue Liste durch und überprüfe ob Operatoren in den
 			// SubGraphContainer verschoben werden können
 			/*
-			 * lupos.engine.operators.singleinput.modifiers.distinct.Distinct
 			 * class lupos.engine.operators.singleinput.modifiers.Limit class
 			 */
 			for (OperatorIDTuple curOp : allSuccessors) {
-				if ((curOp.getOperator() instanceof Filter && checkIfFilterIsSupported((Filter) curOp
-						.getOperator()) || curOp.getOperator() instanceof Projection)) {
+				if ((curOp.getOperator() instanceof Filter
+						&& checkIfFilterIsSupported((Filter) curOp
+								.getOperator())
+						|| curOp.getOperator() instanceof Projection
+						|| curOp.getOperator() instanceof Distinct || curOp
+							.getOperator() instanceof Limit) || curOp.getOperator() instanceof AddBinding) {
 					/*
 					 * Wenn ein direkter Nachfolger des Subgraphcontainer in den
 					 * Container gezogen wird ist der neue Nachfolger des
@@ -145,18 +151,20 @@ public class AddCloudSubGraphContainerRule extends Rule {
 		}
 	}
 
-	
 	private boolean checkIfFilterIsSupported(Filter filter) {
 		SimpleNode node = (SimpleNode) filter.getNodePointer().getChildren()[0];
-		for (Class supportedOp : FilterToPigQuery.supportedOperations) {
+		for (Class supportedOp : PigFilterOperator.supportedOperations) {
 			if (node.getClass() == supportedOp) {
 				return true;
 			}
 		}
-		System.out.println("Der Filter \"" + node.getClass().getSimpleName() + "\" wird momentan nicht ünterstützt und deswegen lokal ausgeführt!");
-	return false;
-}
-	
+		System.out
+				.println("Der Filter \""
+						+ node.getClass().getSimpleName()
+						+ "\" wird momentan nicht ünterstützt und deswegen lokal ausgeführt!");
+		return false;
+	}
+
 	private void addToSubgraphContainerAndRemoveOldOperator(
 			BasicOperator operator, CloudSubgraphContainer container,
 			Root rootNodeOfSubgraph) {
@@ -164,6 +172,7 @@ public class AddCloudSubGraphContainerRule extends Rule {
 		List<OperatorIDTuple> oldSuccs = operator.getSucceedingOperators();
 
 		BasicOperator lastOperation = getLastOperatorOfContainer(rootNodeOfSubgraph);
+		
 		ArrayList<OperatorIDTuple> newSucc = new ArrayList<OperatorIDTuple>();
 		newSucc.add(new OperatorIDTuple(operator, 0));
 		lastOperation.setSucceedingOperators(newSucc);
@@ -183,6 +192,29 @@ public class AddCloudSubGraphContainerRule extends Rule {
 			}
 		}
 
+	}
+	
+	private void deleteNode(BasicOperator operator) {
+		Collection<BasicOperator> oldPreds = operator.getPrecedingOperators();
+		List<OperatorIDTuple> oldSuccs = operator.getSucceedingOperators();
+		ArrayList<OperatorIDTuple> newSucc = new ArrayList<OperatorIDTuple>();
+		newSucc.add(new OperatorIDTuple(operator, 0));
+
+		operator.setSucceedingOperators(null);
+
+		for (final BasicOperator pred : oldPreds) {
+			for (final OperatorIDTuple succ : oldSuccs) {
+				pred.removePrecedingOperator(operator);
+				pred.addPrecedingOperator(succ.getOperator());
+			}
+		}
+
+		for (final OperatorIDTuple succ : oldSuccs) {
+			for (final BasicOperator pred : oldPreds) {
+				succ.getOperator().removePrecedingOperator(operator);
+				succ.getOperator().addPrecedingOperator(pred);
+			}
+		}
 	}
 
 	private BasicOperator getLastOperatorOfContainer(BasicOperator operator) {

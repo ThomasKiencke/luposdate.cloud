@@ -23,28 +23,24 @@
  */
 package lupos.cloud.operator.format;
 
-import lupos.cloud.operator.format.IOperatorFormatter;
 import lupos.cloud.pig.PigQuery;
-import lupos.cloud.pig.operator.PigProjectionOperator;
 import lupos.engine.operators.BasicOperator;
-import lupos.engine.operators.singleinput.Projection;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
- * Implements the formatter for the Filter Operator.
+ * The Interface OperatorFormatter.
  */
-public class ProjectionFormatter implements IOperatorFormatter {
+public interface IOperatorFormatter {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * luposdate.operators.formatter.OperatorFormatter#serialize(lupos.engine
-	 * .operators.BasicOperator, int)
+	/**
+	 * Serialize.
+	 *
+	 * @param operator the operator
+	 * @param node_id the node_id
+	 * @return the jSON object
+	 * @throws JSONException the jSON exception
 	 */
-	@Override
-	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
-		Projection projection = (Projection) operator;
-		pigLatin.setProjection(new PigProjectionOperator(projection));
-		return pigLatin;
-	}
+	public PigQuery serialize(BasicOperator operator, PigQuery pigLatinInput);
 }

@@ -23,23 +23,28 @@
  */
 package lupos.cloud.operator.format;
 
+import com.hp.hpl.jena.reasoner.rulesys.builtins.AddOne;
+
 import lupos.cloud.operator.format.FilterFormatter;
 import lupos.cloud.operator.format.IndexScanFormatter;
-import lupos.cloud.operator.format.OperatorFormatter;
+import lupos.cloud.operator.format.IOperatorFormatter;
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.index.BasicIndexScan;
 import lupos.engine.operators.index.Root;
+import lupos.engine.operators.singleinput.AddBinding;
 import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
+import lupos.engine.operators.singleinput.modifiers.Limit;
+import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 
 /**
  * The Class https://repository.cloudera.com/artifactory/cloudera-repos.
  */
-public class CloudSubgraphContainerFormatter implements OperatorFormatter {
+public class CloudSubgraphContainerFormatter implements IOperatorFormatter {
 
 	public CloudSubgraphContainerFormatter() {
 	}
@@ -49,10 +54,7 @@ public class CloudSubgraphContainerFormatter implements OperatorFormatter {
 		PigQuery result = this.serializeNode(new OperatorIDTuple(operator, 0),
 				pigLatin);
 		pigLatin.applyJoins();
-//		pigLatin.optimizeResultOrder();
-		pigLatin.setResultOrder();
-		pigLatin.applyFilter();
-		pigLatin.createFinalAlias();
+		pigLatin.finishQuery();
 		return result;
 	}
 
@@ -61,17 +63,25 @@ public class CloudSubgraphContainerFormatter implements OperatorFormatter {
 		PigQuery result = null;
 		final BasicOperator op = node.getOperator();
 
-		OperatorFormatter serializer = null;
+		IOperatorFormatter serializer = null;
 		if (op instanceof BasicIndexScan) {
 			serializer = new IndexScanFormatter();
 		} else if (op instanceof Root) {
-			result = pigLatin;
-		} else if (op instanceof Result) {
 			result = pigLatin;
 		} else if (op instanceof Filter) {
 			serializer = new FilterFormatter();
 		} else if (op instanceof Projection) {
 			serializer = new ProjectionFormatter();
+		} else if (op instanceof Distinct) {
+			serializer = new DistinctFormatter();
+		} else if (op instanceof Limit) {
+			serializer = new LimitFormatter();
+		} else if (op instanceof AddBinding) {
+			// ignore
+			result = pigLatin;
+		} else if (op instanceof Result) {
+			// ignore
+			result = pigLatin;
 		} else {
 			throw new RuntimeException("Something is wrong here. Forgot case?");
 		}
