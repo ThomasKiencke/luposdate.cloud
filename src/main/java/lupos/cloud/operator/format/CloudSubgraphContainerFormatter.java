@@ -26,14 +26,13 @@ package lupos.cloud.operator.format;
 import lupos.cloud.operator.format.FilterFormatter;
 import lupos.cloud.operator.format.IndexScanFormatter;
 import lupos.cloud.operator.format.OperatorFormatter;
-import lupos.cloud.operator.format.ResultFormatter;
-import lupos.cloud.operator.format.RootFormatter;
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.index.BasicIndexScan;
 import lupos.engine.operators.index.Root;
+import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
 
@@ -47,11 +46,13 @@ public class CloudSubgraphContainerFormatter implements OperatorFormatter {
 
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
-		PigQuery result = this.serializeNode(new OperatorIDTuple(operator, 0), pigLatin);
+		PigQuery result = this.serializeNode(new OperatorIDTuple(operator, 0),
+				pigLatin);
 		pigLatin.applyJoins();
-		pigLatin.optimizeResultOrder();
+//		pigLatin.optimizeResultOrder();
 		pigLatin.setResultOrder();
 		pigLatin.applyFilter();
+		pigLatin.createFinalAlias();
 		return result;
 	}
 
@@ -60,20 +61,24 @@ public class CloudSubgraphContainerFormatter implements OperatorFormatter {
 		PigQuery result = null;
 		final BasicOperator op = node.getOperator();
 
-		OperatorFormatter serializer;
+		OperatorFormatter serializer = null;
 		if (op instanceof BasicIndexScan) {
 			serializer = new IndexScanFormatter();
 		} else if (op instanceof Root) {
-			serializer = new RootFormatter();
+			result = pigLatin;
 		} else if (op instanceof Result) {
-			serializer = new ResultFormatter();
+			result = pigLatin;
 		} else if (op instanceof Filter) {
 			serializer = new FilterFormatter();
+		} else if (op instanceof Projection) {
+			serializer = new ProjectionFormatter();
 		} else {
 			throw new RuntimeException("Something is wrong here. Forgot case?");
 		}
 
-		result = serializer.serialize(op, pigLatin);
+		if (serializer != null) {
+			result = serializer.serialize(op, pigLatin);
+		}
 
 		for (final OperatorIDTuple successor : op.getSucceedingOperators()) {
 			result = this.serializeNode(successor, result);

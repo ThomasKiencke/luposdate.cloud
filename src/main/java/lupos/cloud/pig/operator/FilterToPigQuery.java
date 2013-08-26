@@ -14,9 +14,10 @@ public class FilterToPigQuery {
 
 	public static Class[] supportedOperations = { ASTLessThanNode.class,
 			ASTNotNode.class, ASTRDFLiteral.class, ASTStringLiteral.class,
-			ASTGreaterThanNode.class };
+			ASTGreaterThanNode.class, ASTLessThanEqualsNode.class,
+			ASTGreaterThanEqualsNode.class, ASTEqualsNode.class, ASTNotEqualsNode.class };
 	ArrayList<String> filterListe = new ArrayList<String>();
-	private boolean debug = false;
+	private boolean debug = true;
 
 	public FilterToPigQuery(Filter filter) {
 		this.filter = filter;
@@ -75,17 +76,21 @@ public class FilterToPigQuery {
 				filterListe.add(node.toString());
 				if (node instanceof ASTLessThanNode) {
 					result.append(" < ");
-				} else
-
-				if (node instanceof ASTRegexFuncNode) {
+				} else if (node instanceof ASTLessThanEqualsNode) {
+					result.append(" <= ");
+				} else if (node instanceof ASTRegexFuncNode) {
 					// TODO: SPARQL REGEX und Java Regex unterscheiden sich,
 					// muss also noch angepasst werden
 					result.append(" MATCHES ");
 				} else if (node instanceof ASTGreaterThanNode) {
 					result.append(" > ");
-				} else
-
-				{
+				} else if (node instanceof ASTGreaterThanEqualsNode) {
+					result.append(" >= ");
+				} else if (node instanceof ASTEqualsNode) {
+					result.append(" == ");
+				} else if (node instanceof ASTNotEqualsNode) {
+					result.append(" != ");
+				} else {
 					System.out.println("Not supported inner Type 2:  "
 							+ node.getClass().getSimpleName());
 					// result.append("(No Support for: " + node.toString() +
@@ -102,7 +107,7 @@ public class FilterToPigQuery {
 	public String getPigLatinProgramm(String aliasOutput, String aliasInput,
 			ArrayList<String> resultOrder) {
 		StringBuilder result = new StringBuilder();
-		if (debug ) {
+		if (debug) {
 			result.append("-- Filter: " + filter.toString());
 		}
 		this.sparqlVariableList = resultOrder;
@@ -110,6 +115,10 @@ public class FilterToPigQuery {
 		result.append(generateFilterList(filter.getNodePointer().getChildren()[0]));
 		result.append(";");
 		System.out.println("Liste: " + this.filterListe.toString());
+		
+		if (debug) {
+			result.append("\n");
+		}
 		return result.toString();
 	}
 

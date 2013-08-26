@@ -26,6 +26,8 @@ public class JoinInformation {
 	/** The triple pattern. */
 	TriplePattern triplePattern;
 
+	private Object tablename;
+
 	/**
 	 * Instantiates a new join information.
 	 * 
@@ -34,12 +36,13 @@ public class JoinInformation {
 	 * @param name
 	 *            the name
 	 */
-	public JoinInformation(TriplePattern triplePattern, String name) {
+	public JoinInformation(TriplePattern triplePattern, String tablename, String name) {
 		super();
 		this.triplePattern = triplePattern;
 		this.patternId = idCounter;
+		this.name = name + this.patternId;
 		idCounter++;
-		this.name = name;
+		this.tablename = tablename;
 		for (Item item : triplePattern.getItems()) {
 			if (item.isVariable()) {
 				joinElements.add(item.toString());
@@ -54,6 +57,7 @@ public class JoinInformation {
 	 *            the name
 	 */
 	public JoinInformation(String name) {
+		this.name = name;
 	}
 
 	/**
@@ -184,5 +188,9 @@ public class JoinInformation {
 			}
 		}
 		return true;
+	}
+	
+	public Object getTablename() {
+		return tablename;
 	}
 }

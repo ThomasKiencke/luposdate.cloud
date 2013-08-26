@@ -25,22 +25,27 @@ package lupos.cloud.operator.format;
 
 import lupos.cloud.operator.format.OperatorFormatter;
 import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.operator.FilterToPigQuery;
 import lupos.engine.operators.BasicOperator;
+import lupos.engine.operators.singleinput.Projection;
+import lupos.engine.operators.singleinput.filter.Filter;
 
 /**
- * Implements the formatter for the result operator.
+ * Implements the formatter for the Filter Operator.
  */
-public class ResultFormatter implements OperatorFormatter {
+public class ProjectionFormatter implements OperatorFormatter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * luposdate.operators.formatter.OperatorFormatter#serialize(lupos.engine
 	 * .operators.BasicOperator, int)
 	 */
 	@Override
-	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatinInput)  {
-		return pigLatinInput;
+	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
+		Projection projection = (Projection) operator;
+		pigLatin.setProjection(projection);
+		return pigLatin;
 	}
 }

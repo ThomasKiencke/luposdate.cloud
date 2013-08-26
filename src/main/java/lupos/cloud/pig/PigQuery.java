@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import lupos.cloud.pig.operator.FilterToPigQuery;
 import lupos.cloud.pig.operator.IndexScanToPigQuery;
+import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.filter.expressionevaluation.EvaluationVisitorImplementation.GetResult;
 
 /**
@@ -20,7 +21,9 @@ public class PigQuery {
 
 	private IndexScanToPigQuery indexScanPigOp;
 	private ArrayList<FilterToPigQuery> filterPigOps = new ArrayList<FilterToPigQuery>();
-	private String aliasBeforeFilter = "INTERMEDIATE_FILTER_";
+	private String aliasBeforeFilter = "INTERMEDIATE_FILTER_BAG_";
+
+	private Projection projection = null;
 
 	/**
 	 * Instantiates a new pig query.
@@ -102,9 +105,13 @@ public class PigQuery {
 	}
 
 	public void applyJoins() {
+		if (projection != null) {
+			indexScanPigOp.setProjection(this.projection);
+		}
 		this.pigLatin.append(indexScanPigOp.getJoinQuery());
 	}
 
+	@Deprecated
 	public void optimizeResultOrder() {
 		this.pigLatin.append(((filterPigOps.size() == 0) ? "X" : "Y")
 				+ indexScanPigOp.optimizeResultOrder() + "\n");
@@ -121,8 +128,8 @@ public class PigQuery {
 				this.pigLatin.append((curFilter.getPigLatinProgramm(
 						(i + 1 == filterPigOps.size()) ? "X"
 								: aliasBeforeFilter + "_" + (i + 1),
-						(i == 0) ? "Y" : aliasBeforeFilter, this
-								.getVariableList())));
+						(i == 0) ? indexScanPigOp.getFinalAlias()
+								: aliasBeforeFilter, this.getVariableList())));
 				i++;
 				aliasBeforeFilter = aliasBeforeFilter + "_" + i;
 			}
@@ -131,6 +138,20 @@ public class PigQuery {
 
 	public void addFilter(FilterToPigQuery pigFilter) {
 		this.filterPigOps.add(pigFilter);
+	}
+
+	public void setProjection(Projection projection) {
+		this.projection = projection;
+	}
+
+	public void createFinalAlias() {
+		// Am Ende der Filter wird automatisch X als Alias gewählt, sonst
+		if (filterPigOps == null) {
+			StringBuilder modifiedPigQuery = new StringBuilder();
+			modifiedPigQuery.append(this.pigLatin.toString().replace(
+					indexScanPigOp.getFinalAlias(), "X"));
+			this.pigLatin = modifiedPigQuery;
+		}
 	}
 
 }

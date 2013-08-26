@@ -32,6 +32,7 @@ import java.util.List;
 
 import lupos.cloud.operator.CloudSubgraphContainer;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
+import lupos.cloud.pig.operator.FilterToPigQuery;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
 import lupos.distributed.storage.distributionstrategy.TriplePatternNotSupportedError;
@@ -39,10 +40,11 @@ import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.index.BasicIndexScan;
 import lupos.engine.operators.index.Root;
+import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
-import lupos.sparql1_1.ParseException;
+import lupos.sparql1_1.SimpleNode;
 
 import org.json.JSONException;
 
@@ -99,14 +101,12 @@ public class AddCloudSubGraphContainerRule extends Rule {
 			// Gehe die neue Liste durch und überprüfe ob Operatoren in den
 			// SubGraphContainer verschoben werden können
 			/*
-			 * class lupos.engine.operators.singleinput.filter.Filter class
-			 * lupos.engine.operators.singleinput.Projection class
 			 * lupos.engine.operators.singleinput.modifiers.distinct.Distinct
 			 * class lupos.engine.operators.singleinput.modifiers.Limit class
-			 * lupos.engine.operators.singleinput.Result
 			 */
 			for (OperatorIDTuple curOp : allSuccessors) {
-				if (curOp.getOperator() instanceof Filter) {
+				if ((curOp.getOperator() instanceof Filter && checkIfFilterIsSupported((Filter) curOp
+						.getOperator()) || curOp.getOperator() instanceof Projection)) {
 					/*
 					 * Wenn ein direkter Nachfolger des Subgraphcontainer in den
 					 * Container gezogen wird ist der neue Nachfolger des
@@ -145,6 +145,18 @@ public class AddCloudSubGraphContainerRule extends Rule {
 		}
 	}
 
+	
+	private boolean checkIfFilterIsSupported(Filter filter) {
+		SimpleNode node = (SimpleNode) filter.getNodePointer().getChildren()[0];
+		for (Class supportedOp : FilterToPigQuery.supportedOperations) {
+			if (node.getClass() == supportedOp) {
+				return true;
+			}
+		}
+		System.out.println("Der Filter \"" + node.getClass().getSimpleName() + "\" wird momentan nicht ünterstützt und deswegen lokal ausgeführt!");
+	return false;
+}
+	
 	private void addToSubgraphContainerAndRemoveOldOperator(
 			BasicOperator operator, CloudSubgraphContainer container,
 			Root rootNodeOfSubgraph) {
