@@ -169,4 +169,11 @@ public class PigQuery {
 		this.limitOperator = pigLimitOperator;
 	}
 
+	public ArrayList<PigFilterOperator> getFilterPigOps() {
+		return filterPigOps;
+	}
+	
+	public PigProjectionOperator getProjection() {
+		return projection;
+	}
 }

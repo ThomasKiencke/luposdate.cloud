@@ -23,8 +23,6 @@
  */
 package lupos.cloud.operator.format;
 
-import com.hp.hpl.jena.reasoner.rulesys.builtins.AddOne;
-
 import lupos.cloud.operator.format.FilterFormatter;
 import lupos.cloud.operator.format.IndexScanFormatter;
 import lupos.cloud.operator.format.IOperatorFormatter;
@@ -35,6 +33,7 @@ import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.index.BasicIndexScan;
 import lupos.engine.operators.index.Root;
 import lupos.engine.operators.singleinput.AddBinding;
+import lupos.engine.operators.singleinput.AddBindingFromOtherVar;
 import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
@@ -76,13 +75,11 @@ public class CloudSubgraphContainerFormatter implements IOperatorFormatter {
 			serializer = new DistinctFormatter();
 		} else if (op instanceof Limit) {
 			serializer = new LimitFormatter();
-		} else if (op instanceof AddBinding) {
+		} else if (op instanceof AddBinding
+				|| op instanceof AddBindingFromOtherVar || op instanceof Result) {
 			// ignore
 			result = pigLatin;
-		} else if (op instanceof Result) {
-			// ignore
-			result = pigLatin;
-		} else {
+		}  else {
 			throw new RuntimeException("Something is wrong here. Forgot case?");
 		}
 

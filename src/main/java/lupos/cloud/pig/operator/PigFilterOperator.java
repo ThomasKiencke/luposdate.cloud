@@ -1,7 +1,7 @@
 package lupos.cloud.pig.operator;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 
 import lupos.cloud.pig.JoinInformation;
 import lupos.cloud.pig.PigQuery;
@@ -12,11 +12,11 @@ public class PigFilterOperator implements IPigOperator {
 	private ArrayList<JoinInformation> intermediateJoins;
 	Filter filter;
 
-	public static Class[] supportedOperations = { ASTLessThanNode.class,
-			ASTNotNode.class, ASTRDFLiteral.class, ASTStringLiteral.class,
-			ASTGreaterThanNode.class, ASTLessThanEqualsNode.class,
-			ASTGreaterThanEqualsNode.class, ASTEqualsNode.class,
-			ASTNotEqualsNode.class };
+	public static Class[] supportedOperations = { ASTVar.class,
+			ASTLessThanNode.class, ASTNotNode.class, ASTRDFLiteral.class,
+			ASTStringLiteral.class, ASTGreaterThanNode.class,
+			ASTLessThanEqualsNode.class, ASTGreaterThanEqualsNode.class,
+			ASTEqualsNode.class, ASTNotEqualsNode.class };
 	ArrayList<String> filterListe = new ArrayList<String>();
 	private boolean debug;
 	private ArrayList<String> variables = new ArrayList<String>();
@@ -48,15 +48,18 @@ public class PigFilterOperator implements IPigOperator {
 
 					JoinInformation newJoin = new JoinInformation(
 							"INTERMEDIATE_BAG_" + JoinInformation.idCounter);
-					
 
 					String pigFilterVarReplaced = pigFilter;
 					for (String var : variables) {
-						pigFilterVarReplaced = pigFilterVarReplaced.replace(var, getPigNameForVariable("?" + var, curJoin.getJoinElements()));
+						pigFilterVarReplaced = pigFilterVarReplaced.replace(
+								var,
+								getPigNameForVariable("?" + var,
+										curJoin.getJoinElements()));
 					}
-					
+
 					result.append(newJoin.getName() + " = FILTER "
-							+ curJoin.getName() + " BY " + pigFilterVarReplaced + ";\n");
+							+ curJoin.getName() + " BY " + pigFilterVarReplaced
+							+ ";\n");
 
 					if (debug) {
 						result.append("\n");
@@ -66,7 +69,7 @@ public class PigFilterOperator implements IPigOperator {
 					newJoin.setJoinElements(curJoin.getJoinElements());
 					newJoin.addAppliedFilters(this);
 					newJoin.addAppliedFilters(curJoin.getAppliedFilters());
-					
+
 					intermediateJoins.remove(curJoin);
 					intermediateJoins.add(newJoin);
 					JoinInformation.idCounter++;
@@ -166,7 +169,8 @@ public class PigFilterOperator implements IPigOperator {
 		return result.toString();
 	}
 
-	private String getPigNameForVariable(String name, ArrayList<String> sparqlVariableList) {
+	private String getPigNameForVariable(String name,
+			ArrayList<String> sparqlVariableList) {
 		for (int i = 0; i < sparqlVariableList.size(); i++) {
 			if (sparqlVariableList.get(i).equals(name)) {
 				return "$" + i;
@@ -175,4 +179,69 @@ public class PigFilterOperator implements IPigOperator {
 		return null; // Fall sollte nicht vorkommen
 	}
 
+	public static boolean checkIfFilterIsSupported(Node node) {
+		ArrayList<Class> supportedClasses = new ArrayList<Class>();
+		for (Class clazz : supportedOperations) {
+			supportedClasses.add(clazz);
+		}
+
+		/** Blätter */
+		if (node.getChildren() == null) {
+			if (!supportedClasses.contains(node.getClass())) {
+				return false;
+			}
+
+			/** Innere Knoten */
+		} else {
+			if (node.getChildren().length == 1) {
+				if (!supportedClasses.contains(node.getClass())) {
+					return false;
+				}
+				if (!supportedClasses
+						.contains(node.getChildren()[0].getClass())) {
+					return false;
+				}
+			} else {
+				// linker Baum
+				checkIfFilterIsSupported(node.getChildren()[0]);
+
+				if (!supportedClasses.contains(node.getClass())) {
+					return false;
+				}
+
+				// rechter Baum
+				checkIfFilterIsSupported(node.getChildren()[1]);
+			}
+		}
+
+		return true;
+	}
+
+	public static HashSet<String> getFilterVariables(Node node) {
+		HashSet<String> result = new HashSet<String>();
+
+		/** Blätter */
+		if (node.getChildren() == null) {
+			if (node instanceof ASTVar) {
+				result.add(((ASTVar) node).getName());
+			}
+
+			/** Innere Knoten */
+		} else {
+			if (node.getChildren().length == 1) {
+				result.addAll(getFilterVariables(node.getChildren()[0]));
+			} else {
+				// linker Baum
+				result.addAll(getFilterVariables(node.getChildren()[0]));
+				// rechter Baum
+				result.addAll(getFilterVariables(node.getChildren()[1]));
+			}
+		}
+
+		return result;
+	}
+
+	public ArrayList<String> getVariables() {
+		return variables;
+	}
 }

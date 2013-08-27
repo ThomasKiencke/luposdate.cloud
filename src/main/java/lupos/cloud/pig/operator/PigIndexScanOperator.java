@@ -13,6 +13,7 @@ import lupos.engine.operators.tripleoperator.TriplePattern;
 public class PigIndexScanOperator implements IPigOperator {
 	ArrayList<JoinInformation> intermediateJoins = null;
 	Collection<TriplePattern> triplePatternCollection = null;
+	int tripleCounter = 0;
 
 	public PigIndexScanOperator(Collection<TriplePattern> tp) {
 		this.triplePatternCollection = tp;
@@ -49,8 +50,9 @@ public class PigIndexScanOperator implements IPigOperator {
 						+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('"
 						+ HBaseDistributionStrategy.getTableInstance()
 								.getColumnFamilyName()
-						+ "', '-loadKey true') as (rowkey:chararray, columncontent:map[]);"
-						+ "\n");
+						+ "', '-loadKey true') as (rowkey_" + tripleCounter
+						+ ":chararray, columncontent_" + tripleCounter
+						+ ":map[]);" + "\n");
 
 				result.append(curPattern.getName()
 						+ " = foreach "
@@ -75,15 +77,18 @@ public class PigIndexScanOperator implements IPigOperator {
 						+ "using lupos.cloud.pig.udfs.HBaseLoadUDF('"
 						+ HBaseDistributionStrategy.getTableInstance()
 								.getColumnFamilyName() + "', '','"
-						+ curPattern.getLiterals()
-						+ "') as (columncontent:map[]);" + "\n");
+						+ curPattern.getLiterals() + "') as (columncontent_"
+						+ tripleCounter + ":map[]);" + "\n");
 
 				result.append(curPattern.getName()
 						+ " = foreach PATTERN_"
 						+ curPattern.getPatternId()
 						+ " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as "
-						+ ((curPattern.getJoinElements().size() == 1) ? "(output:chararray);"
-								: "(output1:chararray, output2:chararray); ")
+						+ ((curPattern.getJoinElements().size() == 1) ? "(output"
+								+ tripleCounter + ":chararray);"
+								: "(output1_" + tripleCounter
+										+ ":chararray, output2_"
+										+ tripleCounter + ":chararray); ")
 						+ "\n");
 			}
 			intermediateJoins.add(curPattern);
@@ -91,7 +96,9 @@ public class PigIndexScanOperator implements IPigOperator {
 			if (pigQuery.isDebug()) {
 				result.append("\n");
 			}
+			tripleCounter++;
 		}
+
 		return result.toString();
 	}
 
@@ -224,8 +231,9 @@ public class PigIndexScanOperator implements IPigOperator {
 		if (!found) {
 			return null;
 		}
-		result.append(getPigMultiJoinWith2Columns(new ArrayList<JoinInformation>(toJoin),
-				new ArrayList<String>(equalVariables)));
+		result.append(getPigMultiJoinWith2Columns(
+				new ArrayList<JoinInformation>(toJoin), new ArrayList<String>(
+						equalVariables)));
 
 		for (JoinInformation toRemove : toJoin) {
 			intermediateJoins.remove(toRemove);
@@ -337,7 +345,8 @@ public class PigIndexScanOperator implements IPigOperator {
 		return result.toString();
 	}
 
-	public String getPigMultiJoinWith2Columns(ArrayList<JoinInformation> joinOverItem,
+	public String getPigMultiJoinWith2Columns(
+			ArrayList<JoinInformation> joinOverItem,
 			ArrayList<String> joinElements) {
 		StringBuilder result = new StringBuilder();
 		JoinInformation curJoinInfo = new JoinInformation("INTERMEDIATE_BAG_"
