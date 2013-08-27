@@ -15,9 +15,9 @@ public class PigProjectionOperator implements IPigOperator {
 	private boolean debug;
 	ArrayList<PigFilterOperator> filterOps;
 
-	public PigProjectionOperator(Projection projection) {
+	public PigProjectionOperator(HashSet<Variable> projection) {
 		this.projectionVariables = new HashSet<String>();
-		for (Variable varToAdd : projection.getProjectedVariables()) {
+		for (Variable varToAdd : projection) {
 			this.projectionVariables.add(varToAdd.toString());
 		}
 	}

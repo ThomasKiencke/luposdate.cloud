@@ -69,7 +69,7 @@ public class CloudSubgraphContainerFormatter implements IOperatorFormatter {
 			result = pigLatin;
 		} else if (op instanceof Filter) {
 			serializer = new FilterFormatter();
-		} else if (op instanceof Projection) {
+		} else if (op instanceof Projection || op instanceof AddCloudProjection) {
 			serializer = new ProjectionFormatter();
 		} else if (op instanceof Distinct) {
 			serializer = new DistinctFormatter();

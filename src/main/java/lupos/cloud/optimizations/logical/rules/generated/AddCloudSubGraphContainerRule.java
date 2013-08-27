@@ -32,9 +32,12 @@ import java.util.List;
 
 import lupos.cloud.operator.CloudSubgraphContainer;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
+import lupos.cloud.operator.format.AddCloudProjection;
 import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
+import lupos.distributed.query.QueryClient;
+import lupos.distributed.query.operator.withouthistogramsubmission.QueryClientRoot;
 import lupos.distributed.storage.distributionstrategy.TriplePatternNotSupportedError;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
@@ -57,6 +60,14 @@ public class AddCloudSubGraphContainerRule extends Rule {
 	public static CloudManagement cloudManagement;
 
 	public static ICloudSubgraphExecutor subgraphExecutor;
+	
+	public HashSet<Variable> additionalProjectionVariables = new HashSet<Variable>();
+	
+	
+	private void replaceIndexScanOperatorWithSubGraphContainer(QueryClientRoot qcRoot){
+		
+		System.out.println("JAAAAAAAAAAAAAAAAAAAAAAA");
+	}
 
 	/**
 	 * replace index scan operator with SubgraphContainer
@@ -114,8 +125,8 @@ public class AddCloudSubGraphContainerRule extends Rule {
 			for (OperatorIDTuple curOp : allSuccessors) {
 				if ((curOp.getOperator() instanceof Filter
 						&& checkIfFilterIsSupported((Filter) curOp
-								.getOperator()) && checkIfFilterIsApplicableForIndexScan(rootNodeOfSubGraph,
-							(Filter) curOp.getOperator(),
+								.getOperator()) && checkIfFilterIsApplicableForIndexScan(
+							rootNodeOfSubGraph, (Filter) curOp.getOperator(),
 							indexScan.getUnionVariables()))
 						|| curOp.getOperator() instanceof Projection
 						|| curOp.getOperator() instanceof Distinct
@@ -129,6 +140,12 @@ public class AddCloudSubGraphContainerRule extends Rule {
 					 */
 					if (succs.contains(curOp)) {
 						succs = curOp.getOperator().getSucceedingOperators();
+					}
+					
+					if (curOp.getOperator() instanceof Projection) {
+						for (Variable var : additionalProjectionVariables) {
+							((Projection) curOp.getOperator()).addProjectionElement(var);
+						}
 					}
 
 					addToSubgraphContainerAndRemoveOldOperator(
@@ -159,8 +176,11 @@ public class AddCloudSubGraphContainerRule extends Rule {
 		}
 	}
 
-	private boolean checkIfFilterIsApplicableForIndexScan(Root rootNodeOfSubgraph, Filter filter,
+	private boolean checkIfFilterIsApplicableForIndexScan(
+			Root rootNodeOfSubgraph, Filter filter,
 			Collection<Variable> unionVariables) {
+//		if ("a".equals("a"))
+//			return true;
 		boolean result = true;
 		for (String var : PigFilterOperator.getFilterVariables(filter
 				.getNodePointer().getChildren()[0])) {
@@ -170,17 +190,16 @@ public class AddCloudSubGraphContainerRule extends Rule {
 		}
 
 		if (result == false) {
-			BasicOperator lastOperation = getLastOperatorOfContainer(rootNodeOfSubgraph);
-			Projection projection = new Projection();
 			for (String var : PigFilterOperator.getFilterVariables(filter
 					.getNodePointer().getChildren()[0])) {
-				projection.addProjectionElement(new Variable(var.replace("?", "")));
+					additionalProjectionVariables.add(new Variable(var.replace(
+							"?", "")));
 			}
-			lastOperation.addSucceedingOperator(new OperatorIDTuple(projection,0));
+			
 			System.out
 					.println("Der Filter \""
 							+ filter.toString().replace("\n", "")
-							+ "\" wird nicht in der Cloud ausgeführt, da in dem Triple-Muster nicht alle notwendigen Variablen vorhanden sind");
+							+ "\" wird nicht in der Cloud ausgeführt, da nicht alle Variablen im IndexScan-Operator vorhanden sind.");
 		}
 		return result;
 	}
@@ -206,10 +225,9 @@ public class AddCloudSubGraphContainerRule extends Rule {
 
 		BasicOperator lastOperation = getLastOperatorOfContainer(rootNodeOfSubgraph);
 
-		ArrayList<OperatorIDTuple> newSucc = new ArrayList<OperatorIDTuple>();
-		newSucc.add(new OperatorIDTuple(operator, 0));
-		lastOperation.setSucceedingOperators(newSucc);
 		operator.setSucceedingOperators(null);
+		lastOperation.setSucceedingOperator(new OperatorIDTuple(operator, 0));
+		
 
 		for (final BasicOperator pred : oldPreds) {
 			for (final OperatorIDTuple succ : oldSuccs) {
@@ -252,7 +270,8 @@ public class AddCloudSubGraphContainerRule extends Rule {
 
 	private BasicOperator getLastOperatorOfContainer(BasicOperator operator) {
 		BasicOperator result = null;
-		if (operator.getSucceedingOperators() == null) {
+		if (operator.getSucceedingOperators() == null
+				|| operator.getSucceedingOperators().size() == 0) {
 			result = operator;
 		} else {
 			for (OperatorIDTuple elem : operator.getSucceedingOperators()) {
@@ -281,14 +300,14 @@ public class AddCloudSubGraphContainerRule extends Rule {
 		return allSuccessors;
 	}
 
-	private lupos.engine.operators.index.BasicIndexScan indexScan = null;
+	private QueryClientRoot indexScan = null;
 
 	private boolean _checkPrivate0(final BasicOperator _op) {
-		if (!(_op instanceof lupos.engine.operators.index.BasicIndexScan)) {
+		if (!(_op instanceof QueryClientRoot)) {
 			return false;
 		}
 
-		this.indexScan = (lupos.engine.operators.index.BasicIndexScan) _op;
+		this.indexScan = (QueryClientRoot) _op;
 
 		return true;
 	}
@@ -296,7 +315,8 @@ public class AddCloudSubGraphContainerRule extends Rule {
 	public AddCloudSubGraphContainerRule() {
 		// this.startOpClass =
 		// lupos.engine.operators.index.BasicIndexScan.class;
-		this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
+//		this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
+		this.startOpClass = QueryClientRoot.class;
 		this.ruleName = "AddSubGraphContainer";
 	}
 

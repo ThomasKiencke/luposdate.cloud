@@ -43,15 +43,30 @@ public class ProjectionFormatter implements IOperatorFormatter {
 	 */
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
-		Projection projection = (Projection) operator;
-		if (pigLatin.getProjection() == null) {
-			pigLatin.setProjection(new PigProjectionOperator(projection));
+		if (operator instanceof Projection) {
+			Projection projection = (Projection) operator;
+			if (pigLatin.getProjection() == null) {
+				pigLatin.setProjection(new PigProjectionOperator(projection.getProjectedVariables()));
+			} else {
+				// Spezialfall, es werden Projektionsvaribalen hinzugefügt, wenn
+				// außerhalb des Containers die Variablen gebraucht werden z.B.
+				// für
+				// einen Filter.
+				pigLatin.getProjection().addProjectionVaribles(
+						projection.getProjectedVariables());
+			}
 		} else {
-			// Spezialfall, es werden Projektionsvaribalen hinzugefügt, wenn
-			// außerhalb des Containers die Variablen gebraucht werden z.B. für
-			// einen Filter.
-			pigLatin.getProjection().addProjectionVaribles(
-					projection.getProjectedVariables());
+			AddCloudProjection projection = (AddCloudProjection) operator;
+			if (pigLatin.getProjection() == null) {
+				pigLatin.setProjection(new PigProjectionOperator(projection.getProjectedVariables()));
+			} else {
+				// Spezialfall, es werden Projektionsvaribalen hinzugefügt, wenn
+				// außerhalb des Containers die Variablen gebraucht werden z.B.
+				// für
+				// einen Filter.
+				pigLatin.getProjection().addProjectionVaribles(
+						projection.getProjectedVariables());
+			}
 		}
 		return pigLatin;
 	}

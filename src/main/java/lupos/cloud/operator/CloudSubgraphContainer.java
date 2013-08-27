@@ -25,6 +25,7 @@ package lupos.cloud.operator;
 
 import java.util.List;
 
+import lupos.cloud.operator.format.AddCloudProjection;
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.datastructures.queryresult.QueryResult;
@@ -34,6 +35,8 @@ import lupos.engine.operators.index.Dataset;
 import lupos.engine.operators.index.Root;
 import lupos.engine.operators.messages.BoundVariablesMessage;
 import lupos.engine.operators.messages.Message;
+import lupos.engine.operators.singleinput.Projection;
+import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 import lupos.rdf.Prefix;
 
@@ -92,7 +95,8 @@ public class CloudSubgraphContainer extends RootChild {
 	@Override
 	public QueryResult process(final Dataset dataset) {
 		final CloudSubgraphContainerFormatter pigParser = new CloudSubgraphContainerFormatter();
-		final PigQuery pigQuery = pigParser.serialize(this.rootNodeOfSubGraph, new PigQuery());
+		final PigQuery pigQuery = pigParser.serialize(this.rootNodeOfSubGraph,
+				new PigQuery());
 		final QueryResult result = this.cloudSubgraphExecutor
 				.evaluate(pigQuery);
 		// result.materialize();
@@ -114,17 +118,34 @@ public class CloudSubgraphContainer extends RootChild {
 		newMsg.setVariables(this.getUnionVariables());
 		return newMsg;
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 		result.append("--- Cloud SubgraphContainer ---\n");
-		List<OperatorIDTuple> curNode = rootNodeOfSubGraph.getSucceedingOperators();
+		List<OperatorIDTuple> curNode = rootNodeOfSubGraph
+				.getSucceedingOperators();
 		while (curNode != null && curNode.size() != 0) {
-			result.append("\n" + curNode.get(0).getOperator().getClass().getSimpleName());
+			if (curNode.get(0).getOperator() instanceof Filter) {
+				result.append("\n" + ((Filter) curNode.get(0).getOperator())
+						.toString().replace("\n", ""));
+			} else if (curNode.get(0).getOperator() instanceof Projection) {
+				result.append("\n"
+						+ ((Projection) curNode.get(0).getOperator())
+								.toString().replace("\n", ""));
+			} else if (curNode.get(0).getOperator() instanceof AddCloudProjection) {
+				result.append("\n"
+						+ ((AddCloudProjection) curNode.get(0).getOperator())
+								.toString().replace("\n", ""));
+			} else {
+				result.append("\n"
+						+ curNode.get(0).getOperator().getClass()
+								.getSimpleName());
+			}
+
 			curNode = curNode.get(0).getOperator().getSucceedingOperators();
 		}
-		
+
 		return result.toString();
 	}
 }
