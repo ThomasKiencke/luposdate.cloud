@@ -60,12 +60,19 @@ public class AddCloudSubGraphContainerRule extends Rule {
 	public static CloudManagement cloudManagement;
 
 	public static ICloudSubgraphExecutor subgraphExecutor;
-	
+
 	public HashSet<Variable> additionalProjectionVariables = new HashSet<Variable>();
-	
-	
-	private void replaceIndexScanOperatorWithSubGraphContainer(QueryClientRoot qcRoot){
-		
+
+	private void replaceIndexScanOperatorWithSubGraphContainer(
+			QueryClientRoot qcRoot) {
+		// final Root rootNodeOfSubGraph = qcRoot
+		// .newInstance(qcRoot.dataset);
+		// final CloudSubgraphContainer container = new CloudSubgraphContainer(
+		// rootNodeOfSubGraph, subgraphExecutor);
+		for (OperatorIDTuple op : qcRoot.getSucceedingOperators()) {
+			replaceIndexScanOperatorWithSubGraphContainer((BasicIndexScan) op
+					.getOperator());
+		}
 		System.out.println("JAAAAAAAAAAAAAAAAAAAAAAA");
 	}
 
@@ -141,10 +148,11 @@ public class AddCloudSubGraphContainerRule extends Rule {
 					if (succs.contains(curOp)) {
 						succs = curOp.getOperator().getSucceedingOperators();
 					}
-					
+
 					if (curOp.getOperator() instanceof Projection) {
 						for (Variable var : additionalProjectionVariables) {
-							((Projection) curOp.getOperator()).addProjectionElement(var);
+							((Projection) curOp.getOperator())
+									.addProjectionElement(var);
 						}
 					}
 
@@ -167,9 +175,6 @@ public class AddCloudSubGraphContainerRule extends Rule {
 				succ.getOperator().addPrecedingOperator(container);
 			}
 
-		} catch (final JSONException e1) {
-			System.err.println(e1);
-			e1.printStackTrace();
 		} catch (final TriplePatternNotSupportedError e1) {
 			System.err.println(e1);
 			e1.printStackTrace();
@@ -179,8 +184,8 @@ public class AddCloudSubGraphContainerRule extends Rule {
 	private boolean checkIfFilterIsApplicableForIndexScan(
 			Root rootNodeOfSubgraph, Filter filter,
 			Collection<Variable> unionVariables) {
-//		if ("a".equals("a"))
-//			return true;
+		// if ("a".equals("a"))
+		// return true;
 		boolean result = true;
 		for (String var : PigFilterOperator.getFilterVariables(filter
 				.getNodePointer().getChildren()[0])) {
@@ -192,10 +197,10 @@ public class AddCloudSubGraphContainerRule extends Rule {
 		if (result == false) {
 			for (String var : PigFilterOperator.getFilterVariables(filter
 					.getNodePointer().getChildren()[0])) {
-					additionalProjectionVariables.add(new Variable(var.replace(
-							"?", "")));
+				additionalProjectionVariables.add(new Variable(var.replace("?",
+						"")));
 			}
-			
+
 			System.out
 					.println("Der Filter \""
 							+ filter.toString().replace("\n", "")
@@ -227,7 +232,6 @@ public class AddCloudSubGraphContainerRule extends Rule {
 
 		operator.setSucceedingOperators(null);
 		lastOperation.setSucceedingOperator(new OperatorIDTuple(operator, 0));
-		
 
 		for (final BasicOperator pred : oldPreds) {
 			for (final OperatorIDTuple succ : oldSuccs) {
@@ -303,19 +307,25 @@ public class AddCloudSubGraphContainerRule extends Rule {
 	private QueryClientRoot indexScan = null;
 
 	private boolean _checkPrivate0(final BasicOperator _op) {
+		
+		// workaround, nicht schön - aber funktioniert :)
 		if (!(_op instanceof QueryClientRoot)) {
 			return false;
+		} else {
+			if (indexScan == null) {
+				this.indexScan = (QueryClientRoot) _op;
+				return true;
+			} else {
+				return false;
+			}
 		}
-
-		this.indexScan = (QueryClientRoot) _op;
-
-		return true;
 	}
 
 	public AddCloudSubGraphContainerRule() {
 		// this.startOpClass =
 		// lupos.engine.operators.index.BasicIndexScan.class;
-//		this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
+		// this.startOpClass =
+		// lupos.engine.operators.index.BasicIndexScan.class;
 		this.startOpClass = QueryClientRoot.class;
 		this.ruleName = "AddSubGraphContainer";
 	}

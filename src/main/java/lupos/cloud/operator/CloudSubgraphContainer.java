@@ -77,7 +77,7 @@ public class CloudSubgraphContainer extends RootChild {
 	 * @throws JSONException
 	 */
 	public CloudSubgraphContainer(final Root rootNodeOfSubGraph,
-			final ICloudSubgraphExecutor subgraphExecutor) throws JSONException {
+			final ICloudSubgraphExecutor subgraphExecutor) {
 		this.rootNodeOfSubGraph = rootNodeOfSubGraph;
 		this.cloudSubgraphExecutor = subgraphExecutor;
 	}
