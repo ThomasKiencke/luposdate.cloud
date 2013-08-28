@@ -30,14 +30,13 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import lupos.cloud.operator.CloudJoin;
 import lupos.cloud.operator.CloudSubgraphContainer;
+import lupos.cloud.operator.CloudUnion;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.operator.format.AddCloudProjection;
 import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
-import lupos.distributed.query.QueryClient;
-import lupos.distributed.query.operator.withouthistogramsubmission.QueryClientRoot;
 import lupos.distributed.storage.distributionstrategy.TriplePatternNotSupportedError;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
@@ -52,9 +51,6 @@ import lupos.engine.operators.singleinput.modifiers.Limit;
 import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 
-import org.json.JSONException;
-import org.mockito.cglib.transform.impl.AddPropertyTransformer;
-
 public class AddCloudSubGraphContainerRule extends Rule {
 
 	public static CloudManagement cloudManagement;
@@ -63,19 +59,6 @@ public class AddCloudSubGraphContainerRule extends Rule {
 
 	public HashSet<Variable> additionalProjectionVariables = new HashSet<Variable>();
 
-	private void replaceIndexScanOperatorWithSubGraphContainer(
-			QueryClientRoot qcRoot) {
-		// final Root rootNodeOfSubGraph = qcRoot
-		// .newInstance(qcRoot.dataset);
-		// final CloudSubgraphContainer container = new CloudSubgraphContainer(
-		// rootNodeOfSubGraph, subgraphExecutor);
-		for (OperatorIDTuple op : qcRoot.getSucceedingOperators()) {
-			replaceIndexScanOperatorWithSubGraphContainer((BasicIndexScan) op
-					.getOperator());
-		}
-		System.out.println("JAAAAAAAAAAAAAAAAAAAAAAA");
-	}
-
 	/**
 	 * replace index scan operator with SubgraphContainer
 	 * 
@@ -83,12 +66,12 @@ public class AddCloudSubGraphContainerRule extends Rule {
 	 *            the index scan operator
 	 */
 	private void replaceIndexScanOperatorWithSubGraphContainer(
-			final BasicIndexScan indexScan) {
+			final BasicOperator indexScan) {
 
 		try {
 
 			// Neuen Container erzeugen + inneren neuen rootNode
-			final Root rootNodeOfOuterGraph = indexScan.getRoot();
+			final Root rootNodeOfOuterGraph = (Root) indexScan.getPrecedingOperators().get(0);
 
 			// leere Liste einfügen, weil sonst NullpointerException - bug?
 			rootNodeOfOuterGraph.setUnionVariables(new ArrayList<Variable>());
@@ -139,7 +122,9 @@ public class AddCloudSubGraphContainerRule extends Rule {
 						|| curOp.getOperator() instanceof Distinct
 						|| curOp.getOperator() instanceof Limit
 						|| curOp.getOperator() instanceof AddBinding
-						|| curOp.getOperator() instanceof AddBindingFromOtherVar) {
+						|| curOp.getOperator() instanceof AddBindingFromOtherVar
+						|| curOp.getOperator() instanceof CloudJoin
+						|| curOp.getOperator() instanceof CloudUnion) {
 					/*
 					 * Wenn ein direkter Nachfolger des Subgraphcontainer in den
 					 * Container gezogen wird ist der neue Nachfolger des
@@ -249,29 +234,6 @@ public class AddCloudSubGraphContainerRule extends Rule {
 
 	}
 
-	private void deleteNode(BasicOperator operator) {
-		Collection<BasicOperator> oldPreds = operator.getPrecedingOperators();
-		List<OperatorIDTuple> oldSuccs = operator.getSucceedingOperators();
-		ArrayList<OperatorIDTuple> newSucc = new ArrayList<OperatorIDTuple>();
-		newSucc.add(new OperatorIDTuple(operator, 0));
-
-		operator.setSucceedingOperators(null);
-
-		for (final BasicOperator pred : oldPreds) {
-			for (final OperatorIDTuple succ : oldSuccs) {
-				pred.removePrecedingOperator(operator);
-				pred.addPrecedingOperator(succ.getOperator());
-			}
-		}
-
-		for (final OperatorIDTuple succ : oldSuccs) {
-			for (final BasicOperator pred : oldPreds) {
-				succ.getOperator().removePrecedingOperator(operator);
-				succ.getOperator().addPrecedingOperator(pred);
-			}
-		}
-	}
-
 	private BasicOperator getLastOperatorOfContainer(BasicOperator operator) {
 		BasicOperator result = null;
 		if (operator.getSucceedingOperators() == null
@@ -304,29 +266,21 @@ public class AddCloudSubGraphContainerRule extends Rule {
 		return allSuccessors;
 	}
 
-	private QueryClientRoot indexScan = null;
+	private BasicOperator currentOperator = null;
 
 	private boolean _checkPrivate0(final BasicOperator _op) {
-		
-		// workaround, nicht schön - aber funktioniert :)
-		if (!(_op instanceof QueryClientRoot)) {
+		if (!(_op instanceof BasicIndexScan
+				|| _op instanceof CloudJoin || _op instanceof CloudUnion)) {
 			return false;
-		} else {
-			if (indexScan == null) {
-				this.indexScan = (QueryClientRoot) _op;
-				return true;
-			} else {
-				return false;
-			}
 		}
+
+		this.currentOperator = _op;
+
+		return true;
 	}
 
 	public AddCloudSubGraphContainerRule() {
-		// this.startOpClass =
-		// lupos.engine.operators.index.BasicIndexScan.class;
-		// this.startOpClass =
-		// lupos.engine.operators.index.BasicIndexScan.class;
-		this.startOpClass = QueryClientRoot.class;
+		this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
 		this.ruleName = "AddSubGraphContainer";
 	}
 
@@ -338,7 +292,7 @@ public class AddCloudSubGraphContainerRule extends Rule {
 	@Override
 	protected void replace(
 			final HashMap<Class<?>, HashSet<BasicOperator>> _startNodes) {
-		this.replaceIndexScanOperatorWithSubGraphContainer(this.indexScan);
+		this.replaceIndexScanOperatorWithSubGraphContainer(this.currentOperator);
 
 	}
 }

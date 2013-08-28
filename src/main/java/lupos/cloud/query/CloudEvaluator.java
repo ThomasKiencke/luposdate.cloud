@@ -38,9 +38,12 @@ import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.distributed.query.QueryClient;
 import lupos.distributed.storage.IStorage;
 import lupos.engine.operators.index.BasicIndexScan;
+import lupos.engine.operators.index.Indices;
 import lupos.misc.debug.BasicOperatorByteArray;
 import lupos.optimizations.logical.rules.DebugContainer;
+import lupos.optimizations.logical.rules.generated.AfterPhysicalOptimizationRulePackage;
 import lupos.optimizations.logical.rules.generated.DistributedRulePackage;
+import lupos.optimizations.physical.PhysicalOptimizations;
 import lupos.rdf.Prefix;
 
 /**
@@ -184,6 +187,7 @@ public class CloudEvaluator extends QueryClient {
 
 		return new Date().getTime() - start;
 	}
+	
 
 	/* (non-Javadoc)
 	 * @see lupos.engine.evaluators.BasicIndexQueryEvaluator#logicalOptimizationDebugByteArray(lupos.rdf.Prefix)

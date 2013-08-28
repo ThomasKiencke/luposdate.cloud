@@ -21,16 +21,38 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.optimizations.logical.rules.generated;
+package lupos.cloud.operator.format;
 
-import lupos.optimizations.logical.rules.generated.runtime.Rule;
-import lupos.optimizations.logical.rules.generated.runtime.RulePackage;
+import java.util.Collection;
 
-public class CloudRulePackage extends RulePackage {
-	public CloudRulePackage() {
-		this.rules = new Rule[] { 
-				new AddMergeContainerRule(),
-				new AddCloudSubGraphContainerRule()
-				};
+import lupos.cloud.operator.CloudUnion;
+import lupos.cloud.operator.format.IOperatorFormatter;
+import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.operator.PigIndexScanOperator;
+import lupos.engine.operators.BasicOperator;
+import lupos.engine.operators.index.BasicIndexScan;
+import lupos.engine.operators.tripleoperator.TriplePattern;
+
+/**
+ * Implements the formatter for the index scan operator
+ */
+public class CloudUnionFormatter implements IOperatorFormatter {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * luposdate.operators.formatter.OperatorFormatter#serialize(lupos.engine
+	 * .operators.BasicOperator, int)
+	 */
+	@Override
+	public PigQuery serialize(final BasicOperator operator, PigQuery pigQuery) {
+		final CloudUnion cloudUnion = (CloudUnion) operator;
+		for (BasicIndexScan bis : cloudUnion.getIndexScanList()) {
+			PigIndexScanOperator pigIndexScan = new PigIndexScanOperator(bis.getTriplePattern());
+			pigQuery.buildAndAppendQuery(pigIndexScan);
+			pigQuery.addIndexScanOperator(pigIndexScan);
+		}
+		return pigQuery;
 	}
+
 }

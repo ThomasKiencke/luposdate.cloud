@@ -11,10 +11,12 @@ import lupos.datastructures.items.Variable;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 public class PigIndexScanOperator implements IPigOperator {
+	static private int idCounter = 0;
+	 private int id = 0;
 	ArrayList<JoinInformation> intermediateJoins = null;
 	Collection<TriplePattern> triplePatternCollection = null;
 	int tripleCounter = 0;
-
+	
 	public PigIndexScanOperator(Collection<TriplePattern> tp) {
 		this.triplePatternCollection = tp;
 	}
@@ -28,6 +30,8 @@ public class PigIndexScanOperator implements IPigOperator {
 	 * @return the string
 	 */
 	public String buildQuery(PigQuery pigQuery) {
+		id = idCounter;
+		idCounter++;
 		StringBuilder result = new StringBuilder();
 		for (TriplePattern triplePattern : this.triplePatternCollection) {
 			JoinInformation curPattern = getHBaseTable(triplePattern);
@@ -97,8 +101,7 @@ public class PigIndexScanOperator implements IPigOperator {
 				result.append("\n");
 			}
 			tripleCounter++;
-		}
-
+		}	
 		return result.toString();
 	}
 

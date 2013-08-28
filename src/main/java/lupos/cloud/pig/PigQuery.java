@@ -2,12 +2,15 @@ package lupos.cloud.pig;
 
 import java.util.ArrayList;
 
+import javax.swing.tree.TreeModel;
+
 import lupos.cloud.pig.operator.PigDistinctOperator;
 import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.pig.operator.PigIndexScanOperator;
 import lupos.cloud.pig.operator.IPigOperator;
 import lupos.cloud.pig.operator.PigLimitOperator;
 import lupos.cloud.pig.operator.PigProjectionOperator;
+import lupos.gui.operatorgraph.visualeditor.visualrif.util.TreeNode;
 
 /**
  * In dieser Klassen werden Informationen über das PigQuery abgespeichert z.B.
@@ -22,10 +25,12 @@ public class PigQuery {
 
 	private ArrayList<PigFilterOperator> filterPigOps = new ArrayList<PigFilterOperator>();
 
-	private PigIndexScanOperator indexScanOperator = null;
+	private ArrayList<PigIndexScanOperator> indexScanOps = new ArrayList<PigIndexScanOperator>();
 
 	/** The intermediate joins. */
-	ArrayList<JoinInformation> intermediateJoins = new ArrayList<JoinInformation>();
+	private ArrayList<JoinInformation> intermediateJoins = new ArrayList<JoinInformation>();
+	
+	private TreeNode indexScanTree = new TreeNode("root");
 
 	public boolean debug = true;
 
@@ -43,7 +48,12 @@ public class PigQuery {
 	}
 
 	public void applyJoins() {
-		this.multiJoin();
+		if (indexScanOps.size() == 1) {
+			this.multiJoin(indexScanOps.get(0));
+		} else {
+			
+		}
+
 	}
 
 	public void addFilter(PigFilterOperator pigFilter) {
@@ -73,7 +83,7 @@ public class PigQuery {
 		if (limitOperator != null) {
 			this.buildAndAppendQuery(limitOperator);
 		}
-		
+
 		StringBuilder modifiedPigQuery = new StringBuilder();
 		modifiedPigQuery.append(this.pigLatin.toString().replace(
 				this.getFinalAlias(), "X"));
@@ -95,7 +105,7 @@ public class PigQuery {
 	 * 
 	 * @return the string
 	 */
-	private void multiJoin() {
+	private void multiJoin(PigIndexScanOperator pigIndexScanOp) {
 		// suche so lange bis es noch Mengen zum joinen gibt
 		while (intermediateJoins.size() > 1) {
 			/*
@@ -111,7 +121,7 @@ public class PigQuery {
 			}
 
 			// System.out.println("size: " + intermediateJoins.size());
-			String multiJoinOverTwoVars = indexScanOperator
+			String multiJoinOverTwoVars = pigIndexScanOp
 					.multiJoinOverTwoVariablse();
 
 			/*
@@ -127,7 +137,7 @@ public class PigQuery {
 			if (multiJoinOverTwoVars != null) {
 				this.pigLatin.append(multiJoinOverTwoVars);
 			} else {
-				pigLatin.append(indexScanOperator.multiJoinOverOneVariable());
+				pigLatin.append(pigIndexScanOp.multiJoinOverOneVariable());
 			}
 
 			if (debug) {
@@ -157,9 +167,14 @@ public class PigQuery {
 		this.pigLatin.append(operator.buildQuery(this));
 	}
 
-	public void setIndexScanOperator(PigIndexScanOperator pigIndexScan) {
-		this.indexScanOperator = pigIndexScan;
+	public void addIndexScanOperator(PigIndexScanOperator pigIndexScan) {
+		this.indexScanOps.add(pigIndexScan);
 	}
+	
+//	public void addIndexScanOperator(String type, PigIndexScanOperator[] pigIndexScans) {
+//		for (PigIndexScanOperator)
+//		this.indexScanOps.add(pigIndexScan);
+//	}
 
 	public void setDistinctOperator(PigDistinctOperator pigDistinctOperator) {
 		this.distinctOperator = pigDistinctOperator;
@@ -172,7 +187,7 @@ public class PigQuery {
 	public ArrayList<PigFilterOperator> getFilterPigOps() {
 		return filterPigOps;
 	}
-	
+
 	public PigProjectionOperator getProjection() {
 		return projection;
 	}

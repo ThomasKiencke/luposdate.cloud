@@ -49,7 +49,7 @@ public class IndexScanFormatter implements IOperatorFormatter {
 		Collection<TriplePattern> tp = indexScan.getTriplePattern();
 		PigIndexScanOperator pigIndexScan = new PigIndexScanOperator(tp);
 		pigQuery.buildAndAppendQuery(pigIndexScan);
-		pigQuery.setIndexScanOperator(pigIndexScan);
+		pigQuery.addIndexScanOperator(pigIndexScan);
 		return pigQuery;
 	}
 
