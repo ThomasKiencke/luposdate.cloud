@@ -36,7 +36,7 @@ import lupos.engine.operators.tripleoperator.TriplePattern;
 /**
  * Implements the formatter for the index scan operator
  */
-public class CloudUnionFormatter implements IOperatorFormatter {
+public class MultiIndexScanFormatter implements IOperatorFormatter {
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -46,12 +46,7 @@ public class CloudUnionFormatter implements IOperatorFormatter {
 	 */
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigQuery) {
-//		final MultiIndexScanContainer cloudUnion = (MultiIndexScanContainer) operator;
-//		for (BasicIndexScan bis : cloudUnion.getIndexScanList()) {
-//			PigIndexScanOperator pigIndexScan = new PigIndexScanOperator(bis.getTriplePattern());
-//			pigQuery.buildAndAppendQuery(pigIndexScan);
-//			pigQuery.addIndexScanOperator(pigIndexScan);
-//		}
+		final MultiIndexScanContainer multiIndexScanContainer = (MultiIndexScanContainer) operator;
 		pigQuery.addMultiIndexScanList((MultiIndexScanContainer) operator);
 		return pigQuery;
 	}

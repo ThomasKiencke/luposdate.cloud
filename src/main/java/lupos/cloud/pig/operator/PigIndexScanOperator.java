@@ -11,12 +11,12 @@ import lupos.datastructures.items.Variable;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 public class PigIndexScanOperator implements IPigOperator {
-	private static int idCounter = 0;
-	 private int id = 0;
 	ArrayList<JoinInformation> intermediateJoins = new ArrayList<JoinInformation>();
 	Collection<TriplePattern> triplePatternCollection = null;
+	private ArrayList<PigFilterOperator> filterPigOps = new ArrayList<PigFilterOperator>();
 	int tripleCounter = 0;
-	
+	private PigProjectionOperator projection = null;
+
 	public PigIndexScanOperator(Collection<TriplePattern> tp) {
 		this.triplePatternCollection = tp;
 	}
@@ -30,12 +30,10 @@ public class PigIndexScanOperator implements IPigOperator {
 	 * @return the string
 	 */
 	public String buildQuery(PigQuery pigQuery) {
-		id = idCounter;
-		idCounter++;
 		StringBuilder result = new StringBuilder();
 		for (TriplePattern triplePattern : this.triplePatternCollection) {
 			JoinInformation curPattern = getHBaseTable(triplePattern);
-//			intermediateJoins = pigQuery.getIntermediateJoins();
+			// intermediateJoins = pigQuery.getIntermediateJoins();
 
 			if (pigQuery.isDebug()) {
 				result.append("-- TriplePattern: " + triplePattern.toN3String()
@@ -101,7 +99,7 @@ public class PigIndexScanOperator implements IPigOperator {
 				result.append("\n");
 			}
 			tripleCounter++;
-		}	
+		}
 		return result.toString();
 	}
 
@@ -379,19 +377,44 @@ public class PigIndexScanOperator implements IPigOperator {
 		return result.toString();
 	}
 
-	public int getId() {
-		return id;
-	}
-	
-	public void setId(int id) {
-		this.id = id;
-	}
-	
+
 	public ArrayList<JoinInformation> getIntermediateJoins() {
 		return intermediateJoins;
 	}
-	
+
 	public String getFinalAlias() {
 		return intermediateJoins.get(0).getName();
+	}
+
+	public ArrayList<PigFilterOperator> getFilter() {
+		return this.filterPigOps;
+	}
+
+	public void addFilter(PigFilterOperator filterPigOp) {
+		this.filterPigOps.add(filterPigOp);
+	}
+
+	public void setProjection(PigProjectionOperator projection) {
+		this.projection = projection;
+	}
+
+	public PigProjectionOperator getProjection() {
+		return projection;
+	}
+
+	public void addFilter(ArrayList<PigFilterOperator> filter) {
+		for (PigFilterOperator item : filter) {
+			this.filterPigOps.add(item);
+		}
+	}
+
+	public void addProjection(PigProjectionOperator newProjection) {
+		if (projection == null) {
+			this.projection = newProjection;
+		} else {
+			this.projection.addProjectionVaribles(newProjection
+					.getProjectionVariables());
+		}
+
 	}
 }

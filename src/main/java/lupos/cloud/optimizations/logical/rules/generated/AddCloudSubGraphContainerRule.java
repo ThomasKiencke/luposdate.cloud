@@ -31,6 +31,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 import lupos.cloud.operator.CloudSubgraphContainer;
+import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
 import lupos.cloud.pig.operator.PigFilterOperator;
@@ -39,7 +40,6 @@ import lupos.datastructures.items.Variable;
 import lupos.distributed.storage.distributionstrategy.TriplePatternNotSupportedError;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
-import lupos.engine.operators.index.BasicIndexScan;
 import lupos.engine.operators.index.Root;
 import lupos.engine.operators.singleinput.AddBinding;
 import lupos.engine.operators.singleinput.AddBindingFromOtherVar;
@@ -90,6 +90,7 @@ public class AddCloudSubGraphContainerRule extends Rule {
 			final Collection<BasicOperator> preds = indexScan
 					.getPrecedingOperators();
 			List<OperatorIDTuple> succs = indexScan.getSucceedingOperators();
+			
 			for (final BasicOperator pred : preds) {
 				pred.getOperatorIDTuple(indexScan).setOperator(container);
 			}
@@ -268,7 +269,7 @@ public class AddCloudSubGraphContainerRule extends Rule {
 	private BasicOperator currentOperator = null;
 
 	private boolean _checkPrivate0(final BasicOperator _op) {
-		if (!(_op instanceof BasicIndexScan || _op instanceof MultiIndexScanContainer)) {
+		if (!(_op instanceof IndexScanContainer || _op instanceof MultiIndexScanContainer)) {
 			return false;
 		}
 
@@ -278,7 +279,7 @@ public class AddCloudSubGraphContainerRule extends Rule {
 	}
 
 	public AddCloudSubGraphContainerRule() {
-		this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
+		this.startOpClass = BasicOperator.class;
 		this.ruleName = "AddSubGraphContainer";
 	}
 

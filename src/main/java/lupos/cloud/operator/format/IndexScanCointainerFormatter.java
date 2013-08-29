@@ -25,17 +25,23 @@ package lupos.cloud.operator.format;
 
 import java.util.Collection;
 
+import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.format.IOperatorFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.cloud.pig.operator.PigIndexScanOperator;
 import lupos.engine.operators.BasicOperator;
-import lupos.engine.operators.index.BasicIndexScan;
+import lupos.engine.operators.index.Root;
+import lupos.engine.operators.singleinput.Projection;
+import lupos.engine.operators.singleinput.Result;
+import lupos.engine.operators.singleinput.filter.Filter;
+import lupos.engine.operators.singleinput.modifiers.Limit;
+import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 /**
  * Implements the formatter for the index scan operator
  */
-public class IndexScanFormatter implements IOperatorFormatter {
+public class IndexScanCointainerFormatter implements IOperatorFormatter {
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -45,12 +51,37 @@ public class IndexScanFormatter implements IOperatorFormatter {
 	 */
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigQuery) {
-		final BasicIndexScan indexScan = (BasicIndexScan) operator;
-		Collection<TriplePattern> tp = indexScan.getTriplePattern();
+		PigQuery result = pigQuery;
+		final IndexScanContainer indexScan = (IndexScanContainer) operator;
+		Collection<TriplePattern> tp = indexScan.getIndexScan()
+				.getTriplePattern();
 		PigIndexScanOperator pigIndexScan = new PigIndexScanOperator(tp);
 		pigQuery.buildAndAppendQuery(pigIndexScan);
 		pigQuery.addIndexScanOperator(pigIndexScan);
+
+		for (BasicOperator op : indexScan.getOperations()) {
+			IOperatorFormatter serializer = null;
+			if (op instanceof Filter) {
+				serializer = new FilterFormatter();
+			} else if (op instanceof Projection) {
+				serializer = new ProjectionFormatter();
+			} else if (op instanceof Distinct) {
+				serializer = new DistinctFormatter();
+			} else if (op instanceof Limit) {
+				serializer = new LimitFormatter();
+			} else if (op instanceof Result || op instanceof Root) {
+				// ignore
+			} else {
+				throw new RuntimeException(
+						"Something is wrong here. Forgot case? Class: "
+								+ op.getClass());
+			}
+
+			if (serializer != null) {
+				result = serializer.serialize(op, result);
+			}
+		}
+
 		return pigQuery;
 	}
-
 }

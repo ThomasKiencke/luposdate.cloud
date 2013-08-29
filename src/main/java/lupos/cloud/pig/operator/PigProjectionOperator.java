@@ -22,12 +22,16 @@ public class PigProjectionOperator implements IPigOperator {
 		}
 	}
 	
-	public void addProjectionVaribles(HashSet<Variable> variables) {
-		for (Variable varToAdd : variables) {
-			this.projectionVariables.add(varToAdd.toString());
+	public void addProjectionVaribles(HashSet<String> variables) {
+		for (String varToAdd : variables) {
+			this.projectionVariables.add(varToAdd);
 		}
 	}
 
+	public HashSet<String> getProjectionVariables() {
+		return projectionVariables;
+	}
+	
 	@Override
 	public String buildQuery(PigQuery pigQuery) {
 		this.intermediateJoins = pigQuery.getIntermediateJoins();

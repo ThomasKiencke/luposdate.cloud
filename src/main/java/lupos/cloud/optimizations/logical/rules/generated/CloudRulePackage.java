@@ -29,6 +29,7 @@ import lupos.optimizations.logical.rules.generated.runtime.RulePackage;
 public class CloudRulePackage extends RulePackage {
 	public CloudRulePackage() {
 		this.rules = new Rule[] { 
+				new AddIndexScanContainerRule(),
 				new AddMergeContainerRule(),
 				new AddCloudSubGraphContainerRule()
 				};

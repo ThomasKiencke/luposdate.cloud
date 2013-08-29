@@ -25,7 +25,6 @@ package lupos.cloud.operator;
 
 import java.util.List;
 
-import lupos.cloud.operator.format.AddCloudProjection;
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.datastructures.queryresult.QueryResult;
@@ -127,16 +126,14 @@ public class CloudSubgraphContainer extends RootChild {
 				.getSucceedingOperators();
 		while (curNode != null && curNode.size() != 0) {
 			if (curNode.get(0).getOperator() instanceof Filter) {
-				result.append("\n" + ((Filter) curNode.get(0).getOperator())
-						.toString().replace("\n", ""));
+				result.append("\n"
+						+ ((Filter) curNode.get(0).getOperator()).toString()
+								.replace("\n", ""));
 			} else if (curNode.get(0).getOperator() instanceof Projection) {
 				result.append("\n"
 						+ ((Projection) curNode.get(0).getOperator())
 								.toString().replace("\n", ""));
-			} else if (curNode.get(0).getOperator() instanceof AddCloudProjection) {
-				result.append("\n"
-						+ ((AddCloudProjection) curNode.get(0).getOperator())
-								.toString().replace("\n", ""));
+
 			} else {
 				result.append("\n"
 						+ curNode.get(0).getOperator().getClass()

@@ -23,18 +23,15 @@
  */
 package lupos.cloud.operator.format;
 
+import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
-import lupos.cloud.operator.format.FilterFormatter;
-import lupos.cloud.operator.format.IndexScanFormatter;
+import lupos.cloud.operator.format.IndexScanCointainerFormatter;
 import lupos.cloud.operator.format.IOperatorFormatter;
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
-import lupos.engine.operators.index.BasicIndexScan;
 import lupos.engine.operators.index.Root;
-import lupos.engine.operators.singleinput.AddBinding;
-import lupos.engine.operators.singleinput.AddBindingFromOtherVar;
 import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
@@ -64,26 +61,24 @@ public class CloudSubgraphContainerFormatter implements IOperatorFormatter {
 		final BasicOperator op = node.getOperator();
 
 		IOperatorFormatter serializer = null;
-		if (op instanceof BasicIndexScan) {
-			serializer = new IndexScanFormatter();
-		} else if (op instanceof Root) {
+		if (op instanceof Root || op instanceof Result) {
 			result = pigLatin;
 		} else if (op instanceof Filter) {
 			serializer = new FilterFormatter();
-		} else if (op instanceof Projection || op instanceof AddCloudProjection) {
+		} else if (op instanceof Projection) {
 			serializer = new ProjectionFormatter();
 		} else if (op instanceof Distinct) {
 			serializer = new DistinctFormatter();
 		} else if (op instanceof Limit) {
 			serializer = new LimitFormatter();
+		} else if (op instanceof IndexScanContainer) {
+			serializer = new IndexScanCointainerFormatter();
 		} else if (op instanceof MultiIndexScanContainer) {
-			serializer = new CloudUnionFormatter();
-		} else if (op instanceof AddBinding
-				|| op instanceof AddBindingFromOtherVar || op instanceof Result) {
-			// ignore
-			result = pigLatin;
+			serializer = new MultiIndexScanFormatter();
 		} else {
-			throw new RuntimeException("Something is wrong here. Forgot case?");
+			throw new RuntimeException(
+					"Something is wrong here. Forgot case? Class: "
+							+ op.getClass());
 		}
 
 		if (serializer != null) {

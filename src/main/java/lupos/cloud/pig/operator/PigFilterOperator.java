@@ -29,6 +29,8 @@ public class PigFilterOperator implements IPigOperator {
 
 	private String checkIfFilterPossible() {
 		StringBuilder result = new StringBuilder();
+		ArrayList<JoinInformation> toRemove = new ArrayList<JoinInformation>();
+		ArrayList<JoinInformation> toAdd = new ArrayList<JoinInformation>();
 		// Wenn alle Variablen in einer Menge vorkommen, kann der Filter
 		// angewandt weden
 		for (JoinInformation curJoin : intermediateJoins) {
@@ -70,11 +72,23 @@ public class PigFilterOperator implements IPigOperator {
 					newJoin.addAppliedFilters(this);
 					newJoin.addAppliedFilters(curJoin.getAppliedFilters());
 
-					intermediateJoins.remove(curJoin);
-					intermediateJoins.add(newJoin);
+					curJoin.addAppliedFilters(this);
+					toRemove.add(curJoin);
+					
+					toRemove.remove(curJoin);
+					toAdd.add(newJoin);
+					
 					JoinInformation.idCounter++;
 				}
 			}
+		}
+		
+		for (JoinInformation item : toRemove) {
+			intermediateJoins.remove(item);
+		}
+		
+		for (JoinInformation item : toAdd) {
+			intermediateJoins.add(item);
 		}
 		return result.toString();
 	}

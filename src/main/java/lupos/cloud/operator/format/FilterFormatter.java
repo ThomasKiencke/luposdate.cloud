@@ -45,7 +45,7 @@ public class FilterFormatter implements IOperatorFormatter {
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
 		Filter filter = (Filter) operator;
 		PigFilterOperator pigFilter = new PigFilterOperator(filter);
-		pigLatin.addFilter(pigFilter);
+		pigLatin.addContainerFilter(pigFilter);
 		return pigLatin;
 	}
 }

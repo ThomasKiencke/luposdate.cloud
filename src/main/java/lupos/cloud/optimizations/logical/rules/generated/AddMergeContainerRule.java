@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
+import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
 import lupos.cloud.storage.util.CloudManagement;
@@ -37,9 +38,11 @@ import lupos.distributed.query.operator.withouthistogramsubmission.QueryClientRo
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.index.BasicIndexScan;
+import lupos.engine.operators.multiinput.MultiInputOperator;
 import lupos.engine.operators.multiinput.Union;
 import lupos.engine.operators.multiinput.join.Join;
 import lupos.engine.operators.multiinput.optional.Optional;
+import lupos.engine.operators.singleinput.Projection;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 
 public class AddMergeContainerRule extends Rule {
@@ -55,8 +58,8 @@ public class AddMergeContainerRule extends Rule {
 		// Am Anfang werden alle IndexScans in die Liste gepackt
 		multiInputList = new ArrayList<BasicOperator>();
 		for (OperatorIDTuple op : qcRoot.getSucceedingOperators()) {
-			if (op.getOperator() instanceof BasicIndexScan) {
-				multiInputList.add((BasicIndexScan) op.getOperator());
+			if (op.getOperator() instanceof IndexScanContainer) {
+				multiInputList.add(op.getOperator());
 			}
 		}
 
@@ -69,10 +72,10 @@ public class AddMergeContainerRule extends Rule {
 
 	private void mergeContainer() {
 		HashMap<BasicOperator, HashSet<BasicOperator>> mergeMap = new HashMap<BasicOperator, HashSet<BasicOperator>>();
-		Class[] mergeClasses = { Union.class, Optional.class, Join.class };
+		// Class[] mergeClasses = { Union.class, Optional.class, Join.class };
 		for (BasicOperator op : multiInputList) {
 			// Suche MultiInput Klasse und gib diese zurück
-			BasicOperator foundOp = this.getOperator(op, mergeClasses);
+			BasicOperator foundOp = this.getOperator(op);
 			if (foundOp != null) {
 				HashSet<BasicOperator> list = mergeMap.get(foundOp);
 				if (list == null) {
@@ -89,46 +92,52 @@ public class AddMergeContainerRule extends Rule {
 		for (BasicOperator op : mergeMap.keySet()) {
 			HashSet<BasicOperator> toMerge = mergeMap.get(op);
 			if (toMerge.size() > 1) {
-				if (op instanceof Union) {
-					// Vereinige die Indexscans
-					MultiIndexScanContainer union = new MultiIndexScanContainer();
 
-					// leere Liste einfügen, weil sonst NullpointerException
-					union.setUnionVariables(new ArrayList<Variable>());
-					union.setIntersectionVariables(new ArrayList<Variable>());
+				MultiIndexScanContainer multiIndexContainer = new MultiIndexScanContainer();
 
-					OperatorIDTuple unionOpID = new OperatorIDTuple(union, 0);
-					
-					union.addOperator(MultiIndexScanContainer.UNION, toMerge);
-					for (BasicOperator indexScan : toMerge) {
-						multiInputList.remove(indexScan);
+				// leere Liste einfügen, weil sonst NullpointerException
+				multiIndexContainer
+						.setUnionVariables(new ArrayList<Variable>());
+				multiIndexContainer
+						.setIntersectionVariables(new ArrayList<Variable>());
+
+				OperatorIDTuple multiIndexScanContainerOpID = new OperatorIDTuple(
+						multiIndexContainer, 0);
+
+				multiIndexContainer.addOperator((MultiInputOperator) op,
+						toMerge);
+
+				// Wenn der MultiInputContainer von Variablen abhängig ist
+				// müssen die als Projektion in den IndexScanContainer
+				// hinzugefügt werden
+				ArrayList<Variable> intersectionVariables = new ArrayList<Variable>(
+						op.getIntersectionVariables());
+				if (intersectionVariables.size() > 0) {
+					Projection proj = new Projection();
+					for (Variable var : intersectionVariables) {
+						proj.addProjectionElement(var);
 					}
-
-					op.removeFromOperatorGraph();
-
-					this.insertAndDeleteOldConnections(unionOpID, toMerge);
-					multiInputList.add(union);
-
-				} else if (op instanceof Join) {
-					// Vereinige die Indexscans
-					MultiIndexScanContainer join = new MultiIndexScanContainer();
-
-					// leere Liste einfügen, weil sonst NullpointerException
-					join.setUnionVariables(new ArrayList<Variable>());
-					join.setIntersectionVariables(new ArrayList<Variable>());
-
-					OperatorIDTuple unionOpID = new OperatorIDTuple(join, 0);
-					join.addOperator(MultiIndexScanContainer.JOIN, toMerge);
 					for (BasicOperator indexScan : toMerge) {
-						multiInputList.remove(indexScan);
+						if (indexScan instanceof IndexScanContainer) {
+							((IndexScanContainer) indexScan).addOperator(proj);
+						}
+						else {
+							((MultiIndexScanContainer) indexScan).addOperatorToAllChilds(proj);
+						}
 					}
-
-					op.removeFromOperatorGraph();
-
-					this.insertAndDeleteOldConnections(unionOpID, toMerge);
-					multiInputList.add(join);
-//
 				}
+
+				for (BasicOperator indexScan : toMerge) {
+					multiInputList.remove(indexScan);
+				}
+
+				this.insertAndDeleteOldConnections(multiIndexScanContainerOpID,
+						toMerge);
+
+				op.removeFromOperatorGraph();
+
+				multiInputList.add(multiIndexContainer);
+
 			}
 		}
 
@@ -186,21 +195,17 @@ public class AddMergeContainerRule extends Rule {
 
 	}
 
-	private BasicOperator getOperator(BasicOperator startOp,
-			Class[] mergeClasses) {
+	private BasicOperator getOperator(BasicOperator startOp) {
 		BasicOperator result = null;
 		List<OperatorIDTuple> succs = startOp.getSucceedingOperators();
 		if (succs == null) {
 			return null;
 		} else {
 			for (OperatorIDTuple node : succs) {
-				for (Class clazz : mergeClasses) {
-//					System.out.println(node.getOperator().getClass());
-					if (node.getOperator().getClass() == clazz) {
-						return node.getOperator();
-					}
+				if (node.getOperator() instanceof MultiInputOperator) {
+					return node.getOperator();
 				}
-				return this.getOperator(node.getOperator(), mergeClasses);
+				return this.getOperator(node.getOperator());
 			}
 
 		}
