@@ -23,8 +23,7 @@
  */
 package lupos.cloud.operator.format;
 
-import lupos.cloud.operator.CloudJoin;
-import lupos.cloud.operator.CloudUnion;
+import lupos.cloud.operator.MultiIndexScanContainer;
 import lupos.cloud.operator.format.FilterFormatter;
 import lupos.cloud.operator.format.IndexScanFormatter;
 import lupos.cloud.operator.format.IOperatorFormatter;
@@ -77,11 +76,10 @@ public class CloudSubgraphContainerFormatter implements IOperatorFormatter {
 			serializer = new DistinctFormatter();
 		} else if (op instanceof Limit) {
 			serializer = new LimitFormatter();
-		} else if (op instanceof CloudUnion) {
+		} else if (op instanceof MultiIndexScanContainer) {
 			serializer = new CloudUnionFormatter();
 		} else if (op instanceof AddBinding
-				|| op instanceof AddBindingFromOtherVar || op instanceof Result
-				|| op instanceof CloudJoin) {
+				|| op instanceof AddBindingFromOtherVar || op instanceof Result) {
 			// ignore
 			result = pigLatin;
 		} else {

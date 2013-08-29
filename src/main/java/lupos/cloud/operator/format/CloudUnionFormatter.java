@@ -25,7 +25,7 @@ package lupos.cloud.operator.format;
 
 import java.util.Collection;
 
-import lupos.cloud.operator.CloudUnion;
+import lupos.cloud.operator.MultiIndexScanContainer;
 import lupos.cloud.operator.format.IOperatorFormatter;
 import lupos.cloud.pig.PigQuery;
 import lupos.cloud.pig.operator.PigIndexScanOperator;
@@ -46,12 +46,13 @@ public class CloudUnionFormatter implements IOperatorFormatter {
 	 */
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigQuery) {
-		final CloudUnion cloudUnion = (CloudUnion) operator;
-		for (BasicIndexScan bis : cloudUnion.getIndexScanList()) {
-			PigIndexScanOperator pigIndexScan = new PigIndexScanOperator(bis.getTriplePattern());
-			pigQuery.buildAndAppendQuery(pigIndexScan);
-			pigQuery.addIndexScanOperator(pigIndexScan);
-		}
+//		final MultiIndexScanContainer cloudUnion = (MultiIndexScanContainer) operator;
+//		for (BasicIndexScan bis : cloudUnion.getIndexScanList()) {
+//			PigIndexScanOperator pigIndexScan = new PigIndexScanOperator(bis.getTriplePattern());
+//			pigQuery.buildAndAppendQuery(pigIndexScan);
+//			pigQuery.addIndexScanOperator(pigIndexScan);
+//		}
+		pigQuery.addMultiIndexScanList((MultiIndexScanContainer) operator);
 		return pigQuery;
 	}
 

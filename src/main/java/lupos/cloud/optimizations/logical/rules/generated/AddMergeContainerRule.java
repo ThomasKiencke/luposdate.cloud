@@ -29,8 +29,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-import lupos.cloud.operator.CloudJoin;
-import lupos.cloud.operator.CloudUnion;
+import lupos.cloud.operator.MultiIndexScanContainer;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
@@ -92,15 +91,16 @@ public class AddMergeContainerRule extends Rule {
 			if (toMerge.size() > 1) {
 				if (op instanceof Union) {
 					// Vereinige die Indexscans
-					CloudUnion union = new CloudUnion();
+					MultiIndexScanContainer union = new MultiIndexScanContainer();
 
 					// leere Liste einfügen, weil sonst NullpointerException
 					union.setUnionVariables(new ArrayList<Variable>());
 					union.setIntersectionVariables(new ArrayList<Variable>());
 
 					OperatorIDTuple unionOpID = new OperatorIDTuple(union, 0);
+					
+					union.addOperator(MultiIndexScanContainer.UNION, toMerge);
 					for (BasicOperator indexScan : toMerge) {
-						union.addOperator((BasicIndexScan) indexScan);
 						multiInputList.remove(indexScan);
 					}
 
@@ -111,15 +111,15 @@ public class AddMergeContainerRule extends Rule {
 
 				} else if (op instanceof Join) {
 					// Vereinige die Indexscans
-					CloudJoin join = new CloudJoin();
+					MultiIndexScanContainer join = new MultiIndexScanContainer();
 
 					// leere Liste einfügen, weil sonst NullpointerException
 					join.setUnionVariables(new ArrayList<Variable>());
 					join.setIntersectionVariables(new ArrayList<Variable>());
 
 					OperatorIDTuple unionOpID = new OperatorIDTuple(join, 0);
+					join.addOperator(MultiIndexScanContainer.JOIN, toMerge);
 					for (BasicOperator indexScan : toMerge) {
-						join.addOperator(indexScan);
 						multiInputList.remove(indexScan);
 					}
 
@@ -127,7 +127,7 @@ public class AddMergeContainerRule extends Rule {
 
 					this.insertAndDeleteOldConnections(unionOpID, toMerge);
 					multiInputList.add(join);
-
+//
 				}
 			}
 		}

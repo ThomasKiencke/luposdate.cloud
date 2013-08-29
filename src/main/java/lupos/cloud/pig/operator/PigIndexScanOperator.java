@@ -11,9 +11,9 @@ import lupos.datastructures.items.Variable;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 public class PigIndexScanOperator implements IPigOperator {
-	static private int idCounter = 0;
+	private static int idCounter = 0;
 	 private int id = 0;
-	ArrayList<JoinInformation> intermediateJoins = null;
+	ArrayList<JoinInformation> intermediateJoins = new ArrayList<JoinInformation>();
 	Collection<TriplePattern> triplePatternCollection = null;
 	int tripleCounter = 0;
 	
@@ -35,7 +35,7 @@ public class PigIndexScanOperator implements IPigOperator {
 		StringBuilder result = new StringBuilder();
 		for (TriplePattern triplePattern : this.triplePatternCollection) {
 			JoinInformation curPattern = getHBaseTable(triplePattern);
-			intermediateJoins = pigQuery.getIntermediateJoins();
+//			intermediateJoins = pigQuery.getIntermediateJoins();
 
 			if (pigQuery.isDebug()) {
 				result.append("-- TriplePattern: " + triplePattern.toN3String()
@@ -379,4 +379,19 @@ public class PigIndexScanOperator implements IPigOperator {
 		return result.toString();
 	}
 
+	public int getId() {
+		return id;
+	}
+	
+	public void setId(int id) {
+		this.id = id;
+	}
+	
+	public ArrayList<JoinInformation> getIntermediateJoins() {
+		return intermediateJoins;
+	}
+	
+	public String getFinalAlias() {
+		return intermediateJoins.get(0).getName();
+	}
 }

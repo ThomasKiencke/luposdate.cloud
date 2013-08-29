@@ -30,9 +30,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import lupos.cloud.operator.CloudJoin;
 import lupos.cloud.operator.CloudSubgraphContainer;
-import lupos.cloud.operator.CloudUnion;
+import lupos.cloud.operator.MultiIndexScanContainer;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
 import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.storage.util.CloudManagement;
@@ -71,7 +70,8 @@ public class AddCloudSubGraphContainerRule extends Rule {
 		try {
 
 			// Neuen Container erzeugen + inneren neuen rootNode
-			final Root rootNodeOfOuterGraph = (Root) indexScan.getPrecedingOperators().get(0);
+			final Root rootNodeOfOuterGraph = (Root) indexScan
+					.getPrecedingOperators().get(0);
 
 			// leere Liste einfügen, weil sonst NullpointerException - bug?
 			rootNodeOfOuterGraph.setUnionVariables(new ArrayList<Variable>());
@@ -123,8 +123,7 @@ public class AddCloudSubGraphContainerRule extends Rule {
 						|| curOp.getOperator() instanceof Limit
 						|| curOp.getOperator() instanceof AddBinding
 						|| curOp.getOperator() instanceof AddBindingFromOtherVar
-						|| curOp.getOperator() instanceof CloudJoin
-						|| curOp.getOperator() instanceof CloudUnion) {
+						|| curOp.getOperator() instanceof MultiIndexScanContainer) {
 					/*
 					 * Wenn ein direkter Nachfolger des Subgraphcontainer in den
 					 * Container gezogen wird ist der neue Nachfolger des
@@ -269,8 +268,7 @@ public class AddCloudSubGraphContainerRule extends Rule {
 	private BasicOperator currentOperator = null;
 
 	private boolean _checkPrivate0(final BasicOperator _op) {
-		if (!(_op instanceof BasicIndexScan
-				|| _op instanceof CloudJoin || _op instanceof CloudUnion)) {
+		if (!(_op instanceof BasicIndexScan || _op instanceof MultiIndexScanContainer)) {
 			return false;
 		}
 

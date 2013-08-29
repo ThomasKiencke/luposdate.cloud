@@ -32,6 +32,12 @@ public class JoinInformation {
 
 	private Object tablename;
 
+	public JoinInformation() {
+		this.name = "INTERMEDIATE_BAG_" + JoinInformation.idCounter;
+		this.setPatternId(idCounter);
+		idCounter++;
+	}
+
 	/**
 	 * Instantiates a new join information.
 	 * 
