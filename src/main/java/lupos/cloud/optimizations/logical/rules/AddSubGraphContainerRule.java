@@ -21,7 +21,7 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.optimizations.logical.rules.generated;
+package lupos.cloud.optimizations.logical.rules;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,7 +50,7 @@ import lupos.engine.operators.singleinput.modifiers.Limit;
 import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 
-public class AddCloudSubGraphContainerRule extends Rule {
+public class AddSubGraphContainerRule extends Rule {
 
 	public static CloudManagement cloudManagement;
 
@@ -278,7 +278,7 @@ public class AddCloudSubGraphContainerRule extends Rule {
 		return true;
 	}
 
-	public AddCloudSubGraphContainerRule() {
+	public AddSubGraphContainerRule() {
 		this.startOpClass = BasicOperator.class;
 		this.ruleName = "AddSubGraphContainer";
 	}

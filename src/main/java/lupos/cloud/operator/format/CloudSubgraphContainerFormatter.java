@@ -48,11 +48,12 @@ public class CloudSubgraphContainerFormatter implements IOperatorFormatter {
 
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
-		PigQuery result = this.serializeNode(new OperatorIDTuple(operator, 0),
-				pigLatin);
-		pigLatin.applyJoins();
-		pigLatin.finishQuery();
-		return result;
+//		PigQuery result = this.serializeNode(new OperatorIDTuple(operator, 0),
+//				pigLatin);
+//		pigLatin.applyJoins();
+//		pigLatin.finishQuery();
+//		return result;
+		return pigLatin;
 	}
 
 	private PigQuery serializeNode(final OperatorIDTuple node, PigQuery pigLatin) {

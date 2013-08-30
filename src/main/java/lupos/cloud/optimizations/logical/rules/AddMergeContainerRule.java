@@ -21,7 +21,7 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.optimizations.logical.rules.generated;
+package lupos.cloud.optimizations.logical.rules;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +32,7 @@ import java.util.List;
 import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
+import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
 import lupos.distributed.query.operator.withouthistogramsubmission.QueryClientRoot;
@@ -43,6 +44,8 @@ import lupos.engine.operators.multiinput.Union;
 import lupos.engine.operators.multiinput.join.Join;
 import lupos.engine.operators.multiinput.optional.Optional;
 import lupos.engine.operators.singleinput.Projection;
+import lupos.engine.operators.singleinput.Result;
+import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 
 public class AddMergeContainerRule extends Rule {
@@ -52,20 +55,25 @@ public class AddMergeContainerRule extends Rule {
 	public static ICloudSubgraphExecutor subgraphExecutor;
 	ArrayList<BasicOperator> multiInputList;
 
+	public static boolean finish = false;
+
 	private void replaceIndexScanOperatorWithSubGraphContainer(
 			QueryClientRoot qcRoot) {
 
 		// Am Anfang werden alle IndexScans in die Liste gepackt
 		multiInputList = new ArrayList<BasicOperator>();
 		for (OperatorIDTuple op : qcRoot.getSucceedingOperators()) {
-			if (op.getOperator() instanceof IndexScanContainer) {
+			if (op.getOperator() instanceof IndexScanContainer
+					|| op.getOperator() instanceof MultiIndexScanContainer) {
 				multiInputList.add(op.getOperator());
 			}
 		}
 
 		// Die IndexScans werden nun so lange gemerged bis nur noch ein
 		// Container existiert
-		while (multiInputList.size() > 1) {
+		if (multiInputList.size() == 1) {
+			finish = true;
+		} else {
 			mergeContainer();
 		}
 	}
@@ -75,17 +83,21 @@ public class AddMergeContainerRule extends Rule {
 		// Class[] mergeClasses = { Union.class, Optional.class, Join.class };
 		for (BasicOperator op : multiInputList) {
 			// Suche MultiInput Klasse und gib diese zurück
-			BasicOperator foundOp = this.getOperator(op);
-			if (foundOp != null) {
-				HashSet<BasicOperator> list = mergeMap.get(foundOp);
-				if (list == null) {
-					list = new HashSet<BasicOperator>();
-					list.add(op);
-					mergeMap.put(foundOp, list);
-				} else {
-					list.add(op);
+			for (OperatorIDTuple path : op.getSucceedingOperators()) {
+				BasicOperator foundOp = this.getOperator(path.getOperator());
+				// for (BasicOperator foundOp : foundOps) {
+				if (foundOp != null) {
+					HashSet<BasicOperator> list = mergeMap.get(foundOp);
+					if (list == null) {
+						list = new HashSet<BasicOperator>();
+						list.add(op);
+						mergeMap.put(foundOp, list);
+					} else {
+						list.add(op);
+					}
 				}
 			}
+			// }
 		}
 
 		// merge
@@ -118,21 +130,60 @@ public class AddMergeContainerRule extends Rule {
 						proj.addProjectionElement(var);
 					}
 					for (BasicOperator indexScan : toMerge) {
+
 						if (indexScan instanceof IndexScanContainer) {
 							((IndexScanContainer) indexScan).addOperator(proj);
-						}
-						else {
-							((MultiIndexScanContainer) indexScan).addOperatorToAllChilds(proj);
+						} else {
+							((MultiIndexScanContainer) indexScan)
+									.addOperatorToAllChilds(proj);
 						}
 					}
 				}
 
+				ArrayList<OperatorIDTuple> opPool = new ArrayList<OperatorIDTuple>(
+						op.getSucceedingOperators());
+				ArrayList<BasicOperator> addAfterContainer = new ArrayList<BasicOperator>();
+				while (opPool.size() > 0) {
+					OperatorIDTuple opID = opPool.get(0);
+					BasicOperator curOp = opID.getOperator();
+					if (curOp instanceof MultiInputOperator
+							|| curOp instanceof Result) {
+						opPool.remove(opID);
+						break;
+					} else {
+						// Überprüfe Ob die Operation unterstützt wird bevor sie
+						// hinzugefügt wird
+						if (isOperationSupported(curOp)) {
+							curOp.removeFromOperatorGraph();
+							multiIndexContainer.addOperator(curOp);
+							opPool.addAll(curOp.getSucceedingOperators());
+						} else {
+							curOp.removeFromOperatorGraph();
+							multiIndexContainer.addOperator(curOp);
+							opPool.addAll(curOp.getSucceedingOperators());
+							addAfterContainer.add(curOp);
+						}
+						opPool.remove(opID);
+					}
+				}
+				
+				for (BasicOperator toAdd : addAfterContainer) {
+					insertOperator(multiIndexContainer, toAdd);
+				}
+
+				HashSet<BasicOperator> toRemove = new HashSet<BasicOperator>();
 				for (BasicOperator indexScan : toMerge) {
-					multiInputList.remove(indexScan);
+					if (indexScan.getSucceedingOperators().size() == 1) {
+						multiInputList.remove(indexScan);
+						toRemove.add(indexScan);
+					} else {
+						op.removePrecedingOperator(indexScan);
+						indexScan.removeSucceedingOperator(op);
+					}
 				}
 
 				this.insertAndDeleteOldConnections(multiIndexScanContainerOpID,
-						toMerge);
+						toRemove);
 
 				op.removeFromOperatorGraph();
 
@@ -141,6 +192,29 @@ public class AddMergeContainerRule extends Rule {
 			}
 		}
 
+	}
+
+	public boolean isOperationSupported(BasicOperator op) {
+		boolean result = true;
+		if (op instanceof Filter) {
+			return PigFilterOperator.checkIfFilterIsSupported(((Filter) op)
+					.getNodePointer().getChildren()[0]);
+		}
+		return result;
+	}
+	
+	public void insertOperator(BasicOperator op, BasicOperator newOp) {
+		final List<OperatorIDTuple> succs = op.getSucceedingOperators();
+
+		for (OperatorIDTuple succ : succs) {
+			op.removeSucceedingOperator(succ);
+			newOp.addSucceedingOperator(succ);
+			succ.getOperator().removePrecedingOperator(op);
+			succ.getOperator().addPrecedingOperator(newOp);
+		}
+
+		op.addSucceedingOperator(newOp);
+		newOp.addPrecedingOperator(op);
 	}
 
 	private void insertAndDeleteOldConnections(OperatorIDTuple newOp,
@@ -195,21 +269,16 @@ public class AddMergeContainerRule extends Rule {
 
 	}
 
-	private BasicOperator getOperator(BasicOperator startOp) {
-		BasicOperator result = null;
-		List<OperatorIDTuple> succs = startOp.getSucceedingOperators();
-		if (succs == null) {
-			return null;
+	private BasicOperator getOperator(BasicOperator node) {
+		if (node instanceof MultiInputOperator) {
+			return node;
 		} else {
-			for (OperatorIDTuple node : succs) {
-				if (node.getOperator() instanceof MultiInputOperator) {
-					return node.getOperator();
-				}
-				return this.getOperator(node.getOperator());
+			for (OperatorIDTuple succ : node.getSucceedingOperators()) {
+				return this.getOperator(succ.getOperator());
 			}
-
 		}
-		return result;
+
+		return null;
 	}
 
 	private QueryClientRoot indexScan = null;
@@ -224,7 +293,7 @@ public class AddMergeContainerRule extends Rule {
 				this.indexScan = (QueryClientRoot) _op;
 				return true;
 			} else {
-				return false;
+				return !finish;
 			}
 		}
 	}

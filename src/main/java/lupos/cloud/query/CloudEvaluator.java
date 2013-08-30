@@ -27,8 +27,9 @@ import java.util.Date;
 import java.util.List;
 
 import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.optimizations.logical.rules.generated.AddCloudSubGraphContainerRule;
-import lupos.cloud.optimizations.logical.rules.generated.CloudRulePackage;
+import lupos.cloud.optimizations.logical.rules.AddMergeContainerRule;
+import lupos.cloud.optimizations.logical.rules.CloudRulePackage;
+import lupos.cloud.optimizations.logical.rules.AddSubGraphContainerRule;
 import lupos.distributed.query.operator.histogramsubmission.IHistogramExecutor;
 import lupos.cloud.storage.Storage_Cloud;
 import lupos.cloud.storage.util.CloudManagement;
@@ -180,8 +181,9 @@ public class CloudEvaluator extends QueryClient {
 
 		// evaluate rule to identify subgraphs and put them into a
 		// SubgraphContainer operator
-		AddCloudSubGraphContainerRule.cloudManagement = this.cloudManagement;
-		AddCloudSubGraphContainerRule.subgraphExecutor = this.subgraphExecutor;
+		AddSubGraphContainerRule.cloudManagement = this.cloudManagement;
+		AddSubGraphContainerRule.subgraphExecutor = this.subgraphExecutor;
+		AddMergeContainerRule.finish = false; // unschön, bessere lösung finden
 		final DistributedRulePackage rules = new DistributedRulePackage();
 		rules.applyRules(this.rootNode);
 
@@ -200,8 +202,8 @@ public class CloudEvaluator extends QueryClient {
 
 		// evaluate rule to identify subgraphs and put them into a
 		// SubgraphContainer operator
-		AddCloudSubGraphContainerRule.cloudManagement = this.cloudManagement;
-		AddCloudSubGraphContainerRule.subgraphExecutor = this.subgraphExecutor;
+		AddSubGraphContainerRule.cloudManagement = this.cloudManagement;
+		AddSubGraphContainerRule.subgraphExecutor = this.subgraphExecutor;
 		final CloudRulePackage rules = new CloudRulePackage();
 		final List<DebugContainer<BasicOperatorByteArray>> result2 = rules
 				.applyRulesDebugByteArray(this.rootNode, prefixInstance);

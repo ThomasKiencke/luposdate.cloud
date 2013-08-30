@@ -1,5 +1,6 @@
 package lupos.cloud.operator;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.TreeMap;
 
@@ -14,6 +15,7 @@ public class MultiIndexScanContainer extends BasicOperator {
 	public static final int UNION = 0;
 	public static final Integer JOIN = 1;
 	private static int idCounter = 0;
+	private ArrayList<BasicOperator> ops = new ArrayList<BasicOperator>();
 
 	/**
 	 * 
@@ -65,6 +67,10 @@ public class MultiIndexScanContainer extends BasicOperator {
 				}
 			}
 		}
+	}
+
+	public void addOperator(BasicOperator op) {
+		this.ops.add(op);		
 	}
 
 }

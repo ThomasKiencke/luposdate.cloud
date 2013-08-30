@@ -21,7 +21,7 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package lupos.cloud.optimizations.logical.rules.generated;
+package lupos.cloud.optimizations.logical.rules;
 
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 import lupos.optimizations.logical.rules.generated.runtime.RulePackage;
@@ -31,7 +31,7 @@ public class CloudRulePackage extends RulePackage {
 		this.rules = new Rule[] { 
 				new AddIndexScanContainerRule(),
 				new AddMergeContainerRule(),
-				new AddCloudSubGraphContainerRule()
+				new AddSubGraphContainerRule()
 				};
 	}
 }
