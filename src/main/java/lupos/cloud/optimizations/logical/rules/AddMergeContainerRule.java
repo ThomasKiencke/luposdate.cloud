@@ -53,25 +53,28 @@ public class AddMergeContainerRule extends Rule {
 	public static CloudManagement cloudManagement;
 
 	public static ICloudSubgraphExecutor subgraphExecutor;
-	ArrayList<BasicOperator> multiInputList;
+	ArrayList<BasicOperator> containerList;
 
 	public static boolean finish = false;
+
 
 	private void replaceIndexScanOperatorWithSubGraphContainer(
 			QueryClientRoot qcRoot) {
 
-		// Am Anfang werden alle IndexScans in die Liste gepackt
-		multiInputList = new ArrayList<BasicOperator>();
+		// Am Anfang werden alle IndexScansContainer und MultiIndexScanContainer
+		// in die Liste gepackt
+		containerList = new ArrayList<BasicOperator>();
 		for (OperatorIDTuple op : qcRoot.getSucceedingOperators()) {
 			if (op.getOperator() instanceof IndexScanContainer
 					|| op.getOperator() instanceof MultiIndexScanContainer) {
-				multiInputList.add(op.getOperator());
+				containerList.add(op.getOperator());
 			}
 		}
 
 		// Die IndexScans werden nun so lange gemerged bis nur noch ein
 		// Container existiert
-		if (multiInputList.size() == 1) {
+
+		if (containerList.size() == 1) {
 			finish = true;
 		} else {
 			mergeContainer();
@@ -80,12 +83,15 @@ public class AddMergeContainerRule extends Rule {
 
 	private void mergeContainer() {
 		HashMap<BasicOperator, HashSet<BasicOperator>> mergeMap = new HashMap<BasicOperator, HashSet<BasicOperator>>();
-		// Class[] mergeClasses = { Union.class, Optional.class, Join.class };
-		for (BasicOperator op : multiInputList) {
-			// Suche MultiInput Klasse und gib diese zurück
+
+		// Für jeden (Multi-)Index-Container wird die Nachfolge MultiInput
+		// Operation gesucht und in die mergeMap gepackt. Dort befinet sich
+		// danach die MultiInputOperation also z.B. Union und eine Lister der
+		// beteiligten (Multi-)IndexScan Operationen
+		for (BasicOperator op : containerList) {
 			for (OperatorIDTuple path : op.getSucceedingOperators()) {
-				BasicOperator foundOp = this.getOperator(path.getOperator());
-				// for (BasicOperator foundOp : foundOps) {
+				BasicOperator foundOp = OperatorGraphHelper
+						.getNextMultiInputOperation(path.getOperator());
 				if (foundOp != null) {
 					HashSet<BasicOperator> list = mergeMap.get(foundOp);
 					if (list == null) {
@@ -97,188 +103,76 @@ public class AddMergeContainerRule extends Rule {
 					}
 				}
 			}
-			// }
 		}
 
-		// merge
-		for (BasicOperator op : mergeMap.keySet()) {
-			HashSet<BasicOperator> toMerge = mergeMap.get(op);
+		// Für jeden MultiInputOperator wird nun ein eigner Container erstellt
+		// mit allen dazugehörigen (Multi-)Index-Scan Containern
+		for (BasicOperator multiInputOperator : mergeMap.keySet()) {
+			HashSet<BasicOperator> toMerge = mergeMap.get(multiInputOperator);
+			// Eine MultiInput Operator braucht immer mehr als eine Input
+			// Operation
 			if (toMerge.size() > 1) {
-
 				MultiIndexScanContainer multiIndexContainer = new MultiIndexScanContainer();
 
-				// leere Liste einfügen, weil sonst NullpointerException
+				// Füge Union/Intersection-Variablen hinzu
+				multiIndexContainer.setUnionVariables(OperatorGraphHelper
+						.getUnionVariablesFromMultipleOperations(toMerge));
 				multiIndexContainer
-						.setUnionVariables(new ArrayList<Variable>());
-				multiIndexContainer
-						.setIntersectionVariables(new ArrayList<Variable>());
+						.setIntersectionVariables(OperatorGraphHelper
+								.getIntersectionVariablesFromMultipleOperations(toMerge));
 
-				OperatorIDTuple multiIndexScanContainerOpID = new OperatorIDTuple(
-						multiIndexContainer, 0);
+				// Neuen Container erzeugen und den MultiInput Operator und
+				// (Multi-)IndexScans übergeben
+				multiIndexContainer.addOperator(
+						(MultiInputOperator) multiInputOperator, toMerge);
 
-				multiIndexContainer.addOperator((MultiInputOperator) op,
-						toMerge);
-
-				// Wenn der MultiInputContainer von Variablen abhängig ist
-				// müssen die als Projektion in den IndexScanContainer
+				// Wenn der MultiInputOperator von Variablen abhängt
+				// müssen die als Projektion in den Containern
 				// hinzugefügt werden
-				ArrayList<Variable> intersectionVariables = new ArrayList<Variable>(
-						op.getIntersectionVariables());
-				if (intersectionVariables.size() > 0) {
-					Projection proj = new Projection();
-					for (Variable var : intersectionVariables) {
-						proj.addProjectionElement(var);
-					}
-					for (BasicOperator indexScan : toMerge) {
+				OperatorGraphHelper
+						.addProjectionFromMultiInputOperatorInContainerIfNecessary(
+								multiInputOperator, toMerge);
 
-						if (indexScan instanceof IndexScanContainer) {
-							((IndexScanContainer) indexScan).addOperator(proj);
-						} else {
-							((MultiIndexScanContainer) indexScan)
-									.addOperatorToAllChilds(proj);
-						}
-					}
-				}
-
-				ArrayList<OperatorIDTuple> opPool = new ArrayList<OperatorIDTuple>(
-						op.getSucceedingOperators());
-				ArrayList<BasicOperator> addAfterContainer = new ArrayList<BasicOperator>();
-				while (opPool.size() > 0) {
-					OperatorIDTuple opID = opPool.get(0);
-					BasicOperator curOp = opID.getOperator();
-					if (curOp instanceof MultiInputOperator
-							|| curOp instanceof Result) {
-						opPool.remove(opID);
-						break;
-					} else {
-						// Überprüfe Ob die Operation unterstützt wird bevor sie
-						// hinzugefügt wird
-						if (isOperationSupported(curOp)) {
-							curOp.removeFromOperatorGraph();
-							multiIndexContainer.addOperator(curOp);
-							opPool.addAll(curOp.getSucceedingOperators());
-						} else {
-							curOp.removeFromOperatorGraph();
-							multiIndexContainer.addOperator(curOp);
-							opPool.addAll(curOp.getSucceedingOperators());
-							addAfterContainer.add(curOp);
-						}
-						opPool.remove(opID);
-					}
-				}
-				
-				for (BasicOperator toAdd : addAfterContainer) {
-					insertOperator(multiIndexContainer, toAdd);
-				}
-
+				// Entferne den Container aus der Container Liste, wenn dieser
+				// nicht noch für eine andere MultiInput-Operation gebraucht
+				// wird.
 				HashSet<BasicOperator> toRemove = new HashSet<BasicOperator>();
-				for (BasicOperator indexScan : toMerge) {
-					if (indexScan.getSucceedingOperators().size() == 1) {
-						multiInputList.remove(indexScan);
-						toRemove.add(indexScan);
+				for (BasicOperator container : toMerge) {
+					OperatorGraphHelper.removeDuplicatedEdges(container);
+					if (container.getSucceedingOperators().size() == 1) {
+						containerList.remove(container);
+						toRemove.add(container);
 					} else {
-						op.removePrecedingOperator(indexScan);
-						indexScan.removeSucceedingOperator(op);
+						multiInputOperator.removePrecedingOperator(container);
+						container.removeSucceedingOperator(multiInputOperator);
 					}
 				}
 
-				this.insertAndDeleteOldConnections(multiIndexScanContainerOpID,
-						toRemove);
-
-				op.removeFromOperatorGraph();
-
-				multiInputList.add(multiIndexContainer);
-
-			}
-		}
-
-	}
-
-	public boolean isOperationSupported(BasicOperator op) {
-		boolean result = true;
-		if (op instanceof Filter) {
-			return PigFilterOperator.checkIfFilterIsSupported(((Filter) op)
-					.getNodePointer().getChildren()[0]);
-		}
-		return result;
-	}
-	
-	public void insertOperator(BasicOperator op, BasicOperator newOp) {
-		final List<OperatorIDTuple> succs = op.getSucceedingOperators();
-
-		for (OperatorIDTuple succ : succs) {
-			op.removeSucceedingOperator(succ);
-			newOp.addSucceedingOperator(succ);
-			succ.getOperator().removePrecedingOperator(op);
-			succ.getOperator().addPrecedingOperator(newOp);
-		}
-
-		op.addSucceedingOperator(newOp);
-		newOp.addPrecedingOperator(op);
-	}
-
-	private void insertAndDeleteOldConnections(OperatorIDTuple newOp,
-			HashSet<BasicOperator> oldOperators) {
-		// lösche alte IndexScans und füge neue Verbindungen ein
-		HashSet<BasicOperator> preds = new HashSet<BasicOperator>();
-		HashSet<OperatorIDTuple> succs = new HashSet<OperatorIDTuple>();
-
-		// Finde Vorgänger/Nachfolger ALLER Operatoren
-		for (BasicOperator old : oldOperators) {
-			preds.addAll(old.getPrecedingOperators());
-			succs.addAll(old.getSucceedingOperators());
-			old.removeFromOperatorGraph();
-		}
-
-		// Für jeden Vorgänger den neuen Nachfolger setezen
-		for (BasicOperator pred : preds) {
-			pred.addSucceedingOperator(newOp);
-			ArrayList<OperatorIDTuple> toRemvoe = new ArrayList<OperatorIDTuple>();
-
-			// Beim löschen der neuen Operationen werden alle Vorgänger mit den
-			// Nachfolgern verbunden, diese Verbindung muss gelöscht werden
-			for (OperatorIDTuple succ : succs) {
-				for (OperatorIDTuple op : pred.getSucceedingOperators())
-					if (op.getOperator().equals(succ.getOperator())) {
-						toRemvoe.add(op);
+				OperatorGraphHelper.mergeContainerListIntoOneNewContainer(
+						multiIndexContainer, toRemove);
+				
+				// Füge Operatoren zum Container hinzu
+				for (BasicOperator op : OperatorGraphHelper
+						.getAndDeleteOperationUntilNextMultiInputOperator(multiInputOperator
+								.getSucceedingOperators())) {
+					if (OperatorGraphHelper.isOperationSupported(op)) {
+						// Wenn die Operation unterstützt wird füge zum
+						// Container hinzu
+						multiIndexContainer.addOperator(op);
+					} else {
+						// Ansonsten hänge die Operation hinter den Container
+						OperatorGraphHelper.insertNewOperator(
+								multiIndexContainer, op);
 					}
-			}
-			for (OperatorIDTuple op : toRemvoe) {
-				pred.getSucceedingOperators().remove(op);
-			}
-		}
+				}
 
-		// Für die neue Operation die alten Vorgänger setzen
-		newOp.getOperator().setPrecedingOperators(
-				new LinkedList<BasicOperator>(preds));
+				multiInputOperator.removeFromOperatorGraph();
+				
+				containerList.add(multiIndexContainer);
 
-		// Für jeden Nachfolger den neuen Vorgänger setzen
-		int i = 0;
-		for (OperatorIDTuple succ : succs) {
-			if (i == 0) {
-				succ.getOperator().setPrecedingOperator(newOp.getOperator());
-			} else {
-				succ.getOperator().addPrecedingOperator(newOp.getOperator());
-			}
-			i++;
-		}
-
-		// Für die neue Operation die alten Nachfolger setzen
-		newOp.getOperator().setSucceedingOperators(
-				new LinkedList<OperatorIDTuple>(succs));
-
-	}
-
-	private BasicOperator getOperator(BasicOperator node) {
-		if (node instanceof MultiInputOperator) {
-			return node;
-		} else {
-			for (OperatorIDTuple succ : node.getSucceedingOperators()) {
-				return this.getOperator(succ.getOperator());
 			}
 		}
 
-		return null;
 	}
 
 	private QueryClientRoot indexScan = null;
@@ -299,10 +193,6 @@ public class AddMergeContainerRule extends Rule {
 	}
 
 	public AddMergeContainerRule() {
-		// this.startOpClass =
-		// lupos.engine.operators.index.BasicIndexScan.class;
-		// this.startOpClass =
-		// lupos.engine.operators.index.BasicIndexScan.class;
 		this.startOpClass = QueryClientRoot.class;
 		this.ruleName = "AddMergeContainer";
 	}

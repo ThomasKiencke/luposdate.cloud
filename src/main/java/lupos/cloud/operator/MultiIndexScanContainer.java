@@ -39,16 +39,18 @@ public class MultiIndexScanContainer extends BasicOperator {
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 		result.append("--- MultiIndexScanContainer ---\n");
-		// for (HashSet<BasicOperator> curNodes : multiIndexScanList.values()) {
-		// for (BasicOperator curNode : curNodes) {
-		// if (curNode instanceof MultiIndexScanContainer) {
-		// ((MultiIndexScanContainer )curNode).toString();
-		// } else {
-		// result.append("\n" + curNode.getClass().getSimpleName());
-		// }
-		// }
-		//
-		// }
+//		for (HashSet<BasicOperator> curNodes : multiIndexScanList.values()) {
+//			for (BasicOperator curNode : curNodes) {
+//				if (curNode instanceof MultiIndexScanContainer) {
+//					result.append(((MultiIndexScanContainer) curNode).toString());
+//				} else if (curNode instanceof IndexScanContainer) {
+//					result.append(((IndexScanContainer) curNode).toString());
+//				} else {
+//					result.append("\n" + curNode.getClass().getSimpleName());
+//				}
+//			}
+//
+//		}
 
 		return result.toString();
 	}
@@ -70,7 +72,7 @@ public class MultiIndexScanContainer extends BasicOperator {
 	}
 
 	public void addOperator(BasicOperator op) {
-		this.ops.add(op);		
+		this.ops.add(op);
 	}
 
 }

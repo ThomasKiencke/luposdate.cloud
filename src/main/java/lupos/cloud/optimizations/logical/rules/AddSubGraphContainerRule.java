@@ -90,7 +90,7 @@ public class AddSubGraphContainerRule extends Rule {
 			final Collection<BasicOperator> preds = indexScan
 					.getPrecedingOperators();
 			List<OperatorIDTuple> succs = indexScan.getSucceedingOperators();
-			
+
 			for (final BasicOperator pred : preds) {
 				pred.getOperatorIDTuple(indexScan).setOperator(container);
 			}
@@ -101,53 +101,9 @@ public class AddSubGraphContainerRule extends Rule {
 					indexScan, 0));
 			indexScan.setSucceedingOperators(null);
 
-			// Füge alle Nachfolger des IndexScannOps in eine Liste ein
-			final LinkedHashSet<OperatorIDTuple> allSuccessors = getAllSuccessors(succs);
-
-			// for (OperatorIDTuple oper : allSuccessors)
-			// System.out.println("class: " +
-			// oper.getOperator().getClass().toString());
-
-			// Gehe die neue Liste durch und überprüfe ob Operatoren in den
-			// SubGraphContainer verschoben werden können
-			/*
-			 * class lupos.engine.operators.singleinput.modifiers.Limit class
-			 */
-			for (OperatorIDTuple curOp : allSuccessors) {
-				if ((curOp.getOperator() instanceof Filter
-						&& checkIfFilterIsSupported((Filter) curOp
-								.getOperator()) && checkIfFilterIsApplicableForIndexScan(
-							rootNodeOfSubGraph, (Filter) curOp.getOperator(),
-							indexScan.getUnionVariables()))
-						|| curOp.getOperator() instanceof Projection
-						|| curOp.getOperator() instanceof Distinct
-						|| curOp.getOperator() instanceof Limit
-						|| curOp.getOperator() instanceof AddBinding
-						|| curOp.getOperator() instanceof AddBindingFromOtherVar
-						|| curOp.getOperator() instanceof MultiIndexScanContainer) {
-					/*
-					 * Wenn ein direkter Nachfolger des Subgraphcontainer in den
-					 * Container gezogen wird ist der neue Nachfolger des
-					 * Containers, der alte Nachfolger vom verschobenen Operator
-					 */
-					if (succs.contains(curOp)) {
-						succs = curOp.getOperator().getSucceedingOperators();
-					}
-
-					if (curOp.getOperator() instanceof Projection) {
-						for (Variable var : additionalProjectionVariables) {
-							((Projection) curOp.getOperator())
-									.addProjectionElement(var);
-						}
-					}
-
-					addToSubgraphContainerAndRemoveOldOperator(
-							curOp.getOperator(), container, rootNodeOfSubGraph);
-				}
-			}
-
 			// Füge Resultoperator hinzu
-			getLastOperatorOfContainer(rootNodeOfSubGraph)
+			OperatorGraphHelper
+					.getLastOperatorOfContainer(rootNodeOfSubGraph)
 					.setSucceedingOperator(new OperatorIDTuple(new Result(), 0));
 
 			// Container mit den Nachfolgern verbinden
@@ -164,106 +120,6 @@ public class AddSubGraphContainerRule extends Rule {
 			System.err.println(e1);
 			e1.printStackTrace();
 		}
-	}
-
-	private boolean checkIfFilterIsApplicableForIndexScan(
-			Root rootNodeOfSubgraph, Filter filter,
-			Collection<Variable> unionVariables) {
-		// if ("a".equals("a"))
-		// return true;
-		boolean result = true;
-		for (String var : PigFilterOperator.getFilterVariables(filter
-				.getNodePointer().getChildren()[0])) {
-			if (!unionVariables.contains(var)) {
-				result = false;
-			}
-		}
-
-		if (result == false) {
-			for (String var : PigFilterOperator.getFilterVariables(filter
-					.getNodePointer().getChildren()[0])) {
-				additionalProjectionVariables.add(new Variable(var.replace("?",
-						"")));
-			}
-
-			System.out
-					.println("Der Filter \""
-							+ filter.toString().replace("\n", "")
-							+ "\" wird nicht in der Cloud ausgeführt, da nicht alle Variablen im IndexScan-Operator vorhanden sind.");
-		}
-		return result;
-	}
-
-	private boolean checkIfFilterIsSupported(Filter filter) {
-		boolean result = PigFilterOperator.checkIfFilterIsSupported(filter
-				.getNodePointer().getChildren()[0]);
-		if (result == false) {
-			System.out
-					.println("Der Filter \""
-							+ filter.toString().replace("\n", "")
-							+ "\" wird momentan nicht ünterstützt und deswegen lokal ausgeführt!");
-		}
-
-		return result;
-	}
-
-	private void addToSubgraphContainerAndRemoveOldOperator(
-			BasicOperator operator, CloudSubgraphContainer container,
-			Root rootNodeOfSubgraph) {
-		Collection<BasicOperator> oldPreds = operator.getPrecedingOperators();
-		List<OperatorIDTuple> oldSuccs = operator.getSucceedingOperators();
-
-		BasicOperator lastOperation = getLastOperatorOfContainer(rootNodeOfSubgraph);
-
-		operator.setSucceedingOperators(null);
-		lastOperation.setSucceedingOperator(new OperatorIDTuple(operator, 0));
-
-		for (final BasicOperator pred : oldPreds) {
-			for (final OperatorIDTuple succ : oldSuccs) {
-				pred.removePrecedingOperator(operator);
-				pred.addPrecedingOperator(succ.getOperator());
-			}
-		}
-
-		for (final OperatorIDTuple succ : oldSuccs) {
-			for (final BasicOperator pred : oldPreds) {
-				succ.getOperator().removePrecedingOperator(operator);
-				succ.getOperator().addPrecedingOperator(pred);
-			}
-		}
-
-	}
-
-	private BasicOperator getLastOperatorOfContainer(BasicOperator operator) {
-		BasicOperator result = null;
-		if (operator.getSucceedingOperators() == null
-				|| operator.getSucceedingOperators().size() == 0) {
-			result = operator;
-		} else {
-			for (OperatorIDTuple elem : operator.getSucceedingOperators()) {
-				result = getLastOperatorOfContainer(elem.getOperator());
-			}
-		}
-		return result;
-	}
-
-	private LinkedHashSet<OperatorIDTuple> getAllSuccessors(
-			List<OperatorIDTuple> succs) {
-		final LinkedHashSet<OperatorIDTuple> allSuccessors = new LinkedHashSet<OperatorIDTuple>();
-		ArrayList<OperatorIDTuple> justAdded = new ArrayList<OperatorIDTuple>();
-		for (OperatorIDTuple elem : succs) {
-			allSuccessors.add(elem);
-			justAdded.add(elem);
-		}
-		for (OperatorIDTuple elem : justAdded) {
-			for (OperatorIDTuple elemSucc : getAllSuccessors(elem.getOperator()
-					.getSucceedingOperators())) {
-				allSuccessors.add(elemSucc);
-			}
-
-		}
-
-		return allSuccessors;
 	}
 
 	private BasicOperator currentOperator = null;

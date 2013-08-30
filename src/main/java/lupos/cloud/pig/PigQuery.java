@@ -123,17 +123,21 @@ public class PigQuery {
 						}
 					}
 
-					pigIndexScan.addFilter(containerFilterPigOps);
-					pigIndexScan.addProjection(containerProjection);
+					if (containerFilterPigOps != null) {
+						pigIndexScan.addFilter(containerFilterPigOps);
+					}
+					if (containerProjection != null) {
+						pigIndexScan.addProjection(containerProjection);
+					}
 
 					this.buildAndAppendQuery(pigIndexScan);
-					
+
 					this.addIndexScanOperator(pigIndexScan);
-					
+
 					this.multiJoin(pigIndexScan);
 					multiInputist.add(intermediateBags.get(intermediateBags
 							.size() - 1));
-					
+
 				} else if (op instanceof MultiIndexScanContainer) {
 					final MultiIndexScanContainer c = (MultiIndexScanContainer) op;
 					multiInputist.add(this.joinMultiIndexScans(c));
@@ -152,14 +156,14 @@ public class PigQuery {
 				throw new RuntimeException(
 						"Something is wrong here. Forgot case? -> "
 								+ container.getMappingTree().get(id).getClass());
-			}			
+			}
 
 			HashSet<String> variables = new HashSet<String>();
 			for (JoinInformation toRemove : multiInputist) {
 				variables.addAll(toRemove.getJoinElements());
 				this.intermediateBags.remove(toRemove);
 			}
-			
+
 			newJoin.setJoinElements(new ArrayList<String>(variables));
 			this.intermediateBags.add(newJoin);
 

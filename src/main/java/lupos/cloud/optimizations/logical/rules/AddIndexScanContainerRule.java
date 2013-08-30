@@ -59,79 +59,27 @@ public class AddIndexScanContainerRule extends Rule {
 	private void replaceIndexScanOperatorWithSubGraphContainer(
 			final BasicIndexScan indexScan) {
 
-		// Container erzeugen
+		// Container erzeugen und Variablen übernehmen
 		final IndexScanContainer container = new IndexScanContainer(indexScan);
 
 		container.setUnionVariables(indexScan.getUnionVariables());
 		container
 				.setIntersectionVariables(indexScan.getIntersectionVariables());
 
-		// Operationen finden die zum IndexScan (bzw. BGP) gehören
-
-		ArrayList<OperatorIDTuple> opPool = new ArrayList<OperatorIDTuple>(
-				indexScan.getSucceedingOperators());
-		while (opPool.size() > 0) {
-			OperatorIDTuple opID = opPool.get(0);
-			BasicOperator op = opID.getOperator();
-			if (op instanceof MultiInputOperator || op instanceof Result) {
-				opPool.remove(opID);
-				break;
-			} else {
-				// Überprüfe Ob die Operation unterstützt wird bevor sie
-				// hinzugefügt wird
-				if (isOperationSupported(op)) {
-					op.removeFromOperatorGraph();
-					container.addOperator(op);
-					opPool.remove(opID);
-					opPool.addAll(op.getSucceedingOperators());
-				}
+		// Die zum IndexScanOperator zugehörigen Operationen werden mit in den
+		// Container kopiert (wenn die Operation in der Cloud unterstützt wird)
+		for (BasicOperator op : OperatorGraphHelper
+				.getAndDeleteOperationUntilNextMultiInputOperator(indexScan
+						.getSucceedingOperators())) {
+			if (OperatorGraphHelper.isOperationSupported(op)) {
+				container.addOperator(op);
 			}
 		}
-
-		// alte Vorgänger/Nachfolger merken
-		final Collection<BasicOperator> preds = indexScan
-				.getPrecedingOperators();
-		final List<OperatorIDTuple> succs = indexScan.getSucceedingOperators();
-
-		// IndexScan durch Container austauschen
-		for (final BasicOperator pred : preds) {
-			pred.getOperatorIDTuple(indexScan).setOperator(container);
-			container.addPrecedingOperator(pred);
-		}
-
-		container.setSucceedingOperators(succs);
-
-		for (final OperatorIDTuple succ : succs) {
-			succ.getOperator().removePrecedingOperator(indexScan);
-			succ.getOperator().addPrecedingOperator(container);
-		}
+		
+		// Ersetze den alten IndexScanOperator durch den neuen IndexScanContainer
+		OperatorGraphHelper.replaceOperation(indexScan, container);
 
 	}
-
-	public boolean isOperationSupported(BasicOperator op) {
-		boolean result = true;
-		if (op instanceof Filter) {
-			return PigFilterOperator.checkIfFilterIsSupported(((Filter) op)
-					.getNodePointer().getChildren()[0]);
-		}
-		return result;
-	}
-
-
-	public void insertOperator(BasicOperator op, BasicOperator newOp) {
-		final List<OperatorIDTuple> succs = op.getSucceedingOperators();
-
-		for (OperatorIDTuple succ : succs) {
-			op.removeSucceedingOperator(succ);
-			newOp.addSucceedingOperator(succ);
-			succ.getOperator().removePrecedingOperator(op);
-			succ.getOperator().addPrecedingOperator(newOp);
-		}
-
-		op.addSucceedingOperator(newOp);
-		newOp.addPrecedingOperator(op);
-	}
-
 	private BasicIndexScan currentOperator = null;
 
 	private boolean _checkPrivate0(final BasicOperator _op) {
