@@ -16,10 +16,6 @@ public class MultiIndexScanContainer extends BasicOperator {
 	public static final Integer JOIN = 1;
 	private static int idCounter = 0;
 	private ArrayList<BasicOperator> ops = new ArrayList<BasicOperator>();
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -5612770902234058839L;
 
 	TreeMap<Integer, HashSet<BasicOperator>> multiIndexScanList = new TreeMap<Integer, HashSet<BasicOperator>>();

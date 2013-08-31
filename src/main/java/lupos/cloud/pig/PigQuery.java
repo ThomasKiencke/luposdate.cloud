@@ -3,7 +3,20 @@ package lupos.cloud.pig;
 import java.util.ArrayList;
 
 import lupos.cloud.pig.operator.IPigOperator;
+import lupos.cloud.pig.operator.PigDistinctOperator;
+import lupos.cloud.pig.operator.PigFilterExectuer;
+import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.pig.operator.PigJoinOperator;
+import lupos.cloud.pig.operator.PigLimitOperator;
+import lupos.cloud.pig.operator.PigProjectionOperator;
+import lupos.engine.operators.BasicOperator;
+import lupos.engine.operators.index.Root;
+import lupos.engine.operators.singleinput.AddBinding;
+import lupos.engine.operators.singleinput.Projection;
+import lupos.engine.operators.singleinput.Result;
+import lupos.engine.operators.singleinput.filter.Filter;
+import lupos.engine.operators.singleinput.modifiers.Limit;
+import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 
 public class PigQuery {
 
@@ -39,11 +52,6 @@ public class PigQuery {
 		pigLatin.append(singlePigQuery.getPigLatin());
 	}
 
-	public void buildAndAppendQuery(IPigOperator operator) {
-		this.pigLatin
-				.append(operator.buildQuery(intermediateBags, debug, null));
-	}
-
 	public void removeIntermediateBags(JoinInformation toRemove) {
 		this.intermediateBags.remove(toRemove);
 	}
@@ -54,11 +62,70 @@ public class PigQuery {
 
 	public JoinInformation getLastAddedBag() {
 		JoinInformation result = null;
-		result = intermediateBags.get(intermediateBags.size() -1 );
+		result = intermediateBags.get(intermediateBags.size() - 1);
 		return result;
 	}
-	
+
 	public String getFinalAlias() {
 		return intermediateBags.get(0).getName();
+	}
+
+	public void addAndExecuteOperation(ArrayList<BasicOperator> oplist) {
+		ArrayList<PigFilterOperator> filterOps = new ArrayList<PigFilterOperator>();
+		PigProjectionOperator projection = null;
+		PigDistinctOperator distinct = null;
+		PigLimitOperator limit = null;
+		
+		for (BasicOperator op : oplist) {
+			if (op instanceof Filter) {
+				filterOps.add(new PigFilterOperator((Filter) op));
+			} else if (op instanceof Projection) {
+				projection = new PigProjectionOperator(
+						((Projection) op).getProjectedVariables());
+			} else if (op instanceof Distinct) {
+				distinct = new PigDistinctOperator();
+			} else if (op instanceof Limit) {
+				limit = new PigLimitOperator(((Limit) op).getLimit());
+			} else if (op instanceof Result || op instanceof Root
+					|| op instanceof AddBinding) {
+				// ignore
+			} else {
+				throw new RuntimeException(
+						"Something is wrong here. Forgot case? Class: "
+								+ op.getClass());
+			}
+		}
+
+		// Filter
+		if (filterOps.size() > 0) {
+			this.buildAndAppendQuery(new PigFilterExectuer(), filterOps);
+		}
+		
+		// Projection
+		if (projection != null) {
+			this.buildAndAppendQuery(projection, filterOps);
+		}
+
+		// Distinct
+		if (distinct != null) {
+			this.buildAndAppendQuery(distinct, filterOps);
+		}
+
+		// Limit
+		if (limit != null) {
+			this.buildAndAppendQuery(limit, filterOps);
+		}
+
+	}
+
+	public void buildAndAppendQuery(IPigOperator operator,
+			ArrayList<PigFilterOperator> filterOps) {
+		this.pigLatin
+				.append(operator.buildQuery(intermediateBags, debug, filterOps));
+	}
+
+	public void buildAndAppendQuery(IPigOperator operator) {
+		this.pigLatin
+				.append(operator.buildQuery(intermediateBags, debug,  new ArrayList<PigFilterOperator>()));
 	}
 }

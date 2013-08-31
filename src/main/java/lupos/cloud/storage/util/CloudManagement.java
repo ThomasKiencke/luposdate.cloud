@@ -146,8 +146,8 @@ public class CloudManagement {
 				System.out.println();
 			}
 			
-//			if (!"a".equals("b"))
-//			return null; // testing purpose
+			if (!"a".equals("b"))
+			return null; // testing purpose
 			System.out.println("PigLatin Programm wird ausgeführt...");
 			pigServer.registerQuery(query.getPigLatin());
 			curVariableList = query.getVariableList();
