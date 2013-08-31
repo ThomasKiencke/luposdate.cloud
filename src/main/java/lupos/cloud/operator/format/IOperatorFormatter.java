@@ -24,6 +24,7 @@
 package lupos.cloud.operator.format;
 
 import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.SinglePigQuery;
 import lupos.engine.operators.BasicOperator;
 
 import org.json.JSONException;

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import lupos.cloud.pig.JoinInformation;
-import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.SinglePigQuery;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.sparql1_1.*;
 
@@ -26,72 +26,11 @@ public class PigFilterOperator implements IPigOperator {
 		this.filter = filter;
 		pigFilter = generateFilterList(filter.getNodePointer().getChildren()[0]);
 	}
-
-	private String checkIfFilterPossible() {
-		StringBuilder result = new StringBuilder();
-		ArrayList<JoinInformation> toRemove = new ArrayList<JoinInformation>();
-		ArrayList<JoinInformation> toAdd = new ArrayList<JoinInformation>();
-		// Wenn alle Variablen in einer Menge vorkommen, kann der Filter
-		// angewandt weden
-		for (JoinInformation curJoin : intermediateJoins) {
-
-			// Wenn die Menge nicht schon einmal gefiltert wurde
-			if (!curJoin.filterApplied(this)) {
-				boolean varNotFound = false;
-				for (String var : variables) {
-					if (!curJoin.getJoinElements().contains("?" + var)) {
-						varNotFound = true;
-					}
-				}
-				if (!varNotFound) {
-					if (debug) {
-						result.append("-- Filter: " + pigFilter + "\n");
-					}
-
-					JoinInformation newJoin = new JoinInformation(
-							"INTERMEDIATE_BAG_" + JoinInformation.idCounter);
-
-					String pigFilterVarReplaced = pigFilter;
-					for (String var : variables) {
-						pigFilterVarReplaced = pigFilterVarReplaced.replace(
-								var,
-								getPigNameForVariable("?" + var,
-										curJoin.getJoinElements()));
-					}
-
-					result.append(newJoin.getName() + " = FILTER "
-							+ curJoin.getName() + " BY " + pigFilterVarReplaced
-							+ ";\n");
-
-					if (debug) {
-						result.append("\n");
-					}
-
-					newJoin.setPatternId(JoinInformation.idCounter);
-					newJoin.setJoinElements(curJoin.getJoinElements());
-					newJoin.addAppliedFilters(this);
-					newJoin.addAppliedFilters(curJoin.getAppliedFilters());
-
-					curJoin.addAppliedFilters(this);
-					toRemove.add(curJoin);
-					
-					toRemove.remove(curJoin);
-					toAdd.add(newJoin);
-					
-					JoinInformation.idCounter++;
-				}
-			}
-		}
-		
-		for (JoinInformation item : toRemove) {
-			intermediateJoins.remove(item);
-		}
-		
-		for (JoinInformation item : toAdd) {
-			intermediateJoins.add(item);
-		}
-		return result.toString();
+	
+	public String getPigFilter() {
+		return pigFilter;
 	}
+
 
 	private String generateFilterList(Node node) {
 		StringBuilder result = new StringBuilder();
@@ -175,22 +114,12 @@ public class PigFilterOperator implements IPigOperator {
 		return result.toString();
 	}
 
-	public String buildQuery(PigQuery pigQuery) {
-		StringBuilder result = new StringBuilder();
-		this.debug = pigQuery.isDebug();
-		this.intermediateJoins = pigQuery.getIntermediateJoins();
-		result.append(this.checkIfFilterPossible());
-		return result.toString();
-	}
-
-	private String getPigNameForVariable(String name,
-			ArrayList<String> sparqlVariableList) {
-		for (int i = 0; i < sparqlVariableList.size(); i++) {
-			if (sparqlVariableList.get(i).equals(name)) {
-				return "$" + i;
-			}
-		}
-		return null; // Fall sollte nicht vorkommen
+	/**
+	 * @deprecated  Use PigFilterExecuter!
+	 */
+	@Deprecated
+	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+		return null;
 	}
 
 	public static boolean checkIfFilterIsSupported(Node node) {

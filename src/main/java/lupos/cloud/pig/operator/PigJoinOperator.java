@@ -3,7 +3,7 @@ package lupos.cloud.pig.operator;
 import java.util.ArrayList;
 
 import lupos.cloud.pig.JoinInformation;
-import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.multiinput.join.Join;
 
@@ -20,8 +20,8 @@ public class PigJoinOperator implements IPigOperator {
 		this.join = join;
 	}
 
-	public String buildQuery(PigQuery pigQuery) {
-		this.debug = pigQuery.isDebug();
+	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+		this.debug = debug;
 		StringBuilder result = new StringBuilder();
 		if (debug) {
 			result.append(" -- JOIN:\n");

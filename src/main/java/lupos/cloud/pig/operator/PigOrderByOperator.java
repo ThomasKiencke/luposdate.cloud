@@ -3,16 +3,16 @@ package lupos.cloud.pig.operator;
 import java.util.ArrayList;
 
 import lupos.cloud.pig.JoinInformation;
-import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.SinglePigQuery;
 
 public class PigOrderByOperator implements IPigOperator {
 	private ArrayList<JoinInformation> intermediateJoins;
 
-	public String buildQuery(PigQuery pigQuery) {
+	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		StringBuilder result = new StringBuilder();
-		this.intermediateJoins = pigQuery.getIntermediateJoins();
+		this.intermediateJoins = intermediateBags;
 
-		if (pigQuery.isDebug()) {
+		if (debug) {
 			result.append("-- Distinct: \n");
 		}
 
@@ -23,7 +23,7 @@ public class PigOrderByOperator implements IPigOperator {
 		result.append(newJoin.getName() + " = DISTINCT " + curJoin.getName()
 				+ ";\n");
 
-		if (pigQuery.isDebug()) {
+		if (debug) {
 			result.append("\n");
 		}
 

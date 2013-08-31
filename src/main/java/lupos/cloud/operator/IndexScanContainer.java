@@ -1,15 +1,9 @@
 package lupos.cloud.operator;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.TreeMap;
 
-import lupos.datastructures.queryresult.QueryResult;
 import lupos.engine.operators.BasicOperator;
-import lupos.engine.operators.Operator;
-import lupos.engine.operators.RootChild;
 import lupos.engine.operators.index.BasicIndexScan;
-import lupos.engine.operators.index.Dataset;
 
 public class IndexScanContainer extends BasicOperator {
 	private static final long serialVersionUID = -5612770902234058839L;

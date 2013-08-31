@@ -25,6 +25,7 @@ package lupos.cloud.query;
 
 import lupos.cloud.operator.ICloudSubgraphExecutor;
 import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.SinglePigQuery;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.queryresult.QueryResult;
 

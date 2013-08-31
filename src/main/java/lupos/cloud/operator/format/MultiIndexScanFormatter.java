@@ -23,14 +23,22 @@
  */
 package lupos.cloud.operator.format;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 
+import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
 import lupos.cloud.operator.format.IOperatorFormatter;
+import lupos.cloud.pig.JoinInformation;
 import lupos.cloud.pig.PigQuery;
 import lupos.cloud.pig.operator.PigIndexScanOperator;
+import lupos.cloud.pig.operator.PigJoinOperator;
+import lupos.cloud.pig.operator.PigUnionOperator;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.BasicIndexScan;
+import lupos.engine.operators.multiinput.Union;
+import lupos.engine.operators.multiinput.join.Join;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 /**
@@ -47,8 +55,50 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigQuery) {
 		final MultiIndexScanContainer multiIndexScanContainer = (MultiIndexScanContainer) operator;
-		pigQuery.addMultiIndexScanList((MultiIndexScanContainer) operator);
+		this.joinMultiIndexScans(multiIndexScanContainer, pigQuery);
 		return pigQuery;
 	}
+	
+	public JoinInformation joinMultiIndexScans(MultiIndexScanContainer container, PigQuery pigQuery ) {
+		JoinInformation newJoin = null;
+		for (Integer id : container.getContainerList().keySet()) {
+			HashSet<BasicOperator> curList = container.getContainerList().get(
+					id);
+			ArrayList<JoinInformation> multiInputist = new ArrayList<JoinInformation>();
+			for (BasicOperator op : curList) {
+				if (op instanceof IndexScanContainer) {
+					new IndexScanCointainerFormatter().serialize(op, pigQuery);
+					multiInputist.add(pigQuery.getLastAddedBag());
+				} else if (op instanceof MultiIndexScanContainer) {
+					final MultiIndexScanContainer c = (MultiIndexScanContainer) op;
+					multiInputist.add(this.joinMultiIndexScans(c, pigQuery));
+				}
+			}
 
+			newJoin = new JoinInformation();
+			if (container.getMappingTree().get(id) instanceof Union) {
+				pigQuery.buildAndAppendQuery(new PigUnionOperator(newJoin,
+						multiInputist));
+			} else if (container.getMappingTree().get(id) instanceof Join) {
+				pigQuery.buildAndAppendQuery(new PigJoinOperator(newJoin,
+						multiInputist, (Join) container.getMappingTree()
+								.get(id)));
+			} else {
+				throw new RuntimeException(
+						"Something is wrong here. Forgot case? -> "
+								+ container.getMappingTree().get(id).getClass());
+			}
+
+			HashSet<String> variables = new HashSet<String>();
+			for (JoinInformation toRemove : multiInputist) {
+				variables.addAll(toRemove.getJoinElements());
+				pigQuery.removeIntermediateBags(toRemove);
+			}
+
+			newJoin.setJoinElements(new ArrayList<String>(variables));
+			pigQuery.addIntermediateBags(newJoin);
+
+		}
+		return newJoin; // never reached
+	}
 }

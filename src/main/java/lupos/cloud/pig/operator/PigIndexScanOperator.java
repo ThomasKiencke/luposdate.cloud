@@ -6,16 +6,14 @@ import java.util.HashSet;
 
 import lupos.cloud.hbase.HBaseDistributionStrategy;
 import lupos.cloud.pig.JoinInformation;
-import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 public class PigIndexScanOperator implements IPigOperator {
-	ArrayList<JoinInformation> intermediateJoins = new ArrayList<JoinInformation>();
+	ArrayList<JoinInformation> intermediateJoins = null;
 	Collection<TriplePattern> triplePatternCollection = null;
-	private ArrayList<PigFilterOperator> filterPigOps = new ArrayList<PigFilterOperator>();
 	int tripleCounter = 0;
-	private PigProjectionOperator projection = null;
 
 	public PigIndexScanOperator(Collection<TriplePattern> tp) {
 		this.triplePatternCollection = tp;
@@ -29,12 +27,13 @@ public class PigIndexScanOperator implements IPigOperator {
 	 *            the triple pattern
 	 * @return the string
 	 */
-	public String buildQuery(PigQuery pigQuery) {
+	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+		this.intermediateJoins = intermediateBags;
 		StringBuilder result = new StringBuilder();
 		for (TriplePattern triplePattern : this.triplePatternCollection) {
 			JoinInformation curPattern = getHBaseTable(triplePattern);
 
-			if (pigQuery.isDebug()) {
+			if (debug) {
 				result.append("-- TriplePattern: " + triplePattern.toN3String()
 						+ "\n");
 			}
@@ -94,7 +93,7 @@ public class PigIndexScanOperator implements IPigOperator {
 			}
 			intermediateJoins.add(curPattern);
 
-			if (pigQuery.isDebug()) {
+			if (debug) {
 				result.append("\n");
 			}
 			tripleCounter++;
@@ -377,43 +376,7 @@ public class PigIndexScanOperator implements IPigOperator {
 	}
 
 
-	public ArrayList<JoinInformation> getIntermediateJoins() {
-		return intermediateJoins;
-	}
-
 	public String getFinalAlias() {
 		return intermediateJoins.get(0).getName();
-	}
-
-	public ArrayList<PigFilterOperator> getFilter() {
-		return this.filterPigOps;
-	}
-
-	public void addFilter(PigFilterOperator filterPigOp) {
-		this.filterPigOps.add(filterPigOp);
-	}
-
-	public void setProjection(PigProjectionOperator projection) {
-		this.projection = projection;
-	}
-
-	public PigProjectionOperator getProjection() {
-		return projection;
-	}
-
-	public void addFilter(ArrayList<PigFilterOperator> filter) {
-		for (PigFilterOperator item : filter) {
-			this.filterPigOps.add(item);
-		}
-	}
-
-	public void addProjection(PigProjectionOperator newProjection) {
-		if (projection == null) {
-			this.projection = newProjection;
-		} else {
-			this.projection.addProjectionVaribles(newProjection
-					.getProjectionVariables());
-		}
-
 	}
 }

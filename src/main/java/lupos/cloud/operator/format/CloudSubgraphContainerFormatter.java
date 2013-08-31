@@ -50,7 +50,6 @@ public class CloudSubgraphContainerFormatter implements IOperatorFormatter {
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
 		PigQuery result = this.serializeNode(new OperatorIDTuple(operator, 0),
 				pigLatin);
-		pigLatin.applyJoins();
 		pigLatin.finishQuery();
 		return result;
 	}
@@ -62,19 +61,12 @@ public class CloudSubgraphContainerFormatter implements IOperatorFormatter {
 
 		IOperatorFormatter serializer = null;
 		if (op instanceof Root || op instanceof Result) {
+			// do nothing
 			result = pigLatin;
-		} else if (op instanceof Filter) {
-			serializer = new FilterFormatter();
-		} else if (op instanceof Projection) {
-			serializer = new ProjectionFormatter();
-		} else if (op instanceof Distinct) {
-			serializer = new DistinctFormatter();
-		} else if (op instanceof Limit) {
-			serializer = new LimitFormatter();
 		} else if (op instanceof IndexScanContainer) {
 			serializer = new IndexScanCointainerFormatter();
 		} else if (op instanceof MultiIndexScanContainer) {
-			serializer = new MultiIndexScanFormatter();
+			 serializer = new MultiIndexScanFormatter();
 		} else {
 			throw new RuntimeException(
 					"Something is wrong here. Forgot case? Class: "

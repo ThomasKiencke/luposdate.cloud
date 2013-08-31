@@ -28,9 +28,15 @@ import java.util.Collection;
 import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.format.IOperatorFormatter;
 import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.SinglePigQuery;
+import lupos.cloud.pig.operator.PigDistinctOperator;
+import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.pig.operator.PigIndexScanOperator;
+import lupos.cloud.pig.operator.PigLimitOperator;
+import lupos.cloud.pig.operator.PigProjectionOperator;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.Root;
+import lupos.engine.operators.singleinput.AddBinding;
 import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
@@ -51,37 +57,35 @@ public class IndexScanCointainerFormatter implements IOperatorFormatter {
 	 */
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigQuery) {
-		PigQuery result = pigQuery;
+		SinglePigQuery singlePigQuery = new SinglePigQuery();
 		final IndexScanContainer indexScan = (IndexScanContainer) operator;
 		Collection<TriplePattern> tp = indexScan.getIndexScan()
 				.getTriplePattern();
 		PigIndexScanOperator pigIndexScan = new PigIndexScanOperator(tp);
-		pigQuery.buildAndAppendQuery(pigIndexScan);
-		pigQuery.addIndexScanOperator(pigIndexScan);
-
+		singlePigQuery.setIndexScanOperator(pigIndexScan);
+		singlePigQuery.buildAndAppendQuery(pigIndexScan);
 		for (BasicOperator op : indexScan.getOperators()) {
-			IOperatorFormatter serializer = null;
 			if (op instanceof Filter) {
-				serializer = new FilterFormatter();
+				singlePigQuery.addContainerFilter(new PigFilterOperator(
+						(Filter) op));
 			} else if (op instanceof Projection) {
-				serializer = new ProjectionFormatter();
+				singlePigQuery.addProjection(new PigProjectionOperator(
+						((Projection) op).getProjectedVariables()));
 			} else if (op instanceof Distinct) {
-				serializer = new DistinctFormatter();
+				singlePigQuery.setDistinctOperator(new PigDistinctOperator());
 			} else if (op instanceof Limit) {
-				serializer = new LimitFormatter();
-			} else if (op instanceof Result || op instanceof Root) {
+				singlePigQuery.setLimitOperator(new PigLimitOperator(
+						((Limit) op).getLimit()));
+			} else if (op instanceof Result || op instanceof Root || op instanceof AddBinding) {
 				// ignore
 			} else {
 				throw new RuntimeException(
 						"Something is wrong here. Forgot case? Class: "
 								+ op.getClass());
 			}
-
-			if (serializer != null) {
-				result = serializer.serialize(op, result);
-			}
 		}
-
+		
+		pigQuery.addAndPrceedSinglePigQuery(singlePigQuery);
 		return pigQuery;
 	}
 }

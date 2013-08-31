@@ -1,7 +1,10 @@
 package lupos.cloud.pig.operator;
 
-import lupos.cloud.pig.PigQuery;
+import java.util.ArrayList;
+
+import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.pig.SinglePigQuery;
 
 public interface IPigOperator {
-	public String buildQuery(PigQuery pigQuery);
+	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps);
 }

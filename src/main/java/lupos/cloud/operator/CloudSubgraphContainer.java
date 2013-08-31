@@ -27,16 +27,13 @@ import java.util.List;
 
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
 import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.queryresult.QueryResult;
-import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.RootChild;
 import lupos.engine.operators.index.Dataset;
 import lupos.engine.operators.index.Root;
 import lupos.engine.operators.messages.BoundVariablesMessage;
 import lupos.engine.operators.messages.Message;
-import lupos.engine.operators.singleinput.Projection;
-import lupos.engine.operators.singleinput.filter.Filter;
-import lupos.engine.operators.tripleoperator.TriplePattern;
 import lupos.rdf.Prefix;
 
 import org.json.JSONException;

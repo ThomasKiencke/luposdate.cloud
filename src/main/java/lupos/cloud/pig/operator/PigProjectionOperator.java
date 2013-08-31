@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import lupos.cloud.pig.JoinInformation;
-import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.singleinput.Projection;
 
@@ -33,10 +33,10 @@ public class PigProjectionOperator implements IPigOperator {
 	}
 	
 	@Override
-	public String buildQuery(PigQuery pigQuery) {
-		this.intermediateJoins = pigQuery.getIntermediateJoins();
-		this.filterOps = pigQuery.getFilterPigOps();
-		this.debug = pigQuery.isDebug();
+	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+		this.intermediateJoins = intermediateBags;
+		this.filterOps = filterOps;
+		this.debug = debug;
 		return this.checkIfProjectionPossible();
 	}
 

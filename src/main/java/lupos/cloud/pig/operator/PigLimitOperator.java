@@ -3,7 +3,7 @@ package lupos.cloud.pig.operator;
 import java.util.ArrayList;
 
 import lupos.cloud.pig.JoinInformation;
-import lupos.cloud.pig.PigQuery;
+import lupos.cloud.pig.SinglePigQuery;
 
 public class PigLimitOperator implements IPigOperator {
 	private ArrayList<JoinInformation> intermediateJoins;
@@ -12,11 +12,11 @@ public class PigLimitOperator implements IPigOperator {
 	public PigLimitOperator(int limit) {
 		this.limit = limit;
 	}
-	public String buildQuery(PigQuery pigQuery) {
+	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		StringBuilder result = new StringBuilder();
-		this.intermediateJoins = pigQuery.getIntermediateJoins();
+		this.intermediateJoins = intermediateBags;
 
-		if (pigQuery.isDebug()) {
+		if (debug) {
 			result.append("-- Limit: \n");
 		}
 
@@ -27,7 +27,7 @@ public class PigLimitOperator implements IPigOperator {
 		result.append(newJoin.getName() + " = LIMIT " + curJoin.getName()
 				+ " " + this.limit +  ";\n");
 
-		if (pigQuery.isDebug()) {
+		if (debug) {
 			result.append("\n");
 		}
 
