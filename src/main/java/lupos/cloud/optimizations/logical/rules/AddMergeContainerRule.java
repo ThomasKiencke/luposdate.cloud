@@ -57,7 +57,6 @@ public class AddMergeContainerRule extends Rule {
 
 	public static boolean finish = false;
 
-
 	private void replaceIndexScanOperatorWithSubGraphContainer(
 			QueryClientRoot qcRoot) {
 
@@ -123,7 +122,7 @@ public class AddMergeContainerRule extends Rule {
 
 				// Neuen Container erzeugen und den MultiInput Operator und
 				// (Multi-)IndexScans übergeben
-				multiIndexContainer.addOperator(
+				multiIndexContainer.addSubContainer(
 						(MultiInputOperator) multiInputOperator, toMerge);
 
 				// Wenn der MultiInputOperator von Variablen abhängt
@@ -150,7 +149,7 @@ public class AddMergeContainerRule extends Rule {
 
 				OperatorGraphHelper.mergeContainerListIntoOneNewContainer(
 						multiIndexContainer, toRemove);
-				
+
 				// Füge Operatoren zum Container hinzu
 				for (BasicOperator op : OperatorGraphHelper
 						.getAndDeleteOperationUntilNextMultiInputOperator(multiInputOperator
@@ -167,7 +166,7 @@ public class AddMergeContainerRule extends Rule {
 				}
 
 				multiInputOperator.removeFromOperatorGraph();
-				
+
 				containerList.add(multiIndexContainer);
 
 			}

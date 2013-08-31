@@ -19,6 +19,7 @@ import lupos.engine.operators.multiinput.MultiInputOperator;
 import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
+import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 
 public class OperatorGraphHelper {
 
@@ -58,12 +59,26 @@ public class OperatorGraphHelper {
 			return PigFilterOperator.checkIfFilterIsSupported(((Filter) op)
 					.getNodePointer().getChildren()[0]);
 		}
-//		System.out
-//		.println("Der Filter \""
-//				+ filter.toString().replace("\n", "")
-//				+ "\" wird nicht in der Cloud ausgeführt, da nicht alle Variablen im IndexScan-Operator vorhanden sind.");
+		// System.out
+		// .println("Der Filter \""
+		// + filter.toString().replace("\n", "")
+		// +
+		// "\" wird nicht in der Cloud ausgeführt, da nicht alle Variablen im IndexScan-Operator vorhanden sind.");
 		return result;
 	}
+
+	/*
+	 * Bestimmte Operationen werden nicht verschoben sondern bleiben im
+	 * äußersten Container. Anmerkung: Äußere Projektionen (=globale
+	 * Projektionen) sind trotzdem in ALLEN unteren Containern "aktiv"
+	 */
+//	public static boolean moveOperation(BasicOperator op) {
+//		boolean result = true;
+//		if (op instanceof Projection || op instanceof Distinct) {
+//			result = false;
+//		}
+//		return result;
+//	}
 
 	public static void replaceOperation(BasicOperator oldOp, BasicOperator newOp) {
 		// Alte Vorgänger/Nachfolger merken
@@ -196,7 +211,7 @@ public class OperatorGraphHelper {
 			}
 		}
 
-		// Für die neue Operation die alten Nachfolger 
+		// Für die neue Operation die alten Nachfolger
 		for (BasicOperator toAdd : succs) {
 			newContainer.addSucceedingOperator(toAdd);
 		}
@@ -207,14 +222,14 @@ public class OperatorGraphHelper {
 				op.getPrecedingOperators());
 		HashSet<OperatorIDTuple> succs = new HashSet<OperatorIDTuple>(
 				op.getSucceedingOperators());
-		
+
 		op.setPrecedingOperators(new ArrayList<BasicOperator>(preds));
 		op.setSucceedingOperators(new ArrayList<OperatorIDTuple>(succs));
-		
 
 	}
-	
-	public static BasicOperator getLastOperatorOfContainer(BasicOperator operator) {
+
+	public static BasicOperator getLastOperatorOfContainer(
+			BasicOperator operator) {
 		BasicOperator result = null;
 		if (operator.getSucceedingOperators() == null
 				|| operator.getSucceedingOperators().size() == 0) {

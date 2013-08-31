@@ -33,7 +33,6 @@ public class PigIndexScanOperator implements IPigOperator {
 		StringBuilder result = new StringBuilder();
 		for (TriplePattern triplePattern : this.triplePatternCollection) {
 			JoinInformation curPattern = getHBaseTable(triplePattern);
-			// intermediateJoins = pigQuery.getIntermediateJoins();
 
 			if (pigQuery.isDebug()) {
 				result.append("-- TriplePattern: " + triplePattern.toN3String()

@@ -1,17 +1,10 @@
 package lupos.cloud.pig;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 
 import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
-import lupos.cloud.operator.format.DistinctFormatter;
-import lupos.cloud.operator.format.FilterFormatter;
-import lupos.cloud.operator.format.IndexScanCointainerFormatter;
-import lupos.cloud.operator.format.LimitFormatter;
-import lupos.cloud.operator.format.MultiIndexScanFormatter;
-import lupos.cloud.operator.format.ProjectionFormatter;
 import lupos.cloud.pig.operator.PigDistinctOperator;
 import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.pig.operator.PigIndexScanOperator;
@@ -20,14 +13,9 @@ import lupos.cloud.pig.operator.PigJoinOperator;
 import lupos.cloud.pig.operator.PigLimitOperator;
 import lupos.cloud.pig.operator.PigProjectionOperator;
 import lupos.cloud.pig.operator.PigUnionOperator;
-import lupos.datastructures.items.Variable;
 import lupos.engine.operators.BasicOperator;
-import lupos.engine.operators.index.BasicIndexScan;
-import lupos.engine.operators.index.Root;
 import lupos.engine.operators.multiinput.Union;
 import lupos.engine.operators.multiinput.join.Join;
-import lupos.engine.operators.singleinput.AddBinding;
-import lupos.engine.operators.singleinput.AddBindingFromOtherVar;
 import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
@@ -43,13 +31,11 @@ public class PigQuery {
 	/** The pig latin. */
 	StringBuilder pigLatin = new StringBuilder();
 
-	// private PigProjectionOperator projection = null;
-
 	/* Projektion die für den Container gültig ist */
-	private PigProjectionOperator containerProjection = null;
+	private PigProjectionOperator globalProjection = null;
 
 	/* Filter die für den gesamten SubGraph Container gültig sind */
-	private ArrayList<PigFilterOperator> containerFilterPigOps = new ArrayList<PigFilterOperator>();
+	private ArrayList<PigFilterOperator> globalFilterPigOps = new ArrayList<PigFilterOperator>();
 
 	private ArrayList<PigIndexScanOperator> indexScanOps = new ArrayList<PigIndexScanOperator>();
 
@@ -76,15 +62,17 @@ public class PigQuery {
 	}
 
 	public void applyJoins() {
-		if (indexScanOps.size() == 1 && multiIndexScanContainer == null) {
-			indexScanOps.get(0).addFilter(containerFilterPigOps);
-			indexScanOps.get(0).addProjection(containerProjection);
-			this.multiJoin(indexScanOps.get(0));
-		} else {
 
+		// Es ist nur ein BGP's vorhanden
+		if (indexScanOps.size() == 1 && multiIndexScanContainer == null) {
+			indexScanOps.get(0).addFilter(globalFilterPigOps);
+			indexScanOps.get(0).addProjection(globalProjection);
+			this.multiJoin(indexScanOps.get(0));
+		}
+		// Es sind mehrere BGP's vorhanden und diese werden nacheinander gejoint
+		else {
 			// push Filter/Projections
-			executeFiltersAndProjections(containerProjection,
-					containerFilterPigOps);
+			executeFiltersAndProjections(globalProjection, globalFilterPigOps);
 
 			this.joinMultiIndexScans(multiIndexScanContainer);
 		}
@@ -93,9 +81,9 @@ public class PigQuery {
 
 	public JoinInformation joinMultiIndexScans(MultiIndexScanContainer container) {
 		JoinInformation newJoin = null;
-		for (Integer id : container.getOperatorList().keySet()) {
-			HashSet<BasicOperator> curList = container.getOperatorList()
-					.get(id);
+		for (Integer id : container.getContainerList().keySet()) {
+			HashSet<BasicOperator> curList = container.getContainerList().get(
+					id);
 			ArrayList<JoinInformation> multiInputist = new ArrayList<JoinInformation>();
 			for (BasicOperator op : curList) {
 				if (op instanceof IndexScanContainer) {
@@ -105,7 +93,7 @@ public class PigQuery {
 									.getTriplePattern());
 
 					for (BasicOperator indexOp : curIndexScanContainer
-							.getOperations()) {
+							.getOperators()) {
 						if (indexOp instanceof Filter) {
 							PigFilterOperator filterOp = new PigFilterOperator(
 									(Filter) indexOp);
@@ -123,11 +111,11 @@ public class PigQuery {
 						}
 					}
 
-					if (containerFilterPigOps != null) {
-						pigIndexScan.addFilter(containerFilterPigOps);
+					if (globalFilterPigOps != null) {
+						pigIndexScan.addFilter(globalFilterPigOps);
 					}
-					if (containerProjection != null) {
-						pigIndexScan.addProjection(containerProjection);
+					if (globalProjection != null) {
+						pigIndexScan.addProjection(globalProjection);
 					}
 
 					this.buildAndAppendQuery(pigIndexScan);
@@ -142,8 +130,9 @@ public class PigQuery {
 					final MultiIndexScanContainer c = (MultiIndexScanContainer) op;
 					multiInputist.add(this.joinMultiIndexScans(c));
 				}
-			}
-
+			}		
+			
+			
 			newJoin = new JoinInformation();
 			if (container.getMappingTree().get(id) instanceof Union) {
 				this.buildAndAppendQuery(new PigUnionOperator(newJoin,
@@ -172,8 +161,6 @@ public class PigQuery {
 	}
 
 	public void addMultiIndexScanList(MultiIndexScanContainer container) {
-		// this.multiIndexScanList = multiIndexScanList;
-		// this.mappingTree = mappingTree;
 		this.multiIndexScanContainer = container;
 	}
 
@@ -188,7 +175,7 @@ public class PigQuery {
 
 	public void finishQuery() {
 
-		executeFiltersAndProjections(containerProjection, containerFilterPigOps);
+		executeFiltersAndProjections(globalProjection, globalFilterPigOps);
 
 		if (distinctOperator != null) {
 			this.buildAndAppendQuery(distinctOperator);
@@ -313,7 +300,7 @@ public class PigQuery {
 
 	public ArrayList<PigFilterOperator> getFilterPigOps() {
 		if (activeIndexScan == null) {
-			return containerFilterPigOps;
+			return globalFilterPigOps;
 		} else {
 			return activeIndexScan.getFilter();
 		}
@@ -321,7 +308,7 @@ public class PigQuery {
 
 	public PigProjectionOperator getProjection() {
 		if (activeIndexScan == null) {
-			return containerProjection;
+			return globalProjection;
 		} else {
 			return activeIndexScan.getProjection();
 		}
@@ -329,10 +316,10 @@ public class PigQuery {
 
 	public void setContainerProjection(
 			PigProjectionOperator pigProjectionOperator) {
-		this.containerProjection = pigProjectionOperator;
+		this.globalProjection = pigProjectionOperator;
 	}
 
 	public void addContainerFilter(PigFilterOperator pigFilter) {
-		this.containerFilterPigOps.add(pigFilter);
+		this.globalFilterPigOps.add(pigFilter);
 	}
 }

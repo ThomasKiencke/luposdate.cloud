@@ -25,13 +25,14 @@ public class MultiIndexScanContainer extends BasicOperator {
 	TreeMap<Integer, HashSet<BasicOperator>> multiIndexScanList = new TreeMap<Integer, HashSet<BasicOperator>>();
 	TreeMap<Integer, MultiInputOperator> mappingTree = new TreeMap<Integer, MultiInputOperator>();
 
-	public void addOperator(MultiInputOperator type, HashSet<BasicOperator> ops) {
+	public void addSubContainer(MultiInputOperator type,
+			HashSet<BasicOperator> ops) {
 		multiIndexScanList.put(idCounter, ops);
 		mappingTree.put(idCounter, type);
 		idCounter++;
 	}
 
-	public TreeMap<Integer, HashSet<BasicOperator>> getOperatorList() {
+	public TreeMap<Integer, HashSet<BasicOperator>> getContainerList() {
 		return multiIndexScanList;
 	}
 
@@ -39,18 +40,18 @@ public class MultiIndexScanContainer extends BasicOperator {
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 		result.append("--- MultiIndexScanContainer ---\n");
-//		for (HashSet<BasicOperator> curNodes : multiIndexScanList.values()) {
-//			for (BasicOperator curNode : curNodes) {
-//				if (curNode instanceof MultiIndexScanContainer) {
-//					result.append(((MultiIndexScanContainer) curNode).toString());
-//				} else if (curNode instanceof IndexScanContainer) {
-//					result.append(((IndexScanContainer) curNode).toString());
-//				} else {
-//					result.append("\n" + curNode.getClass().getSimpleName());
-//				}
-//			}
-//
-//		}
+		// for (HashSet<BasicOperator> curNodes : multiIndexScanList.values()) {
+		// for (BasicOperator curNode : curNodes) {
+		// if (curNode instanceof MultiIndexScanContainer) {
+		// result.append(((MultiIndexScanContainer) curNode).toString());
+		// } else if (curNode instanceof IndexScanContainer) {
+		// result.append(((IndexScanContainer) curNode).toString());
+		// } else {
+		// result.append("\n" + curNode.getClass().getSimpleName());
+		// }
+		// }
+		//
+		// }
 
 		return result.toString();
 	}
@@ -73,6 +74,10 @@ public class MultiIndexScanContainer extends BasicOperator {
 
 	public void addOperator(BasicOperator op) {
 		this.ops.add(op);
+	}
+
+	public ArrayList<BasicOperator> getOperators() {
+		return ops;
 	}
 
 }

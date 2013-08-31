@@ -48,7 +48,7 @@ public class IndexScanContainer extends BasicOperator {
 		return id;
 	}
 	
-	public ArrayList<BasicOperator> getOperations() {
+	public ArrayList<BasicOperator> getOperators() {
 		return ops;
 	}
 

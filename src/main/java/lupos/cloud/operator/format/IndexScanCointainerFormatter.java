@@ -59,7 +59,7 @@ public class IndexScanCointainerFormatter implements IOperatorFormatter {
 		pigQuery.buildAndAppendQuery(pigIndexScan);
 		pigQuery.addIndexScanOperator(pigIndexScan);
 
-		for (BasicOperator op : indexScan.getOperations()) {
+		for (BasicOperator op : indexScan.getOperators()) {
 			IOperatorFormatter serializer = null;
 			if (op instanceof Filter) {
 				serializer = new FilterFormatter();
