@@ -33,6 +33,7 @@ import lupos.cloud.pig.operator.PigDistinctOperator;
 import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.pig.operator.PigIndexScanOperator;
 import lupos.cloud.pig.operator.PigLimitOperator;
+import lupos.cloud.pig.operator.PigOrderByOperator;
 import lupos.cloud.pig.operator.PigProjectionOperator;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.Root;
@@ -42,6 +43,7 @@ import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.engine.operators.singleinput.modifiers.Limit;
 import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
+import lupos.engine.operators.singleinput.sort.Sort;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 /**
@@ -76,7 +78,11 @@ public class IndexScanCointainerFormatter implements IOperatorFormatter {
 			} else if (op instanceof Limit) {
 				singlePigQuery.setLimitOperator(new PigLimitOperator(
 						((Limit) op).getLimit()));
-			} else if (op instanceof Result || op instanceof Root || op instanceof AddBinding) {
+			} else if (op instanceof Sort) {
+				singlePigQuery.setOrderbyOperator(new PigOrderByOperator(
+						((Sort) op)));
+			} else if (op instanceof Result || op instanceof Root
+					|| op instanceof AddBinding) {
 				// ignore
 			} else {
 				throw new RuntimeException(
@@ -84,7 +90,7 @@ public class IndexScanCointainerFormatter implements IOperatorFormatter {
 								+ op.getClass());
 			}
 		}
-		
+
 		pigQuery.addAndPrceedSinglePigQuery(singlePigQuery);
 		return pigQuery;
 	}

@@ -8,6 +8,7 @@ import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.pig.operator.PigIndexScanOperator;
 import lupos.cloud.pig.operator.IPigOperator;
 import lupos.cloud.pig.operator.PigLimitOperator;
+import lupos.cloud.pig.operator.PigOrderByOperator;
 import lupos.cloud.pig.operator.PigProjectionOperator;;
 
 /**
@@ -41,6 +42,8 @@ public class SinglePigQuery {
 
 	private PigLimitOperator limitOperator;
 
+	private PigOrderByOperator pigOrderByOperator;
+
 	/**
 	 * Gets the pig latin.
 	 * 
@@ -65,6 +68,10 @@ public class SinglePigQuery {
 
 		if (limitOperator != null) {
 			this.buildAndAppendQuery(limitOperator);
+		}
+		
+		if (pigOrderByOperator != null) {
+			this.buildAndAppendQuery(pigOrderByOperator);
 		}
 	}
 
@@ -106,7 +113,7 @@ public class SinglePigQuery {
 
 			// System.out.println("size: " + intermediateJoins.size());
 			String multiJoinOverTwoVars = this.indexScanOp
-					.multiJoinOverTwoVariablse();
+					.multiJoinOverTwoVariables();
 
 			/*
 			 * Es werden immer erst Tripel-Muster gesucht bei denen über zwei
@@ -115,9 +122,6 @@ public class SinglePigQuery {
 			 * ?o}
 			 */
 
-			if (debug) {
-				this.pigLatin.append("-- Join \n");
-			}
 			if (multiJoinOverTwoVars != null) {
 				this.pigLatin.append(multiJoinOverTwoVars);
 			} else {
@@ -186,5 +190,9 @@ public class SinglePigQuery {
 					.getProjectionVariables());
 		}
 
+	}
+
+	public void setOrderbyOperator(PigOrderByOperator pigOrderByOperator) {
+		this.pigOrderByOperator = pigOrderByOperator;
 	}
 }

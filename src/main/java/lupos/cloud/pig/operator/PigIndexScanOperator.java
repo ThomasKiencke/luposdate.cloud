@@ -14,6 +14,7 @@ public class PigIndexScanOperator implements IPigOperator {
 	ArrayList<JoinInformation> intermediateJoins = null;
 	Collection<TriplePattern> triplePatternCollection = null;
 	int tripleCounter = 0;
+	boolean debug = false;
 
 	public PigIndexScanOperator(Collection<TriplePattern> tp) {
 		this.triplePatternCollection = tp;
@@ -27,8 +28,10 @@ public class PigIndexScanOperator implements IPigOperator {
 	 *            the triple pattern
 	 * @return the string
 	 */
-	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
+			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		this.intermediateJoins = intermediateBags;
+		this.debug = debug;
 		StringBuilder result = new StringBuilder();
 		for (TriplePattern triplePattern : this.triplePatternCollection) {
 			JoinInformation curPattern = getHBaseTable(triplePattern);
@@ -59,7 +62,7 @@ public class PigIndexScanOperator implements IPigOperator {
 						+ curPattern.getTablename()
 						+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1));\n");
 			} else if (curPattern.allElementsAreLiterals()) {
-				// do nothing
+				// do nothing, maybe add in future
 				return "";
 			} else {
 				result.append(
@@ -165,7 +168,7 @@ public class PigIndexScanOperator implements IPigOperator {
 		return result;
 	}
 
-	public String multiJoinOverTwoVariablse() {
+	public String multiJoinOverTwoVariables() {
 		StringBuilder result = new StringBuilder();
 		HashSet<String> equalVariables = null;
 		HashSet<JoinInformation> toJoin = new HashSet<JoinInformation>();
@@ -318,6 +321,19 @@ public class PigIndexScanOperator implements IPigOperator {
 	public String getPigMultiJoin(ArrayList<JoinInformation> joinOverItem,
 			String joinElement) {
 		StringBuilder result = new StringBuilder();
+
+		for (JoinInformation bag : joinOverItem) {
+			if (bag.isVariableOptional(joinElement)) {
+				throw new RuntimeException(
+						"Join over optional variable is not allowed in pig!");
+			}
+		}
+
+		if (debug) {
+			result.append("-- Join over "+ joinElement.toString() +"\n");
+		}
+
+
 		JoinInformation curJoinInfo = new JoinInformation("INTERMEDIATE_BAG_"
 				+ JoinInformation.idCounter);
 		result.append(curJoinInfo.getName() + " = JOIN");
@@ -334,6 +350,10 @@ public class PigIndexScanOperator implements IPigOperator {
 			} else {
 				result.append(";\n");
 			}
+
+			for (String elem : curPattern.getOptionalJoinElements()) {
+				curJoinInfo.addOptionalElements(elem);
+			}
 		}
 		curJoinInfo.setPatternId(JoinInformation.idCounter);
 		curJoinInfo.addAppliedFilters(JoinInformation
@@ -348,8 +368,23 @@ public class PigIndexScanOperator implements IPigOperator {
 			ArrayList<JoinInformation> joinOverItem,
 			ArrayList<String> joinElements) {
 		StringBuilder result = new StringBuilder();
+
+		for (String var : joinElements) {
+			for (JoinInformation bag : joinOverItem) {
+				if (bag.isVariableOptional(var)) {
+					throw new RuntimeException(
+							"Join over optional variable is not allowed in pig!");
+				}
+			}
+		}
+
+		if (debug) {
+			result.append("-- Join over "+ joinElements.toString() +"\n");
+		}
+		
 		JoinInformation curJoinInfo = new JoinInformation("INTERMEDIATE_BAG_"
 				+ JoinInformation.idCounter);
+		
 		result.append(curJoinInfo.getName() + " = JOIN");
 		int i = 0;
 		for (JoinInformation curPattern : joinOverItem) {
@@ -365,16 +400,20 @@ public class PigIndexScanOperator implements IPigOperator {
 			} else {
 				result.append(";\n");
 			}
+
+			for (String elem : curPattern.getOptionalJoinElements()) {
+				curJoinInfo.addOptionalElements(elem);
+			}
 		}
 		curJoinInfo.setPatternId(JoinInformation.idCounter);
 		curJoinInfo.addAppliedFilters(JoinInformation
 				.mergeAppliedFilters(joinOverItem));
+
 		intermediateJoins.add(curJoinInfo);
 		JoinInformation.idCounter++;
 
 		return result.toString();
 	}
-
 
 	public String getFinalAlias() {
 		return intermediateJoins.get(0).getName();

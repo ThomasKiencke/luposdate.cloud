@@ -8,6 +8,7 @@ import lupos.cloud.pig.operator.PigFilterExectuer;
 import lupos.cloud.pig.operator.PigFilterOperator;
 import lupos.cloud.pig.operator.PigJoinOperator;
 import lupos.cloud.pig.operator.PigLimitOperator;
+import lupos.cloud.pig.operator.PigOrderByOperator;
 import lupos.cloud.pig.operator.PigProjectionOperator;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.Root;
@@ -17,6 +18,7 @@ import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.engine.operators.singleinput.modifiers.Limit;
 import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
+import lupos.engine.operators.singleinput.sort.Sort;
 
 public class PigQuery {
 
@@ -75,7 +77,8 @@ public class PigQuery {
 		PigProjectionOperator projection = null;
 		PigDistinctOperator distinct = null;
 		PigLimitOperator limit = null;
-		
+		PigOrderByOperator orderBy = null;
+
 		for (BasicOperator op : oplist) {
 			if (op instanceof Filter) {
 				filterOps.add(new PigFilterOperator((Filter) op));
@@ -84,6 +87,8 @@ public class PigQuery {
 						((Projection) op).getProjectedVariables());
 			} else if (op instanceof Distinct) {
 				distinct = new PigDistinctOperator();
+			} else if (op instanceof Sort) {
+				orderBy = new PigOrderByOperator(((Sort) op));
 			} else if (op instanceof Limit) {
 				limit = new PigLimitOperator(((Limit) op).getLimit());
 			} else if (op instanceof Result || op instanceof Root
@@ -100,32 +105,37 @@ public class PigQuery {
 		if (filterOps.size() > 0) {
 			this.buildAndAppendQuery(new PigFilterExectuer(), filterOps);
 		}
-		
-		// Projection
-		if (projection != null) {
-			this.buildAndAppendQuery(projection, filterOps);
-		}
-
-		// Distinct
-		if (distinct != null) {
-			this.buildAndAppendQuery(distinct, filterOps);
-		}
 
 		// Limit
 		if (limit != null) {
 			this.buildAndAppendQuery(limit, filterOps);
 		}
+		
+		// Order by
+		if (orderBy != null) {
+			this.buildAndAppendQuery(orderBy, filterOps);
+		}
+		
+		// Distinct
+		if (distinct != null) {
+			this.buildAndAppendQuery(distinct, filterOps);
+		}
 
+		// Projection
+		if (projection != null) {
+			this.buildAndAppendQuery(projection, filterOps);
+		}
+		
 	}
 
 	public void buildAndAppendQuery(IPigOperator operator,
 			ArrayList<PigFilterOperator> filterOps) {
-		this.pigLatin
-				.append(operator.buildQuery(intermediateBags, debug, filterOps));
+		this.pigLatin.append(operator.buildQuery(intermediateBags, debug,
+				filterOps));
 	}
 
 	public void buildAndAppendQuery(IPigOperator operator) {
-		this.pigLatin
-				.append(operator.buildQuery(intermediateBags, debug,  new ArrayList<PigFilterOperator>()));
+		this.pigLatin.append(operator.buildQuery(intermediateBags, debug,
+				new ArrayList<PigFilterOperator>()));
 	}
 }

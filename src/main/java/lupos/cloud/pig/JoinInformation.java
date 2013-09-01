@@ -25,6 +25,8 @@ public class JoinInformation {
 	/** The join elements. */
 	ArrayList<String> joinElements = new ArrayList<String>();
 
+	HashSet<String> optionalJoinElements = new HashSet<String>();
+
 	/** The triple pattern. */
 	TriplePattern triplePattern;
 
@@ -128,6 +130,18 @@ public class JoinInformation {
 		this.joinElements = joinElements;
 	}
 
+	public void addJoinElements(String elem) {
+		this.joinElements.add(elem);
+	}
+
+	public void addOptionalElements(String elem) {
+		this.optionalJoinElements.add(elem);
+	}
+
+	public HashSet<String> getOptionalJoinElements() {
+		return optionalJoinElements;
+	}
+
 	/**
 	 * Gets the literals.
 	 * 
@@ -143,6 +157,10 @@ public class JoinInformation {
 			}
 		}
 		return result.toString();
+	}
+
+	public boolean isVariableOptional(String var) {
+		return optionalJoinElements.contains(var);
 	}
 
 	/**
@@ -241,5 +259,17 @@ public class JoinInformation {
 			}
 		}
 		return result;
+	}
+
+	public void mergeOptionalVariables(ArrayList<JoinInformation> inputBags) {
+		for (JoinInformation bag : inputBags) {
+			this.mergeOptionalVariables(bag);
+		}
+	}
+
+	public void mergeOptionalVariables(JoinInformation bag) {
+		for (String var : bag.getOptionalJoinElements()) {
+			this.optionalJoinElements.add(var);
+		}
 	}
 }

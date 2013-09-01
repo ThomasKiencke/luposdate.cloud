@@ -26,10 +26,9 @@ public class IndexScanContainer extends BasicOperator {
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 		result.append("--- IndexScanContainer ---\n");
-//		for (BasicOperator curNode : ops) {
-//			result.append("\n" + curNode.getClass().getSimpleName());
-//
-//		}
+		for (BasicOperator op : ops) {
+			result.append(op.getClass().getSimpleName() + "\n");
+		}
 
 		return result.toString();
 	}

@@ -85,6 +85,9 @@ public class PigProjectionOperator implements IPigOperator {
 					newJoin.setPatternId(JoinInformation.idCounter);
 					newJoin.setJoinElements(new ArrayList<String>(varJoinMap
 							.get(curJoin)));
+					
+					newJoin.mergeOptionalVariables(curJoin);
+					
 					intermediateJoins.remove(curJoin);
 					intermediateJoins.add(newJoin);
 					JoinInformation.idCounter++;

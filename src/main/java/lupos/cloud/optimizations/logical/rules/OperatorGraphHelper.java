@@ -20,6 +20,7 @@ import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
+import lupos.engine.operators.singleinput.sort.Sort;
 
 public class OperatorGraphHelper {
 
@@ -72,13 +73,13 @@ public class OperatorGraphHelper {
 	 * äußersten Container. Anmerkung: Äußere Projektionen (=globale
 	 * Projektionen) sind trotzdem in ALLEN unteren Containern "aktiv"
 	 */
-//	public static boolean moveOperation(BasicOperator op) {
-//		boolean result = true;
-//		if (op instanceof Projection || op instanceof Distinct) {
-//			result = false;
-//		}
-//		return result;
-//	}
+	// public static boolean moveOperation(BasicOperator op) {
+	// boolean result = true;
+	// if (op instanceof Projection || op instanceof Distinct) {
+	// result = false;
+	// }
+	// return result;
+	// }
 
 	public static void replaceOperation(BasicOperator oldOp, BasicOperator newOp) {
 		// Alte Vorgänger/Nachfolger merken
@@ -138,6 +139,36 @@ public class OperatorGraphHelper {
 			BasicOperator multiInputOperator, Set<BasicOperator> containerList) {
 		ArrayList<Variable> intersectionVariables = new ArrayList<Variable>(
 				multiInputOperator.getIntersectionVariables());
+		if (intersectionVariables.size() > 0) {
+			Projection proj = new Projection();
+			for (Variable var : intersectionVariables) {
+				proj.addProjectionElement(var);
+			}
+			for (BasicOperator indexScan : containerList) {
+				if (indexScan instanceof IndexScanContainer) {
+					((IndexScanContainer) indexScan).addOperator(proj);
+				} else {
+					((MultiIndexScanContainer) indexScan)
+							.addOperatorToAllChilds(proj);
+				}
+			}
+		}
+
+	}
+
+	public static void addProjectionIfNecessary(BasicOperator operation,
+			ArrayList<BasicOperator> containerList) {
+		ArrayList<Variable> intersectionVariables = new ArrayList<Variable>(
+				operation.getIntersectionVariables());
+
+		// Beim OrderBy Operator umfassen die IntersectionVariablen alle
+		// Variablen des Triple Pattern, es ist aber nur nötig die OrderBy
+		// Variable zu pushen
+		if (operation instanceof Sort) {
+			intersectionVariables = new ArrayList<Variable>(
+					((Sort) operation).getSortCriterium());
+		}
+
 		if (intersectionVariables.size() > 0) {
 			Projection proj = new Projection();
 			for (Variable var : intersectionVariables) {

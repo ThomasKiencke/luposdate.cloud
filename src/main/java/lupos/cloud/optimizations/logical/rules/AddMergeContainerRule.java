@@ -132,6 +132,25 @@ public class AddMergeContainerRule extends Rule {
 						.addProjectionFromMultiInputOperatorInContainerIfNecessary(
 								multiInputOperator, toMerge);
 
+				// Füge Operatoren zum Container hinzu
+				for (BasicOperator op : OperatorGraphHelper
+						.getAndDeleteOperationUntilNextMultiInputOperator(multiInputOperator
+								.getSucceedingOperators())) {
+					if (OperatorGraphHelper.isOperationSupported(op)) {
+						// Wenn die Operation unterstützt wird füge zum
+						// Container hinzu
+						multiIndexContainer.addOperator(op);
+						// Falls eine Operatione z.B. eine Projektion/Filter von
+						// Variablen abhängig ist füge diese zur inneren Container-
+						// Projektion hinzu
+						OperatorGraphHelper.addProjectionIfNecessary(op, containerList);
+					} else {
+						// Ansonsten hänge die Operation hinter den Container
+						OperatorGraphHelper.insertNewOperator(
+								multiIndexContainer, op);
+					}
+				}
+				
 				// Entferne den Container aus der Container Liste, wenn dieser
 				// nicht noch für eine andere MultiInput-Operation gebraucht
 				// wird.
@@ -150,20 +169,6 @@ public class AddMergeContainerRule extends Rule {
 				OperatorGraphHelper.mergeContainerListIntoOneNewContainer(
 						multiIndexContainer, toRemove);
 
-				// Füge Operatoren zum Container hinzu
-				for (BasicOperator op : OperatorGraphHelper
-						.getAndDeleteOperationUntilNextMultiInputOperator(multiInputOperator
-								.getSucceedingOperators())) {
-					if (OperatorGraphHelper.isOperationSupported(op)) {
-						// Wenn die Operation unterstützt wird füge zum
-						// Container hinzu
-						multiIndexContainer.addOperator(op);
-					} else {
-						// Ansonsten hänge die Operation hinter den Container
-						OperatorGraphHelper.insertNewOperator(
-								multiIndexContainer, op);
-					}
-				}
 
 				multiInputOperator.removeFromOperatorGraph();
 

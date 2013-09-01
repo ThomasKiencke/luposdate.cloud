@@ -17,7 +17,7 @@ public class PigLimitOperator implements IPigOperator {
 		this.intermediateJoins = intermediateBags;
 
 		if (debug) {
-			result.append("-- Limit: \n");
+			result.append("-- Limit: " + limit + " \n");
 		}
 
 		JoinInformation curJoin = intermediateJoins.get(0);
@@ -34,6 +34,7 @@ public class PigLimitOperator implements IPigOperator {
 		newJoin.setPatternId(JoinInformation.idCounter);
 		newJoin.setJoinElements(curJoin.getJoinElements());
 		newJoin.addAppliedFilters(curJoin.getAppliedFilters());
+		newJoin.mergeOptionalVariables(curJoin);
 
 		intermediateJoins.remove(curJoin);
 		intermediateJoins.add(newJoin);
