@@ -169,8 +169,14 @@ public class CloudManagement {
 									Tuple tuple = pigQueryResult.next();
 									int i = 0;
 									for (String var : curVariableList) {
-										String curTupel = tuple.get(i)
-												.toString();
+										Object curTupleObject = tuple.get(i);
+										// unbounded Variables
+										if (curTupleObject == null) {
+											result.add(new Variable(var), null);
+											continue;
+										}
+										
+										String curTupel = curTupleObject.toString();
 										if (curTupel.toString().startsWith("<")) {
 											result.add(
 													new Variable(var),
