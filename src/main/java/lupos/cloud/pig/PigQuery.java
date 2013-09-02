@@ -1,6 +1,7 @@
 package lupos.cloud.pig;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import lupos.cloud.pig.operator.IPigOperator;
 import lupos.cloud.pig.operator.PigDistinctOperator;
@@ -26,11 +27,7 @@ public class PigQuery {
 	ArrayList<JoinInformation> intermediateBags = new ArrayList<JoinInformation>();
 	StringBuilder pigLatin = new StringBuilder();
 	public static boolean debug = true;
-
-	// public void applyJoins() {
-	// // TODO Auto-generated method stub
-	//
-	// }
+	private HashMap<String, String> addBinding = new HashMap<String, String>();
 
 	public void finishQuery() {
 		StringBuilder modifiedPigQuery = new StringBuilder();
@@ -44,12 +41,31 @@ public class PigQuery {
 	}
 
 	public ArrayList<String> getVariableList() {
-		return singleQueries.get(0).getVariableList();
+		ArrayList<String> result = new ArrayList<String>();
+		for (String elem : intermediateBags.get(0).getJoinElements()) {
+			// Bindings werden für die Ergebnismenge wieder rückgängig gemacht
+			boolean replaced = false;
+			for (String oldVar : this.addBinding.keySet()) {
+				if (elem.equals(this.addBinding.get(oldVar))) {
+					result.add(oldVar.replace("?", ""));
+					replaced = true;
+				}
+
+			}
+			if (!replaced) {
+				result.add(elem.replace("?", ""));
+			}
+
+		}
+		return result;
 	}
 
 	public void addAndPrceedSinglePigQuery(SinglePigQuery singlePigQuery) {
 		singlePigQuery.finishQuery();
 		this.singleQueries.add(singlePigQuery);
+		if (singlePigQuery.getAddBindings() != null) {
+			this.addBinding.putAll(singlePigQuery.getAddBindings());
+		}
 		intermediateBags.add(singlePigQuery.getIntermediateJoins().get(0));
 		pigLatin.append(singlePigQuery.getPigLatin());
 	}
@@ -110,22 +126,25 @@ public class PigQuery {
 		if (limit != null) {
 			this.buildAndAppendQuery(limit, filterOps);
 		}
-		
+
 		// Order by
 		if (orderBy != null) {
 			this.buildAndAppendQuery(orderBy, filterOps);
 		}
-		
+
+		// Projection
+		if (projection != null) {
+			if (this.addBinding.size() > 0) {
+				projection.replaceVariableInProjection(this.addBinding);
+			}
+			this.buildAndAppendQuery(projection, filterOps);
+		}
+
 		// Distinct
 		if (distinct != null) {
 			this.buildAndAppendQuery(distinct, filterOps);
 		}
 
-		// Projection
-		if (projection != null) {
-			this.buildAndAppendQuery(projection, filterOps);
-		}
-		
 	}
 
 	public void buildAndAppendQuery(IPigOperator operator,
@@ -137,5 +156,12 @@ public class PigQuery {
 	public void buildAndAppendQuery(IPigOperator operator) {
 		this.pigLatin.append(operator.buildQuery(intermediateBags, debug,
 				new ArrayList<PigFilterOperator>()));
+	}
+
+	public void replaceVariableInProjection(String oldVar, String newVar) {
+		if (this.addBinding == null) {
+			this.addBinding = new HashMap<String, String>();
+		}
+		this.addBinding.put(oldVar, newVar);
 	}
 }

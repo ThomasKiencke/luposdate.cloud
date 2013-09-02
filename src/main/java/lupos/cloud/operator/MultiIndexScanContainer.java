@@ -2,6 +2,7 @@ package lupos.cloud.operator;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.TreeMap;
 
 import lupos.datastructures.queryresult.QueryResult;
@@ -18,17 +19,17 @@ public class MultiIndexScanContainer extends BasicOperator {
 	private ArrayList<BasicOperator> ops = new ArrayList<BasicOperator>();
 	private static final long serialVersionUID = -5612770902234058839L;
 
-	TreeMap<Integer, HashSet<BasicOperator>> multiIndexScanList = new TreeMap<Integer, HashSet<BasicOperator>>();
+	TreeMap<Integer, LinkedList<BasicOperator>> multiIndexScanList = new TreeMap<Integer, LinkedList<BasicOperator>>();
 	TreeMap<Integer, MultiInputOperator> mappingTree = new TreeMap<Integer, MultiInputOperator>();
 
 	public void addSubContainer(MultiInputOperator type,
-			HashSet<BasicOperator> ops) {
+			LinkedList<BasicOperator> ops) {
 		multiIndexScanList.put(idCounter, ops);
 		mappingTree.put(idCounter, type);
 		idCounter++;
 	}
 
-	public TreeMap<Integer, HashSet<BasicOperator>> getContainerList() {
+	public TreeMap<Integer, LinkedList<BasicOperator>> getContainerList() {
 		return multiIndexScanList;
 	}
 
@@ -52,7 +53,7 @@ public class MultiIndexScanContainer extends BasicOperator {
 	}
 
 	public void addOperatorToAllChilds(BasicOperator op) {
-		for (HashSet<BasicOperator> curList : multiIndexScanList.values()) {
+		for (LinkedList<BasicOperator> curList : multiIndexScanList.values()) {
 			for (BasicOperator node : curList) {
 				if (node instanceof IndexScanContainer) {
 					((IndexScanContainer) node).addOperator(op);

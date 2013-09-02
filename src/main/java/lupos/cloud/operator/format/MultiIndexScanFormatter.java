@@ -26,6 +26,7 @@ package lupos.cloud.operator.format;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 
 import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
@@ -79,7 +80,7 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 		// ArrayList<BasicOperator> containerOperations = new
 		// ArrayList<BasicOperator>();
 		for (Integer id : container.getContainerList().keySet()) {
-			HashSet<BasicOperator> curList = container.getContainerList().get(
+			LinkedList<BasicOperator> curList = container.getContainerList().get(
 					id);
 			ArrayList<JoinInformation> multiInputist = new ArrayList<JoinInformation>();
 			for (BasicOperator op : curList) {

@@ -38,6 +38,7 @@ import lupos.cloud.pig.operator.PigProjectionOperator;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.Root;
 import lupos.engine.operators.singleinput.AddBinding;
+import lupos.engine.operators.singleinput.AddBindingFromOtherVar;
 import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
@@ -81,6 +82,13 @@ public class IndexScanCointainerFormatter implements IOperatorFormatter {
 			} else if (op instanceof Sort) {
 				singlePigQuery.setOrderbyOperator(new PigOrderByOperator(
 						((Sort) op)));
+			} else if (op instanceof AddBindingFromOtherVar) {
+				// muss an sich nicht behandelt werden, da im
+				// IndexScan/TripelMustern die Variablen bereits durch LUPOSDATE
+				// ersetzew werden, jedoch nicht in der Projektion! 
+				AddBindingFromOtherVar addVar = (AddBindingFromOtherVar) op;
+				singlePigQuery.replaceVariableInProjection("?" + addVar.getVar().getName(), "?" + addVar.getOtherVar().getName());
+				
 			} else if (op instanceof Result || op instanceof Root
 					|| op instanceof AddBinding) {
 				// ignore

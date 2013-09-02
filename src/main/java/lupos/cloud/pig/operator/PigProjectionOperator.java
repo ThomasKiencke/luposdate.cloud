@@ -21,7 +21,7 @@ public class PigProjectionOperator implements IPigOperator {
 			this.projectionVariables.add(varToAdd.toString());
 		}
 	}
-	
+
 	public void addProjectionVaribles(HashSet<String> variables) {
 		for (String varToAdd : variables) {
 			this.projectionVariables.add(varToAdd);
@@ -31,9 +31,10 @@ public class PigProjectionOperator implements IPigOperator {
 	public HashSet<String> getProjectionVariables() {
 		return projectionVariables;
 	}
-	
+
 	@Override
-	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
+			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		this.intermediateJoins = intermediateBags;
 		this.filterOps = filterOps;
 		this.debug = debug;
@@ -85,9 +86,9 @@ public class PigProjectionOperator implements IPigOperator {
 					newJoin.setPatternId(JoinInformation.idCounter);
 					newJoin.setJoinElements(new ArrayList<String>(varJoinMap
 							.get(curJoin)));
-					
+
 					newJoin.mergeOptionalVariables(curJoin);
-					
+
 					intermediateJoins.remove(curJoin);
 					intermediateJoins.add(newJoin);
 					JoinInformation.idCounter++;
@@ -184,5 +185,16 @@ public class PigProjectionOperator implements IPigOperator {
 			}
 		}
 		return true;
+	}
+
+	public void replaceVariableInProjection(HashMap<String, String> addBinding) {
+		if (addBinding != null) {
+			for (String oldVar : addBinding.keySet()) {
+				boolean removed = this.projectionVariables.remove(oldVar);
+				if (removed) {
+					this.projectionVariables.add(addBinding.get(oldVar));
+				}
+			}
+		}
 	}
 }

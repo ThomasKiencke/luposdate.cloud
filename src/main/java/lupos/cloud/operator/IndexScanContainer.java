@@ -25,7 +25,7 @@ public class IndexScanContainer extends BasicOperator {
 	@Override
 	public String toString() {
 		StringBuilder result = new StringBuilder();
-		result.append("--- IndexScanContainer ---\n");
+		result.append("--- IndexScanContainer (" + indexScan.getTriplePattern().size() + ")  --- \n");
 		for (BasicOperator op : ops) {
 			result.append(op.getClass().getSimpleName() + "\n");
 		}

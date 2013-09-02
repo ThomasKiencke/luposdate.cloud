@@ -23,6 +23,7 @@ import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 import lupos.engine.operators.singleinput.sort.Sort;
 
 public class OperatorGraphHelper {
+	private static Integer edgeNumber;
 
 	// Operationen werden zurück gegeben und im Graphen GELÖSCHT!
 	public static ArrayList<BasicOperator> getAndDeleteOperationUntilNextMultiInputOperator(
@@ -96,23 +97,29 @@ public class OperatorGraphHelper {
 
 		for (final OperatorIDTuple succ : succs) {
 			succ.getOperator().removePrecedingOperator(oldOp);
-			succ.getOperator().addPrecedingOperator(oldOp);
+			succ.getOperator().addPrecedingOperator(newOp);
 		}
 	}
 
-	public static BasicOperator getNextMultiInputOperation(BasicOperator op) {
+	public static BasicOperator getNextMultiInputOperation(BasicOperator op, int edgeID) {
 		if (op instanceof MultiInputOperator) {
+			edgeNumber = edgeID;
 			return op;
 		} else {
 			for (OperatorIDTuple succ : op.getSucceedingOperators()) {
-				return getNextMultiInputOperation(succ.getOperator());
+				return getNextMultiInputOperation(succ.getOperator(), succ.getId());
 			}
 		}
 		return null;
 	}
+	
+	// quick workaround, TODO: bessere Lösung finden
+	public static Integer getLastEdgeNumber() {
+		return edgeNumber;
+	}
 
 	public static Collection<Variable> getUnionVariablesFromMultipleOperations(
-			Set<BasicOperator> list) {
+			LinkedList<BasicOperator> list) {
 		HashSet<Variable> result = new HashSet<Variable>();
 
 		for (BasicOperator op : list) {
@@ -124,7 +131,7 @@ public class OperatorGraphHelper {
 	}
 
 	public static Collection<Variable> getIntersectionVariablesFromMultipleOperations(
-			Set<BasicOperator> list) {
+			LinkedList<BasicOperator> list) {
 		HashSet<Variable> result = new HashSet<Variable>();
 
 		for (BasicOperator op : list) {
@@ -136,7 +143,7 @@ public class OperatorGraphHelper {
 	}
 
 	public static void addProjectionFromMultiInputOperatorInContainerIfNecessary(
-			BasicOperator multiInputOperator, Set<BasicOperator> containerList) {
+			BasicOperator multiInputOperator, LinkedList<BasicOperator> containerList) {
 		ArrayList<Variable> intersectionVariables = new ArrayList<Variable>(
 				multiInputOperator.getIntersectionVariables());
 		if (intersectionVariables.size() > 0) {

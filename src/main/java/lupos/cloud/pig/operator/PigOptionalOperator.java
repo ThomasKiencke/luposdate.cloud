@@ -62,10 +62,10 @@ public class PigOptionalOperator implements IPigOperator {
 		newBag.setJoinElements(multiInputist.get(0).getJoinElements());
 
 		for (String elem : multiInputist.get(1).getJoinElements()) {
-			if (!multiInputist.get(0).getJoinElements().contains(elem)) {
+//			if (!multiInputist.get(0).getJoinElements().contains(elem)) {
 				newBag.addJoinElements(elem);
 				newBag.addOptionalElements(elem);
-			}
+//			}
 		}
 
 		return result.toString();

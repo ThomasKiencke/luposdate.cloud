@@ -81,8 +81,7 @@ public class AddMergeContainerRule extends Rule {
 	}
 
 	private void mergeContainer() {
-		HashMap<BasicOperator, HashSet<BasicOperator>> mergeMap = new HashMap<BasicOperator, HashSet<BasicOperator>>();
-
+		HashMap<BasicOperator, LinkedList<BasicOperator>> mergeMap = new HashMap<BasicOperator, LinkedList<BasicOperator>>();
 		// Für jeden (Multi-)Index-Container wird die Nachfolge MultiInput
 		// Operation gesucht und in die mergeMap gepackt. Dort befinet sich
 		// danach die MultiInputOperation also z.B. Union und eine Lister der
@@ -90,15 +89,20 @@ public class AddMergeContainerRule extends Rule {
 		for (BasicOperator op : containerList) {
 			for (OperatorIDTuple path : op.getSucceedingOperators()) {
 				BasicOperator foundOp = OperatorGraphHelper
-						.getNextMultiInputOperation(path.getOperator());
+						.getNextMultiInputOperation(path.getOperator(), path.getId());
 				if (foundOp != null) {
-					HashSet<BasicOperator> list = mergeMap.get(foundOp);
+					LinkedList<BasicOperator> list = mergeMap.get(foundOp);
 					if (list == null) {
-						list = new HashSet<BasicOperator>();
+						list = new LinkedList<BasicOperator>();
 						list.add(op);
 						mergeMap.put(foundOp, list);
 					} else {
-						list.add(op);
+						Integer position = OperatorGraphHelper
+								.getLastEdgeNumber();
+						while (position >= list.size() && position > 0) {
+							position--;
+						}
+						list.add(position, op);
 					}
 				}
 			}
@@ -107,7 +111,8 @@ public class AddMergeContainerRule extends Rule {
 		// Für jeden MultiInputOperator wird nun ein eigner Container erstellt
 		// mit allen dazugehörigen (Multi-)Index-Scan Containern
 		for (BasicOperator multiInputOperator : mergeMap.keySet()) {
-			HashSet<BasicOperator> toMerge = mergeMap.get(multiInputOperator);
+			LinkedList<BasicOperator> toMerge = new LinkedList<BasicOperator>(
+					mergeMap.get(multiInputOperator));
 			// Eine MultiInput Operator braucht immer mehr als eine Input
 			// Operation
 			if (toMerge.size() > 1) {
@@ -141,16 +146,18 @@ public class AddMergeContainerRule extends Rule {
 						// Container hinzu
 						multiIndexContainer.addOperator(op);
 						// Falls eine Operatione z.B. eine Projektion/Filter von
-						// Variablen abhängig ist füge diese zur inneren Container-
+						// Variablen abhängig ist füge diese zur inneren
+						// Container-
 						// Projektion hinzu
-						OperatorGraphHelper.addProjectionIfNecessary(op, containerList);
+						OperatorGraphHelper.addProjectionIfNecessary(op,
+								containerList);
 					} else {
 						// Ansonsten hänge die Operation hinter den Container
 						OperatorGraphHelper.insertNewOperator(
 								multiIndexContainer, op);
 					}
 				}
-				
+
 				// Entferne den Container aus der Container Liste, wenn dieser
 				// nicht noch für eine andere MultiInput-Operation gebraucht
 				// wird.
@@ -168,7 +175,6 @@ public class AddMergeContainerRule extends Rule {
 
 				OperatorGraphHelper.mergeContainerListIntoOneNewContainer(
 						multiIndexContainer, toRemove);
-
 
 				multiInputOperator.removeFromOperatorGraph();
 

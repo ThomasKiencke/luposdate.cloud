@@ -53,7 +53,7 @@ public class PigIndexScanOperator implements IPigOperator {
 						+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('"
 						+ HBaseDistributionStrategy.getTableInstance()
 								.getColumnFamilyName()
-						+ "', '-loadKey true') as (rowkey_" + tripleCounter
+						+ "', '-loadKey true -caching 500') as (rowkey_" + tripleCounter
 						+ ":chararray, columncontent_" + tripleCounter
 						+ ":map[]);" + "\n");
 
@@ -79,7 +79,7 @@ public class PigIndexScanOperator implements IPigOperator {
 						+ "' "
 						+ "using lupos.cloud.pig.udfs.HBaseLoadUDF('"
 						+ HBaseDistributionStrategy.getTableInstance()
-								.getColumnFamilyName() + "', '','"
+								.getColumnFamilyName() + "', '-caching 500','"
 						+ curPattern.getLiterals() + "') as (columncontent_"
 						+ tripleCounter + ":map[]);" + "\n");
 

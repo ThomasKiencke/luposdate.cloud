@@ -135,8 +135,8 @@ public class CloudManagement {
 	 * @return the query result
 	 */
 	public QueryResult submitPigQuery(final PigQuery query) {
-//		if (!"a".equals("b"))
-//		return null; // testing purpose
+		// if (!"a".equals("b"))
+		// return null; // testing purpose
 		QueryResult result = null;
 		long start = System.currentTimeMillis();
 		try {
@@ -145,9 +145,9 @@ public class CloudManagement {
 				System.out.println(query.getPigLatin());
 				System.out.println();
 			}
-			
-//			if (!"a".equals("b"))
-//			return null; // testing purpose
+
+//			 if (!"a".equals("b"))
+//			 return null; // testing purpose
 			System.out.println("PigLatin Programm wird ausgeführt...");
 			pigServer.registerQuery(query.getPigLatin());
 			curVariableList = query.getVariableList();
@@ -172,62 +172,73 @@ public class CloudManagement {
 										Object curTupleObject = tuple.get(i);
 										// unbounded Variables
 										if (curTupleObject == null) {
-											result.add(new Variable(var), null);
-											continue;
-										}
-										
-										String curTupel = curTupleObject.toString();
-										if (curTupel.toString().startsWith("<")) {
-											result.add(
-													new Variable(var),
-													LiteralFactory
-															.createURILiteral(tuple
-																	.get(i)
-																	.toString()));
-										} else if (curTupel.startsWith("\"")) {
-											String content = curTupel.substring(
-													curTupel.indexOf("\""),
-													curTupel.lastIndexOf("\"") + 1);
-											int startIndex = curTupel
-													.indexOf("<");
-											int stopIndex = curTupel
-													.indexOf(">") + 1;
-											if (startIndex != -1
-													&& stopIndex != -1) {
-												String type = curTupel
-														.substring(startIndex,
-																stopIndex);
+											// do nothing
+//											result.add(
+//													new Variable(var),
+//													LiteralFactory
+//															.createLiteral("unbound"));
+
+										} else {
+
+											String curTupel = curTupleObject
+													.toString();
+											if (curTupel.toString().startsWith(
+													"<")) {
 												result.add(
 														new Variable(var),
 														LiteralFactory
-																.createTypedLiteral(
-																		content,
-																		type));
+																.createURILiteral(tuple
+																		.get(i)
+																		.toString()));
+											} else if (curTupel
+													.startsWith("\"")) {
+												String content = curTupel.substring(
+														curTupel.indexOf("\""),
+														curTupel.lastIndexOf("\"") + 1);
+												int startIndex = curTupel
+														.indexOf("<");
+												int stopIndex = curTupel
+														.indexOf(">") + 1;
+												if (startIndex != -1
+														&& stopIndex != -1) {
+													String type = curTupel
+															.substring(
+																	startIndex,
+																	stopIndex);
+													result.add(
+															new Variable(var),
+															LiteralFactory
+																	.createTypedLiteral(
+																			content,
+																			type));
+												} else {
+													result.add(
+															new Variable(var),
+															LiteralFactory
+																	.createLiteral(content));
+												}
+											} else if (curTupel
+													.startsWith("_:")) {
+												result.add(
+														new Variable(var),
+														LiteralFactory
+																.createAnonymousLiteral(curTupel));
+											} else if (curTupel
+													.startsWith("_:")) {
+												result.add(
+														new Variable(var),
+														LiteralFactory
+																.createAnonymousLiteral(curTupel));
 											} else {
 												result.add(
 														new Variable(var),
 														LiteralFactory
-																.createLiteral(content));
+																.createLiteral(tuple
+																		.get(i)
+																		.toString()));
 											}
-										} else if (curTupel.startsWith("_:")) {
-											result.add(
-													new Variable(var),
-													LiteralFactory
-															.createAnonymousLiteral(curTupel));
-										} else if (curTupel.startsWith("_:")) {
-											result.add(
-													new Variable(var),
-													LiteralFactory
-															.createAnonymousLiteral(curTupel));
-										} else {
-											result.add(
-													new Variable(var),
-													LiteralFactory
-															.createLiteral(tuple
-																	.get(i)
-																	.toString()));
+											i++;
 										}
-										i++;
 									}
 									return result;
 								} catch (Exception e) {

@@ -1,6 +1,9 @@
 package lupos.cloud.pig;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 import lupos.cloud.pig.operator.PigDistinctOperator;
 import lupos.cloud.pig.operator.PigFilterExectuer;
@@ -43,6 +46,8 @@ public class SinglePigQuery {
 	private PigLimitOperator limitOperator;
 
 	private PigOrderByOperator pigOrderByOperator;
+	
+	private HashMap<String, String> addBinding = null;
 
 	/**
 	 * Gets the pig latin.
@@ -189,10 +194,25 @@ public class SinglePigQuery {
 			this.globalProjection.addProjectionVaribles(newProjection
 					.getProjectionVariables());
 		}
-
+		this.globalProjection.replaceVariableInProjection(this.addBinding);
 	}
 
 	public void setOrderbyOperator(PigOrderByOperator pigOrderByOperator) {
 		this.pigOrderByOperator = pigOrderByOperator;
+	}
+
+	public void replaceVariableInProjection(String oldVar, String newVar) {
+		if (this.addBinding == null) {
+			this.addBinding = new HashMap<String, String>();
+		}
+		this.addBinding.put(oldVar, newVar);
+		
+		if (this.globalProjection != null) {
+			this.globalProjection.replaceVariableInProjection(this.addBinding);
+		}
+	}
+
+	public  HashMap<String, String> getAddBindings() {
+		return this.addBinding;
 	}
 }
