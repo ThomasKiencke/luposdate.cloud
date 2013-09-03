@@ -90,7 +90,7 @@ public class HBaseConnection {
 	static FileSystem hdfs_fileSystem = null;
 
 	/** The delete table on creation. */
-	private static boolean deleteTableOnCreation = false;
+	public static boolean deleteTableOnCreation = false;
 
 	/**
 	 * Initialisierung der Verbindung und erstellen der Arbeitsverzeichnisse auf
