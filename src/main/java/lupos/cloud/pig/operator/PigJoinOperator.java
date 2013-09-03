@@ -38,21 +38,27 @@ public class PigJoinOperator implements IPigOperator {
 
 			ArrayList<Variable> joinList = new ArrayList<Variable>(
 					join.getIntersectionVariables());
+
+			if (joinList.size() == 0) {
+				throw new RuntimeException(
+						"Es sind keine Intersection Variablen für die Operation Join vorhanden -> Abbruch!");
+			}
+
 			if (joinList.size() == 1) {
 				result.append("$"
 						+ multiInputist.get(i).getJoinElements()
 								.indexOf("?" + joinList.get(0).getName()));
 			} else {
-				i = 0;
+				int j = 0;
 				result.append("(");
 				for (Variable var : joinList) {
-					if (i > 0) {
+					if (j > 0) {
 						result.append(",");
 					}
 					result.append("$"
-							+ multiInputist.get(i).getJoinElements()
+							+ multiInputist.get(j).getJoinElements()
 									.indexOf("?" + var.getName()));
-					i++;
+					j++;
 				}
 				result.append(")");
 			}

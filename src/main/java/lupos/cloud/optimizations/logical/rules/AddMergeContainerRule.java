@@ -89,7 +89,8 @@ public class AddMergeContainerRule extends Rule {
 		for (BasicOperator op : containerList) {
 			for (OperatorIDTuple path : op.getSucceedingOperators()) {
 				BasicOperator foundOp = OperatorGraphHelper
-						.getNextMultiInputOperation(path.getOperator(), path.getId());
+						.getNextMultiInputOperation(path.getOperator(),
+								path.getId());
 				if (foundOp != null) {
 					LinkedList<BasicOperator> list = mergeMap.get(foundOp);
 					if (list == null) {
@@ -138,10 +139,12 @@ public class AddMergeContainerRule extends Rule {
 								multiInputOperator, toMerge);
 
 				// Füge Operatoren zum Container hinzu
+				boolean oneOperationWasNotSupported = false;
 				for (BasicOperator op : OperatorGraphHelper
 						.getAndDeleteOperationUntilNextMultiInputOperator(multiInputOperator
 								.getSucceedingOperators())) {
-					if (OperatorGraphHelper.isOperationSupported(op)) {
+					if (OperatorGraphHelper.isOperationSupported(op)
+							&& !oneOperationWasNotSupported) {
 						// Wenn die Operation unterstützt wird füge zum
 						// Container hinzu
 						multiIndexContainer.addOperator(op);
@@ -152,9 +155,15 @@ public class AddMergeContainerRule extends Rule {
 						OperatorGraphHelper.addProjectionIfNecessary(op,
 								containerList);
 					} else {
-						// Ansonsten hänge die Operation hinter den Container
+						// Ansonsten hänge die Operation hinter den Container.
+						// Alle Folgeoperationen werden dann, obwohl sie
+						// vielleichtsogar unterstützt wreden, auch dahitner
+						// gehängt, weil
+						// sonst die Reihenfolge durcheinander gebracht werden
+						// würde
 						OperatorGraphHelper.insertNewOperator(
-								multiIndexContainer, op);
+								OperatorGraphHelper.getLastOperator(multiIndexContainer), op);
+						oneOperationWasNotSupported = true;
 					}
 				}
 

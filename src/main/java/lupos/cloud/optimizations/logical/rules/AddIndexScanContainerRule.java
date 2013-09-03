@@ -68,18 +68,31 @@ public class AddIndexScanContainerRule extends Rule {
 
 		// Die zum IndexScanOperator zugehörigen Operationen werden mit in den
 		// Container kopiert (wenn die Operation in der Cloud unterstützt wird)
+		boolean oneOperationsWasNotSupported = false;
 		for (BasicOperator op : OperatorGraphHelper
 				.getAndDeleteOperationUntilNextMultiInputOperator(indexScan
 						.getSucceedingOperators())) {
-			if (OperatorGraphHelper.isOperationSupported(op)) {
+			if (OperatorGraphHelper.isOperationSupported(op)
+					&& !oneOperationsWasNotSupported) {
 				container.addOperator(op);
+			} else {
+				// Ansonsten hänge die Operation hinter den Container.
+				// Alle Folgeoperationen werden dann, obwohl sie
+				// vielleichtsogar unterstützt wreden, auch dahitner
+				// gehängt, weil
+				// sonst die Reihenfolge durcheinander gebracht werden
+				// würde
+				OperatorGraphHelper.insertNewOperator(OperatorGraphHelper.getLastOperator(container), op);
+				oneOperationsWasNotSupported = true;
 			}
 		}
-		
-		// Ersetze den alten IndexScanOperator durch den neuen IndexScanContainer
+
+		// Ersetze den alten IndexScanOperator durch den neuen
+		// IndexScanContainer
 		OperatorGraphHelper.replaceOperation(indexScan, container);
 
 	}
+
 	private BasicIndexScan currentOperator = null;
 
 	private boolean _checkPrivate0(final BasicOperator _op) {

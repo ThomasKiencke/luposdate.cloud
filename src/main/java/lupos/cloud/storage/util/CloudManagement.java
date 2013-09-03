@@ -135,8 +135,8 @@ public class CloudManagement {
 	 * @return the query result
 	 */
 	public QueryResult submitPigQuery(final PigQuery query) {
-		// if (!"a".equals("b"))
-		// return null; // testing purpose
+//		 if (!"a".equals("b"))
+//		 return null; // testing purpose
 		QueryResult result = null;
 		long start = System.currentTimeMillis();
 		try {
@@ -145,7 +145,7 @@ public class CloudManagement {
 				System.out.println(query.getPigLatin());
 				System.out.println();
 			}
-
+//
 //			 if (!"a".equals("b"))
 //			 return null; // testing purpose
 			System.out.println("PigLatin Programm wird ausgeführt...");

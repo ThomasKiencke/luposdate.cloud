@@ -103,7 +103,7 @@ public class AddSubGraphContainerRule extends Rule {
 
 			// Füge Resultoperator hinzu
 			OperatorGraphHelper
-					.getLastOperatorOfContainer(rootNodeOfSubGraph)
+					.getLastOperator(rootNodeOfSubGraph)
 					.setSucceedingOperator(new OperatorIDTuple(new Result(), 0));
 
 			// Container mit den Nachfolgern verbinden
