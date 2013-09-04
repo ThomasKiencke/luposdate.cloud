@@ -183,7 +183,7 @@ public class CloudEvaluator extends QueryClient {
 		// SubgraphContainer operator
 		AddSubGraphContainerRule.cloudManagement = this.cloudManagement;
 		AddSubGraphContainerRule.subgraphExecutor = this.subgraphExecutor;
-		AddMergeContainerRule.finish = false; // unschön, bessere lösung finden
+		AddMergeContainerRule.reset(); // unschön, bessere lösung finden
 		final CloudRulePackage rules = new CloudRulePackage();
 		rules.applyRules(this.rootNode);
 
@@ -204,7 +204,7 @@ public class CloudEvaluator extends QueryClient {
 		// SubgraphContainer operator
 		AddSubGraphContainerRule.cloudManagement = this.cloudManagement;
 		AddSubGraphContainerRule.subgraphExecutor = this.subgraphExecutor;
-		AddMergeContainerRule.finish = false; // unschön, bessere lösung finden
+		AddMergeContainerRule.reset(); // unschön, bessere lösung finden
 		final CloudRulePackage rules = new CloudRulePackage();
 		final List<DebugContainer<BasicOperatorByteArray>> result2 = rules
 				.applyRulesDebugByteArray(this.rootNode, prefixInstance);

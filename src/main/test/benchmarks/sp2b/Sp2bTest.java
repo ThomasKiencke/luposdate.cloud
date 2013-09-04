@@ -88,16 +88,14 @@ public class Sp2bTest {
 	protected static CloudEvaluator cloudEvaluator;
 
 	@BeforeClass
-	public static void initP2PNetwork() throws Exception {
+	public static void initCloud() throws Exception {
 		cloudEvaluator = initCloudEvaluator();
 
 	}
 
 	protected static void loadIntoCloud(String file) throws Exception {
-		String[] args = { Sp2b.class.getClassLoader().getResource(file).toString().replace("file:/", "") , "1" };
-		HBaseConnection.deleteTableOnCreation = true;
+		String[] args = { Sp2b.class.getClassLoader().getResource(file).toString().replace("file:", "") , "1" , "1"};
 		HBaseLoader.main(args);
-		HBaseConnection.deleteTableOnCreation = false;
 	}
 
 	protected static CloudEvaluator initCloudEvaluator() throws Exception {

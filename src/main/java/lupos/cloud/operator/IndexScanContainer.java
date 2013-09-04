@@ -11,6 +11,7 @@ public class IndexScanContainer extends BasicOperator {
 	private int id;
 	private BasicIndexScan indexScan;
 	private ArrayList<BasicOperator> ops = new ArrayList<BasicOperator>();
+	private boolean oneOperatorWasNotSupported;
 
 	public IndexScanContainer(BasicIndexScan indexScan) {
 		this.indexScan = indexScan;
@@ -43,6 +44,14 @@ public class IndexScanContainer extends BasicOperator {
 	
 	public ArrayList<BasicOperator> getOperators() {
 		return ops;
+	}
+	
+	public void oneOperatorWasNotSupported(boolean b) {
+		this.oneOperatorWasNotSupported = b;
+	}
+	
+	public boolean isOneOperatorWasNotSupported() {
+		return oneOperatorWasNotSupported;
 	}
 
 }

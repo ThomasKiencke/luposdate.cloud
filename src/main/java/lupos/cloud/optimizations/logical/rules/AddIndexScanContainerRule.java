@@ -84,6 +84,7 @@ public class AddIndexScanContainerRule extends Rule {
 				// würde
 				OperatorGraphHelper.insertNewOperator(OperatorGraphHelper.getLastOperator(container), op);
 				oneOperationsWasNotSupported = true;
+				container.oneOperatorWasNotSupported(true);
 			}
 		}
 
