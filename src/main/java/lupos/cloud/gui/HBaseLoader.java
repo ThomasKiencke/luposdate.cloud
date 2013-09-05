@@ -30,7 +30,7 @@ public class HBaseLoader {
 	 */
 	public static void main(String[] args) throws Exception {
 		if (args.length != 3) {
-			System.out.println("Parameter: <n3 Pfad> <1/2 für normal oder BulkLoad> <1/2 zum löschen der Tabellen> ");
+			System.out.println("Parameter: <n3 Pfad> <1/2 für normal oder BulkLoad>");
 			System.exit(0);
 		}
 		
@@ -42,11 +42,6 @@ public class HBaseLoader {
 			HBaseConnection.MAP_REDUCE_BULK_LOAD = true;
 		}
 		
-		if(args[1].equals("2")) {
-			HBaseConnection.deleteTableOnCreation = false;
-		} else {
-			HBaseConnection.deleteTableOnCreation = true;
-		}
 		HBaseConnection.deleteTableOnCreation = true;
 		HBaseConnection.init();
 		

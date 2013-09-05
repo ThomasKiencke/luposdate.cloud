@@ -90,6 +90,7 @@ public class HBaseConnection {
 
 	/** The delete table on creation. */
 	public static boolean deleteTableOnCreation = false;
+	
 
 	/**
 	 * Initialisierung der Verbindung und erstellen der Arbeitsverzeichnisse auf

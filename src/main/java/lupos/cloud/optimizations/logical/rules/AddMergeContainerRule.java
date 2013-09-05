@@ -86,7 +86,6 @@ public class AddMergeContainerRule extends Rule {
 		if (containerList.size() <= finalContainerSize) {
 			finish = true;
 		} else {
-			System.out.println("final" + finalContainerSize + "but: "+ containerList.size());
 			mergeContainer();
 		}
 	}
