@@ -72,7 +72,7 @@ public class HBaseConnection {
 	static int rowCounter = 0;
 
 	/** The Constant ROW_BUFFER_SIZE. */
-	public static final int ROW_BUFFER_SIZE = 65000000;
+	public static final int ROW_BUFFER_SIZE = 21000000;
 
 	/** The Constant WORKING_DIR. */
 	public static final String WORKING_DIR = "bulkLoadDirectory";

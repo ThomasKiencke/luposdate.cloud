@@ -39,6 +39,7 @@ public class HBaseLoader {
 		} else {
 			HBaseConnection.MAP_REDUCE_BULK_LOAD = true;
 		}
+		HBaseConnection.deleteTableOnCreation = true;
 		HBaseConnection.init();
 		
 		String file_path = args[0];
@@ -69,10 +70,6 @@ public class HBaseLoader {
 				curLine = br.readLine();
 			}
 
-			if (curLine == null) {
-				run = false;
-				break;
-			}
 			final URILiteral rdfURL = LiteralFactory
 					.createStringURILiteral("<inlinedata:" + prefix.toString()
 							+ "\n" + inputCache.toString() + ">");
@@ -81,12 +78,18 @@ public class HBaseLoader {
 
 			evaluator.prepareInputData(defaultGraphs,
 					new LinkedList<URILiteral>());
+			
+			if (curLine == null) {
+				run = false;
+				break;
+			}
 
 		}
 		br.close();
 
 		HBaseConnection.flush();
 		HBaseConnection.MAP_REDUCE_BULK_LOAD = false;
+		HBaseConnection.deleteTableOnCreation = false;
 		long stopTime = System.currentTimeMillis();
 		System.out.println("Import ist beendet Triple: " + tripleAnzahl
 				+ " Dauer: " + (stopTime - startTime) / 1000 + "s");
