@@ -55,17 +55,27 @@ public class AddMergeContainerRule extends Rule {
 	public static ICloudSubgraphExecutor subgraphExecutor;
 	ArrayList<BasicOperator> containerList;
 
-	public static boolean finish = false;
+	private static boolean finish = false;
 
 	private void replaceIndexScanOperatorWithSubGraphContainer(
 			QueryClientRoot qcRoot) {
-
+		int finalContainerSize = 1;
 		// Am Anfang werden alle IndexScansContainer und MultiIndexScanContainer
 		// in die Liste gepackt
 		containerList = new ArrayList<BasicOperator>();
 		for (OperatorIDTuple op : qcRoot.getSucceedingOperators()) {
-			if (op.getOperator() instanceof IndexScanContainer
-					|| op.getOperator() instanceof MultiIndexScanContainer) {
+			if (op.getOperator() instanceof IndexScanContainer) {
+				if (((IndexScanContainer) op.getOperator())
+						.isOneOperatorWasNotSupported()) {
+					finalContainerSize++;
+				}
+				containerList.add(op.getOperator());
+			}
+			if (op.getOperator() instanceof MultiIndexScanContainer) {
+				if (((MultiIndexScanContainer) op.getOperator())
+						.isOneOperatorWasNotSupported()) {
+					finalContainerSize++;
+				}
 				containerList.add(op.getOperator());
 			}
 		}
@@ -73,9 +83,10 @@ public class AddMergeContainerRule extends Rule {
 		// Die IndexScans werden nun so lange gemerged bis nur noch ein
 		// Container existiert
 
-		if (containerList.size() == 1) {
+		if (containerList.size() <= finalContainerSize) {
 			finish = true;
 		} else {
+			System.out.println("final" + finalContainerSize + "but: "+ containerList.size());
 			mergeContainer();
 		}
 	}
@@ -87,6 +98,18 @@ public class AddMergeContainerRule extends Rule {
 		// danach die MultiInputOperation also z.B. Union und eine Lister der
 		// beteiligten (Multi-)IndexScan Operationen
 		for (BasicOperator op : containerList) {
+			if (op instanceof IndexScanContainer) {
+				if (((IndexScanContainer) op)
+						.isOneOperatorWasNotSupported()) {
+					continue;
+				}
+			}
+			if (op instanceof MultiIndexScanContainer) {
+				if (((MultiIndexScanContainer) op)
+						.isOneOperatorWasNotSupported()) {
+					continue;
+				}
+			}
 			for (OperatorIDTuple path : op.getSucceedingOperators()) {
 				BasicOperator foundOp = OperatorGraphHelper
 						.getNextMultiInputOperation(path.getOperator(),
@@ -162,8 +185,11 @@ public class AddMergeContainerRule extends Rule {
 						// sonst die Reihenfolge durcheinander gebracht werden
 						// würde
 						OperatorGraphHelper.insertNewOperator(
-								OperatorGraphHelper.getLastOperator(multiIndexContainer), op);
+								OperatorGraphHelper
+										.getLastOperator(multiIndexContainer),
+								op);
 						oneOperationWasNotSupported = true;
+						multiIndexContainer.oneOperatorWasNotSupported(true);
 					}
 				}
 
@@ -209,6 +235,10 @@ public class AddMergeContainerRule extends Rule {
 				return !finish;
 			}
 		}
+	}
+
+	public static void reset() {
+		finish = false;
 	}
 
 	public AddMergeContainerRule() {

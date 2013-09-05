@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.LinkedList;
 
+import org.apache.hadoop.hbase.thrift.generated.Hbase;
+
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.query.CloudEvaluator;
 import lupos.datastructures.items.literal.LiteralFactory;
@@ -27,8 +29,8 @@ public class HBaseLoader {
 	 *             the exception
 	 */
 	public static void main(String[] args) throws Exception {
-		if (args.length != 2) {
-			System.out.println("Parameter: <n3 Pfad> <1/2 für normal oder BulkLoad> ");
+		if (args.length != 3) {
+			System.out.println("Parameter: <n3 Pfad> <1/2 für normal oder BulkLoad> <1/2 zum löschen der Tabellen> ");
 			System.exit(0);
 		}
 		
@@ -38,6 +40,12 @@ public class HBaseLoader {
 			HBaseConnection.MAP_REDUCE_BULK_LOAD = false;
 		} else {
 			HBaseConnection.MAP_REDUCE_BULK_LOAD = true;
+		}
+		
+		if(args[1].equals("2")) {
+			HBaseConnection.deleteTableOnCreation = false;
+		} else {
+			HBaseConnection.deleteTableOnCreation = true;
 		}
 		HBaseConnection.deleteTableOnCreation = true;
 		HBaseConnection.init();

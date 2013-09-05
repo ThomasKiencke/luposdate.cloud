@@ -21,6 +21,7 @@ public class MultiIndexScanContainer extends BasicOperator {
 
 	TreeMap<Integer, LinkedList<BasicOperator>> multiIndexScanList = new TreeMap<Integer, LinkedList<BasicOperator>>();
 	TreeMap<Integer, MultiInputOperator> mappingTree = new TreeMap<Integer, MultiInputOperator>();
+	private boolean oneOperatorWasNotSupported;
 
 	public void addSubContainer(MultiInputOperator type,
 			LinkedList<BasicOperator> ops) {
@@ -72,4 +73,11 @@ public class MultiIndexScanContainer extends BasicOperator {
 		return ops;
 	}
 
+	public void oneOperatorWasNotSupported(boolean b) {
+		this.oneOperatorWasNotSupported = b;
+	}
+	
+	public boolean isOneOperatorWasNotSupported() {
+		return oneOperatorWasNotSupported;
+	}
 }

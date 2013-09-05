@@ -90,13 +90,14 @@ public class CloudSubgraphContainer extends RootChild {
 	 */
 	@Override
 	public QueryResult process(final Dataset dataset) {
-		final CloudSubgraphContainerFormatter pigParser = new CloudSubgraphContainerFormatter();
-		final PigQuery pigQuery = pigParser.serialize(this.rootNodeOfSubGraph,
-				new PigQuery());
-		final QueryResult result = this.cloudSubgraphExecutor
-				.evaluate(pigQuery);
-		// result.materialize();
-		return result;
+//		final CloudSubgraphContainerFormatter pigParser = new CloudSubgraphContainerFormatter();
+//		final PigQuery pigQuery = pigParser.serialize(this.rootNodeOfSubGraph,
+//				new PigQuery());
+//		final QueryResult result = this.cloudSubgraphExecutor
+//				.evaluate(pigQuery);
+//		// result.materialize();
+//		return result;
+		return null;
 	}
 
 	@Override
