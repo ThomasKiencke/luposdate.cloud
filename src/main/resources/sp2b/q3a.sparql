@@ -7,4 +7,4 @@ WHERE {
   ?article rdf:type bench:Article .
   ?article ?property ?value 
   FILTER (?property=swrc:pages) 
-}
+} 

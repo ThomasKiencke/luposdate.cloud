@@ -60,16 +60,16 @@ public class CloudManagement {
 	/** The cur variable list. */
 	ArrayList<String> curVariableList = null;
 
-	boolean PRINT_PIGLATIN_PROGRAMM = true;
+	boolean PRINT_PIGLATIN_PROGRAMM = false;
 
-	boolean testing_mode = true;
+	boolean TESTING_MODE = false;
 
 	/**
 	 * Instantiates a new cloud management.
 	 */
 	public CloudManagement() {
 
-		if (testing_mode) 
+		if (TESTING_MODE) 
 			return;
 		try {
 			HBaseConnection.init();
@@ -147,7 +147,7 @@ public class CloudManagement {
 				System.out.println();
 			}
 			//
-			if (testing_mode)
+			if (TESTING_MODE)
 				return null; // testing purpose
 			System.out.println("PigLatin Programm wird ausgeführt...");
 			pigServer.registerQuery(query.getPigLatin());
@@ -174,10 +174,9 @@ public class CloudManagement {
 										// unbounded Variables
 										if (curTupleObject == null) {
 											// do nothing
-											// result.add(
-											// new Variable(var),
-											// LiteralFactory
-											// .createLiteral("unbound"));
+//											 result.add(
+//											 new Variable(var),
+//											 null);
 
 										} else {
 
@@ -238,8 +237,8 @@ public class CloudManagement {
 																		.get(i)
 																		.toString()));
 											}
-											i++;
 										}
+										i++;
 									}
 									return result;
 								} catch (Exception e) {

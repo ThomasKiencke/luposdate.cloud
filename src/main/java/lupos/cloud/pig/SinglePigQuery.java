@@ -78,6 +78,8 @@ public class SinglePigQuery {
 		if (pigOrderByOperator != null) {
 			this.buildAndAppendQuery(pigOrderByOperator);
 		}
+		
+		executeFiltersAndProjections(globalProjection, globalFilterPigOp);
 	}
 
 	public ArrayList<JoinInformation> getIntermediateJoins() {

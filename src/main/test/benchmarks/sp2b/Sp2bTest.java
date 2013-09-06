@@ -64,8 +64,9 @@ public class Sp2bTest {
 	protected static final String file_q12a = "benchmarks/sp2b/sp2b_q12a.n3";
 	protected static final String file_q12b = "benchmarks/sp2b/sp2b_q12b.n3";
 	protected static final String file_q12c = "benchmarks/sp2b/sp2b_q12c.n3";
-
-	protected static final String default_file = file_1000_triples;
+	protected static final String file_test = "benchmarks/sp2b/sp2b_test.n3";
+	
+	protected static final String default_file = file_10000_triples;
 
 	protected static final String q1_query_filename = "benchmarks/sp2b/queries/q1.sparql";
 	protected static final String q2_query_filename = "benchmarks/sp2b/queries/q2.sparql";
@@ -124,7 +125,7 @@ public class Sp2bTest {
 		return selectQuery;
 	}
 	
-	private String convertStreamToString(java.io.InputStream is) {
+	public static String convertStreamToString(java.io.InputStream is) {
 		java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
 		return s.hasNext() ? s.next() : "";
 	}

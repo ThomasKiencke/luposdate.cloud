@@ -78,7 +78,7 @@ public class PigFilterExectuer implements IPigOperator {
 
 				toRemove.add(curJoin);
 
-				toRemove.remove(curJoin);
+//				toRemove.remove(curJoin);
 				toAdd.add(newJoin);
 
 				JoinInformation.idCounter++;

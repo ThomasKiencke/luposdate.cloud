@@ -252,8 +252,11 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		assertEquals(expected, actual);
 	}
 
+	@Ignore
 	@Test
 	public void testQ12a() throws Exception {
+		
+		fail("Diese Anfrage wird nich unterstuetzt");
 
 		String selectQuery = readFile(q12a_query_filename);
 
@@ -266,8 +269,11 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		assertEquals(expected, actual);
 	}
 
+	@Ignore
 	@Test
 	public void testQ12b() throws Exception {
+		
+		fail("Diese Anfrage wird nich unterstuetzt");
 
 		String selectQuery = readFile(q12b_query_filename);
 
@@ -319,6 +325,14 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		try {
 			memoryEvaluator.getResult(full_filepath(file),
 					"SELECT * WHERE {<s> <p> <o>}");
+//			String input = convertStreamToString(CloudEvaluatorTest.class.getClassLoader().getResourceAsStream(file));
+//			final URILiteral rdfURL = LiteralFactory
+//					.createStringURILiteral("<inlinedata:" + input + ">");
+//			LinkedList<URILiteral> defaultGraphs = new LinkedList<URILiteral>();
+//			defaultGraphs.add(rdfURL);
+//
+//			memoryEvaluator.prepareInputData(defaultGraphs,
+//					new LinkedList<URILiteral>());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

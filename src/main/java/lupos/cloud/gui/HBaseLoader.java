@@ -65,7 +65,6 @@ public class HBaseLoader {
 		// Tripel in 1000 Blöcke einlesen und den Evaluator übergeben
 		while (run) {
 			StringBuilder inputCache = new StringBuilder();
-			curLine = br.readLine();
 
 			for (int i = 0; i < 1000 && curLine != null; i++) {
 				tripleAnzahl++;
