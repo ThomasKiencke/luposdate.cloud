@@ -29,5 +29,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/Thomas/Desktop/hadoop-lzo-cdh4-0.4.15-gplextras.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

@@ -419,21 +419,15 @@ public class HBaseConnection {
 			job.setOutputFormatClass(HFileOutputFormat.class);
 			job.setPartitionerClass(TotalOrderPartitioner.class);
 			job.setInputFormatClass(TextInputFormat.class);
-			TableMapReduceUtil.addDependencyJars(job);
 
-//			job.getConfiguration().setBoolean("mapred.compress.map.output",
-//					true);
-//			job.getConfiguration().setClass(
-//					"mapred.map.output.compression.codec",
-//					org.apache.hadoop.io.compress.GzipCodec.class,
-//					org.apache.hadoop.io.compress.CompressionCodec.class);
-//			job.getConfiguration().set("hfile.compression",
-//					Compression.Algorithm.LZO.getName());
+			TableMapReduceUtil.addDependencyJars(job);
 
 			// generiere HFiles auf dem verteilten Dateisystem
 			HTable hTable = new HTable(configuration, tablename);
 
+
 			HFileOutputFormat.configureIncrementalLoad(job, hTable);
+			
 			FileInputFormat.addInputPath(job, new Path("/tmp/" + WORKING_DIR
 					+ "/" + tablename + "_" + BUFFER_FILE_NAME + ".csv"));
 			FileOutputFormat.setOutputPath(job, new Path("/tmp/" + WORKING_DIR
