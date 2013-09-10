@@ -28,6 +28,8 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.ColumnPrefixFilter;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.io.hfile.Compression;
+import org.apache.hadoop.hbase.io.hfile.Compression.Algorithm;
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
@@ -89,8 +91,7 @@ public class HBaseConnection {
 	static FileSystem hdfs_fileSystem = null;
 
 	/** The delete table on creation. */
-	public static boolean deleteTableOnCreation = false;
-	
+	public static boolean deleteTableOnCreation = true;
 
 	/**
 	 * Initialisierung der Verbindung und erstellen der Arbeitsverzeichnisse auf
@@ -143,7 +144,9 @@ public class HBaseConnection {
 			}
 			HTableDescriptor descriptor = new HTableDescriptor(
 					Bytes.toBytes(tablename));
-			descriptor.addFamily(new HColumnDescriptor(familyname));
+			HColumnDescriptor family = new HColumnDescriptor(familyname);
+			family.setCompressionType(Algorithm.LZO);
+			descriptor.addFamily(family);
 			admin.createTable(descriptor);
 			if (message) {
 				System.out.println("Tabelle \"" + tablename
@@ -205,12 +208,17 @@ public class HBaseConnection {
 
 	/**
 	 * Entfernt ein HBase Triple.
-	 *
-	 * @param tablename the tablename
-	 * @param columnFamily the column family
-	 * @param rowKey the row key
-	 * @param colunmnname the colunmnname
-	 * @throws IOException Signals that an I/O exception has occurred.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @param columnFamily
+	 *            the column family
+	 * @param rowKey
+	 *            the row key
+	 * @param colunmnname
+	 *            the colunmnname
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
 	 */
 	public static void deleteRow(String tablename, String columnFamily,
 			String rowKey, String colunmnname) throws IOException {
@@ -413,8 +421,18 @@ public class HBaseConnection {
 			job.setInputFormatClass(TextInputFormat.class);
 			TableMapReduceUtil.addDependencyJars(job);
 
+//			job.getConfiguration().setBoolean("mapred.compress.map.output",
+//					true);
+//			job.getConfiguration().setClass(
+//					"mapred.map.output.compression.codec",
+//					org.apache.hadoop.io.compress.GzipCodec.class,
+//					org.apache.hadoop.io.compress.CompressionCodec.class);
+//			job.getConfiguration().set("hfile.compression",
+//					Compression.Algorithm.LZO.getName());
+
 			// generiere HFiles auf dem verteilten Dateisystem
 			HTable hTable = new HTable(configuration, tablename);
+
 			HFileOutputFormat.configureIncrementalLoad(job, hTable);
 			FileInputFormat.addInputPath(job, new Path("/tmp/" + WORKING_DIR
 					+ "/" + tablename + "_" + BUFFER_FILE_NAME + ".csv"));

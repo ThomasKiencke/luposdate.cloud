@@ -3,6 +3,7 @@ package lupos.cloud.pig.operator;
 import java.util.ArrayList;
 
 import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.storage.util.CloudManagement;
 
 public class PigDistinctOperator implements IPigOperator {
 	private ArrayList<JoinInformation> intermediateJoins;
@@ -19,8 +20,13 @@ public class PigDistinctOperator implements IPigOperator {
 		JoinInformation newJoin = new JoinInformation("INTERMEDIATE_BAG_"
 				+ JoinInformation.idCounter);
 
-		result.append(newJoin.getName() + " = DISTINCT " + curJoin.getName()
-				+ ";\n");
+		result.append(newJoin.getName() + " = DISTINCT " + curJoin.getName());
+		
+		if (CloudManagement.PARALLEL_REDUCE_OPERATIONS > 1) {
+			result.append(" PARALLEL " + CloudManagement.PARALLEL_REDUCE_OPERATIONS);
+		}
+		
+		result.append( ";\n");
 
 		if (debug) {
 			result.append("\n");

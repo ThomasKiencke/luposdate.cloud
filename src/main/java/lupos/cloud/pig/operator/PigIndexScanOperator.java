@@ -7,6 +7,7 @@ import java.util.HashSet;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
 import lupos.cloud.pig.JoinInformation;
 import lupos.cloud.pig.SinglePigQuery;
+import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
@@ -348,6 +349,9 @@ public class PigIndexScanOperator implements IPigOperator {
 			if (i < joinOverItem.size()) {
 				result.append(",");
 			} else {
+				if (CloudManagement.PARALLEL_REDUCE_OPERATIONS > 1) {
+					result.append(" PARALLEL " + CloudManagement.PARALLEL_REDUCE_OPERATIONS);
+				}
 				result.append(";\n");
 			}
 
