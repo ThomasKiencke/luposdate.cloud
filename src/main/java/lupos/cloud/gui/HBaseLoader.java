@@ -29,8 +29,8 @@ public class HBaseLoader {
 	 *             the exception
 	 */
 	public static void main(String[] args) throws Exception {
-		if (args.length != 3) {
-			System.out.println("Parameter: <n3 Pfad> <1/2 für normal oder BulkLoad>");
+		if (args.length != 4) {
+			System.out.println("Parameter: <n3 Pfad> <1/2 für normal oder BulkLoad> <HTriple Cache Size>");
 			System.exit(0);
 		}
 		
@@ -42,6 +42,7 @@ public class HBaseLoader {
 			HBaseConnection.MAP_REDUCE_BULK_LOAD = true;
 		}
 		
+		HBaseConnection.ROW_BUFFER_SIZE = Integer.parseInt(args[3]);
 		HBaseConnection.deleteTableOnCreation = true;
 		HBaseConnection.init();
 		
