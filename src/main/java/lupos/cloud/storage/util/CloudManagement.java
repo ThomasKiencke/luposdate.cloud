@@ -60,9 +60,9 @@ public class CloudManagement {
 	/** The cur variable list. */
 	ArrayList<String> curVariableList = null;
 
-	boolean PRINT_PIGLATIN_PROGRAMM = true;
+	boolean PRINT_PIGLATIN_PROGRAMM = false;
 
-	boolean TESTING_MODE = true;
+	boolean TESTING_MODE = false;
 	
 	public static int PARALLEL_REDUCE_OPERATIONS = 1;
 

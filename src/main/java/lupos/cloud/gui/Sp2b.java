@@ -63,8 +63,23 @@ public class Sp2b {
 	private static CloudEvaluator cloudEvaluator;
 	private static double[] result_time = new double[17];
 	private static double[] result_queryresult = new double[17];
-	
+	private static boolean printResults = false;
+
 	public static void main(String[] args) throws Exception {
+
+		if (args.length != 1) {
+			System.out
+					.println("java -jar programm <true/false for printResults>");
+			System.exit(0);
+		} else {
+			if (args[0].equals("true")) {
+				printResults = true;
+			} else if (args[0].equals("false")) {
+				printResults = false;
+			} else {
+				System.exit(0);
+			}
+		}
 
 		cloudEvaluator = new CloudEvaluator();
 
@@ -135,9 +150,14 @@ public class Sp2b {
 		// System.out.println("actual:  " + actual);
 		long stop = System.currentTimeMillis();
 		result_time[0] = (double) ((stop - start) / (double) 1000);
-		System.out.println("Test Q1: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[0] = actual.getCollection().size();
+		System.out.print("Test Q1: "
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[0] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -149,8 +169,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[1] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q2: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[1] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[1] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -162,8 +187,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[2] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q3a: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[2] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[2] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -175,8 +205,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[3] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q3b: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[3] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[3] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -188,8 +223,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[4] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q3c: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[4] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[4] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -201,8 +241,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[5] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q4 "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[5] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[5] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -214,8 +259,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[6] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q5a: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[6] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[6] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -227,8 +277,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[7] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q5b: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[7] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[7] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -240,8 +295,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[8] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q6: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[8] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[8] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Ignore
@@ -253,9 +313,13 @@ public class Sp2b {
 		// System.out.println("actual:  " + actual);
 		long stop = System.currentTimeMillis();
 		System.out.println("Test Q7: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_time[9] = (double) ((stop - start) / (double) 1000);
-		result_queryresult[9] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[9] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -267,8 +331,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[10] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q8: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[10] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[10] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Ignore
@@ -281,8 +350,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[11] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q9: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[11] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[11] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -294,8 +368,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[12] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q10: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[12] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[12] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -307,8 +386,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[13] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q11: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[13] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[13] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -320,8 +404,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[14] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q12a: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[14] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[14] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -333,8 +422,13 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[15] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q12b: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[15] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[15] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 
 	@Test
@@ -346,7 +440,12 @@ public class Sp2b {
 		long stop = System.currentTimeMillis();
 		result_time[16] = (double) ((stop - start) / (double) 1000);
 		System.out.println("Test Q12c: "
-				+ (double) ((stop - start) / (double) 1000) + " Sekunden - Results: " + actual.getCollection().size());
-		result_queryresult[16] = actual.getCollection().size();
+				+ (double) ((stop - start) / (double) 1000) + " Sekunden");
+		if (printResults) {
+			int resultSize = actual.getCollection().size();
+			result_queryresult[16] = resultSize;
+			System.out.print("- Results: " + resultSize);
+		}
+		System.out.println();
 	}
 }

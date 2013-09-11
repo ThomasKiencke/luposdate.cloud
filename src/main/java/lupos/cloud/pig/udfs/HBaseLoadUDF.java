@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import org.joda.time.DateTime;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -54,6 +53,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.BinaryComparator;
+import org.apache.hadoop.hbase.filter.ColumnPaginationFilter;
 import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.QualifierFilter;
@@ -398,6 +398,9 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		scan = new Scan();
 		// scan.setRaw(true);
 
+//		scan.setFilter(new ColumnPaginationFilter(100000000, 50000));
+		scan.setBatch(50000);
+		
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
 			// add random string because stopRow is exclusiv
