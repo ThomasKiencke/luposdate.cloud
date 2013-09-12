@@ -11,7 +11,7 @@ import lupos.datastructures.items.Triple;
 public abstract class HBaseDistributionStrategy {
 	
 	/** The table strategy. */
-	public static int TABLE_STRATEGY = HexaDistributionTableStrategy.STRAGEGY_ID;
+	public static int TABLE_STRATEGY = HexaSubkeyDistributionTableStrategy.STRAGEGY_ID;
 	
 	/** The instance. */
 	private static HBaseDistributionStrategy instance = null;

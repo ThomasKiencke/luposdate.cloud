@@ -398,8 +398,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		scan = new Scan();
 		// scan.setRaw(true);
 
-//		scan.setFilter(new ColumnPaginationFilter(100000000, 50000));
-		scan.setBatch(50000);
+		scan.setBatch(10000);
 		
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));

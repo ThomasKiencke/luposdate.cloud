@@ -25,9 +25,13 @@ package lupos.cloud.gui;
 
 import java.io.InputStream;
 import java.util.LinkedList;
-
 import lupos.cloud.query.CloudEvaluator;
+import lupos.cloud.storage.util.CloudManagement;
+import lupos.datastructures.bindings.Bindings;
+import lupos.datastructures.bindings.BindingsMap;
+import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.datastructures.items.literal.URILiteral;
+import lupos.datastructures.items.literal.LiteralFactory.MapType;
 import lupos.datastructures.queryresult.QueryResult;
 import lupos.engine.evaluators.BasicIndexQueryEvaluator;
 
@@ -45,8 +49,16 @@ public class QueryExecuter {
 		if (args.length == 0) {
 			System.exit(0);
 		}
+		
+		CloudManagement.PARALLEL_REDUCE_OPERATIONS = Integer.parseInt(args[0]);
 
 		cloudEvaluator = new CloudEvaluator();
+		
+		Bindings.instanceClass = BindingsMap.class;
+		
+		LiteralFactory.setType(MapType.NOCODEMAP);
+		
+		QueryResult.type = QueryResult.TYPE.ADAPTIVE;
 
 		result_time = new double[args.length];
 		result_queryresult = new double[args.length];
@@ -56,7 +68,7 @@ public class QueryExecuter {
 			System.out.println("Tests werden ausgeführt:");
 
 			for (int i = 0; i < args.length; i++) {
-				testQuery(i, args[i]);
+				testQuery(i, args[i + 1]);
 			}
 
 			printCSV();
@@ -108,7 +120,7 @@ public class QueryExecuter {
 		System.out.print("Time: " + (double) ((stop - start) / (double) 1000)
 				+ " Sekunden");
 		if (printResults) {
-			int resultSize = actual.getCollection().size();
+			int resultSize = actual.oneTimeSize();
 			result_queryresult[number] = resultSize;
 			System.out.print("- Results: " + resultSize);
 		}
