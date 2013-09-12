@@ -259,4 +259,8 @@ public class CloudManagement {
 				+ ((stop - start) / 1000) + "s ausgeführt!");
 		return result;
 	}
+
+	public void shutdown() {
+		pigServer.shutdown();
+	}
 }

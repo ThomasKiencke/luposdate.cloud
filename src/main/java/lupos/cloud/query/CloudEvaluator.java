@@ -225,4 +225,8 @@ public class CloudEvaluator extends QueryClient {
 		LiteralFactory.setType(LiteralFactory.MapType.NOCODEMAP);
 		super.init();
 	}
+	
+	public void shutdown() {
+		cloudManagement.shutdown();
+	}
 }

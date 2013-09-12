@@ -25,6 +25,9 @@ package lupos.cloud.gui;
 
 import java.io.InputStream;
 import java.util.LinkedList;
+
+import org.apache.pig.impl.io.FileLocalizer;
+
 import lupos.cloud.query.CloudEvaluator;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.bindings.Bindings;
@@ -60,18 +63,20 @@ public class QueryExecuter {
 		
 		QueryResult.type = QueryResult.TYPE.ADAPTIVE;
 
-		result_time = new double[args.length];
-		result_queryresult = new double[args.length];
+		result_time = new double[args.length - 1];
+		result_queryresult = new double[args.length - 1];
 
 		// Tests ausführen:
 		try {
 			System.out.println("Tests werden ausgeführt:");
 
-			for (int i = 0; i < args.length; i++) {
+			for (int i = 0; i < args.length - 1; i++) {
 				testQuery(i, args[i + 1]);
+				FileLocalizer.deleteTempFiles(); // loescht temp files auf HDFS
 			}
 
 			printCSV();
+			cloudEvaluator.shutdown(); // gibt temporäre dateien frei
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
