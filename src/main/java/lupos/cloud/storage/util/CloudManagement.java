@@ -60,10 +60,10 @@ public class CloudManagement {
 	/** The cur variable list. */
 	ArrayList<String> curVariableList = null;
 
-	boolean PRINT_PIGLATIN_PROGRAMM = true;
+	boolean PRINT_PIGLATIN_PROGRAMM = false;
 
 	boolean TESTING_MODE = false;
-	
+
 	public static int PARALLEL_REDUCE_OPERATIONS = 1;
 
 	/**
@@ -71,7 +71,7 @@ public class CloudManagement {
 	 */
 	public CloudManagement() {
 
-		if (TESTING_MODE) 
+		if (TESTING_MODE)
 			return;
 		try {
 			HBaseConnection.init();
@@ -176,9 +176,8 @@ public class CloudManagement {
 										// unbounded Variables
 										if (curTupleObject == null) {
 											// do nothing
-//											 result.add(
-//											 new Variable(var),
-//											 null);
+											// result.add(new Variable(var),
+											// null);
 
 										} else {
 

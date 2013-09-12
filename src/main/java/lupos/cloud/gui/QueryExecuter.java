@@ -107,7 +107,7 @@ public class QueryExecuter {
 		evaluator.logicalOptimization();
 		evaluator.physicalOptimization();
 
-		return evaluator.getResult();
+		return evaluator.getResult(true);
 	}
 
 	public static void testQuery(int number, String filename) throws Exception {
