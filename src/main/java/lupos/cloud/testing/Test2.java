@@ -2,6 +2,9 @@ package lupos.cloud.testing;
 
 import java.util.LinkedList;
 
+import org.apache.pig.builtin.Bloom;
+import org.apache.pig.builtin.BuildBloom;
+
 import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.datastructures.items.literal.URILiteral;
 import lupos.datastructures.queryresult.QueryResult;
@@ -22,6 +25,9 @@ public class Test2 {
 				"SELECT DISTINCT ?s WHERE {?s ?p ?o .}");
 
 		System.out.println("result:  " + result);
+		
+		BuildBloom a;
+		Bloom b;
 
 	}
 

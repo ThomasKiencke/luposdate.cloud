@@ -19,7 +19,7 @@ public class HexaDistributionTableStrategy extends HBaseDistributionStrategy {
 	public static final int STRAGEGY_ID = 1;
 
 	/** The Constant COLUMN_FAMILY. */
-	public static final String COLUMN_FAMILY = "VALUE";
+	public static final String COLUMN_FAMILY = "Hexa";
 
 	/*
 	 * (non-Javadoc)

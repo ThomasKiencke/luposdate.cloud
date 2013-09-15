@@ -164,4 +164,8 @@ public class PigQuery {
 		}
 		this.addBinding.put(oldVar, newVar);
 	}
+
+	public void append(String toAdd) {
+		this.pigLatin.append(toAdd);
+	}
 }

@@ -3,8 +3,10 @@ package lupos.cloud.hbase;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
+import lupos.cloud.hbase.bulkLoad.BulkLoad;
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 
 import org.apache.hadoop.conf.Configuration;
@@ -145,8 +147,12 @@ public class HBaseConnection {
 			HTableDescriptor descriptor = new HTableDescriptor(
 					Bytes.toBytes(tablename));
 			HColumnDescriptor family = new HColumnDescriptor(familyname);
+			HColumnDescriptor familyb1 = new HColumnDescriptor("bloomfilter1");
+			HColumnDescriptor familyb2 = new HColumnDescriptor("bloomfilter2");
 			family.setCompressionType(Algorithm.LZO);
 			descriptor.addFamily(family);
+			descriptor.addFamily(familyb1);
+			descriptor.addFamily(familyb2);
 			admin.createTable(descriptor);
 			if (message) {
 				System.out.println("Tabelle \"" + tablename
@@ -163,23 +169,13 @@ public class HBaseConnection {
 	/**
 	 * Die Tripel in dem lokalen TripelCache werden in HBase geladen (nur für
 	 * den BulkLoad).
+	 * 
+	 * @throws IOException
 	 */
-	public static void flush() {
-		rowCounter = 0;
-		for (String key : csvwriter.keySet()) {
-			try {
-				hdfs_fileSystem.copyFromLocalFile(true, true, new Path(
-						WORKING_DIR + File.separator + key + "_"
-								+ BUFFER_FILE_NAME + ".csv"), new Path("/tmp/"
-						+ WORKING_DIR + "/" + key + "_" + BUFFER_FILE_NAME
-						+ ".csv"));
-				csvwriter.get(key).close();
-				bulkLoad(key);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+	public static void flush() throws IOException {
+		if (rowCounter > 0) {
+			startBulkLoad();
 		}
-		csvwriter = new HashMap<String, CSVWriter>();
 	}
 
 	/**
@@ -367,19 +363,7 @@ public class HBaseConnection {
 			rowCounter++;
 
 			if (rowCounter == ROW_BUFFER_SIZE) {
-				rowCounter = 0;
-				for (String key : csvwriter.keySet()) {
-					hdfs_fileSystem.copyFromLocalFile(true, true, new Path(
-							WORKING_DIR + File.separator + key + "_"
-									+ BUFFER_FILE_NAME + ".csv"), new Path(
-							"/tmp/" + WORKING_DIR + "/" + key + "_"
-									+ BUFFER_FILE_NAME + ".csv"));
-					csvwriter.get(key).close();
-					bulkLoad(key);
-				}
-				csvwriter = new HashMap<String, CSVWriter>();
-				hdfs_fileSystem.delete(new Path("/tmp/" + WORKING_DIR), true);
-				hdfs_fileSystem.mkdirs(new Path("/tmp/" + WORKING_DIR));
+				startBulkLoad();
 			}
 
 		} else {
@@ -397,58 +381,104 @@ public class HBaseConnection {
 		}
 	}
 
-	/**
-	 * Lädt eine Tabelle per Map Reduce Bulkload.
-	 * 
-	 * @param tablename
-	 *            the tablename
-	 */
-	private static void bulkLoad(String tablename) {
+	public static void startBulkLoad() throws IOException {
+		rowCounter = 0;
+		ArrayList<BulkLoad> bulkList = new ArrayList<BulkLoad>();
+		for (String key : csvwriter.keySet()) {
+			hdfs_fileSystem.copyFromLocalFile(true, true, new Path(WORKING_DIR
+					+ File.separator + key + "_" + BUFFER_FILE_NAME + ".csv"),
+					new Path("/tmp/" + WORKING_DIR + "/" + key + "_"
+							+ BUFFER_FILE_NAME + ".csv"));
+			csvwriter.get(key).close();
+			BulkLoad b = new BulkLoad(key);
+			b.start();
+			bulkList.add(b);
+			// bulkLoad(key);
+		}
+
+		// Warte bis alle jobs fertig sind
+		// for (BulkLoad b : bulkList) {
+		// b.start();
+		// }
+
+		System.out.println("Wait until jobs are finished ...");
+		boolean allJobsReady = false;
+		while (!allJobsReady) {
+			allJobsReady = true;
+			for (BulkLoad b : bulkList) {
+				if (!b.isFinished()) {
+					allJobsReady = false;
+				}
+			}
+			wait(5); // warte 5 sekunden
+		}
+		System.out.println("ready!");
+
+		csvwriter = new HashMap<String, CSVWriter>();
+		hdfs_fileSystem.delete(new Path("/tmp/" + WORKING_DIR), true);
+		hdfs_fileSystem.mkdirs(new Path("/tmp/" + WORKING_DIR));
+	}
+
+	public static void wait(int sec) {
 		try {
-			System.out.println(tablename + " wird übertragen!");
-			// init job
-			configuration.set("hbase.table.name", tablename);
-
-			Job job = new Job(configuration, "HBase Bulk Import for "
-					+ tablename);
-			job.setJarByClass(HBaseKVMapper.class);
-
-			job.setMapperClass(HBaseKVMapper.class);
-			job.setMapOutputKeyClass(ImmutableBytesWritable.class);
-			job.setMapOutputValueClass(KeyValue.class);
-			job.setOutputFormatClass(HFileOutputFormat.class);
-			job.setPartitionerClass(TotalOrderPartitioner.class);
-			job.setInputFormatClass(TextInputFormat.class);
-
-			TableMapReduceUtil.addDependencyJars(job);
-
-			// generiere HFiles auf dem verteilten Dateisystem
-			HTable hTable = new HTable(configuration, tablename);
-
-
-			HFileOutputFormat.configureIncrementalLoad(job, hTable);
-			
-			FileInputFormat.addInputPath(job, new Path("/tmp/" + WORKING_DIR
-					+ "/" + tablename + "_" + BUFFER_FILE_NAME + ".csv"));
-			FileOutputFormat.setOutputPath(job, new Path("/tmp/" + WORKING_DIR
-					+ "/" + tablename + "_" + BUFFER_HFILE_NAME));
-
-			job.waitForCompletion(true);
-
-			// Lade generierte HFiles in HBase
-			LoadIncrementalHFiles loader = new LoadIncrementalHFiles(
-					configuration);
-			loader.doBulkLoad(new Path("/tmp/" + WORKING_DIR + "/" + tablename
-					+ "_" + BUFFER_HFILE_NAME), hTable);
-
-		} catch (TableNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
+			Thread.sleep(sec * 1000);
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
+
+	// /**
+	// * Lädt eine Tabelle per Map Reduce Bulkload.
+	// *
+	// * @param tablename
+	// * the tablename
+	// */
+	// private static void bulkLoad(String tablename) {
+	// try {
+	// System.out.println(tablename + " wird uebertragen!");
+	// // init job
+	// configuration.set("hbase.table.name", tablename);
+	//
+	// Job job = new Job(configuration, "HBase Bulk Import for "
+	// + tablename);
+	// job.setJarByClass(HBaseKVMapper.class);
+	//
+	// job.setMapperClass(HBaseKVMapper.class);
+	// job.setMapOutputKeyClass(ImmutableBytesWritable.class);
+	// job.setMapOutputValueClass(KeyValue.class);
+	// job.setOutputFormatClass(HFileOutputFormat.class);
+	// job.setPartitionerClass(TotalOrderPartitioner.class);
+	// job.setInputFormatClass(TextInputFormat.class);
+	//
+	// TableMapReduceUtil.addDependencyJars(job);
+	//
+	// // generiere HFiles auf dem verteilten Dateisystem
+	// HTable hTable = new HTable(configuration, tablename);
+	//
+	// HFileOutputFormat.configureIncrementalLoad(job, hTable);
+	//
+	// FileInputFormat.addInputPath(job, new Path("/tmp/" + WORKING_DIR
+	// + "/" + tablename + "_" + BUFFER_FILE_NAME + ".csv"));
+	// FileOutputFormat.setOutputPath(job, new Path("/tmp/" + WORKING_DIR
+	// + "/" + tablename + "_" + BUFFER_HFILE_NAME));
+	//
+	// job.waitForCompletion(false);
+	// jobList.add(job);
+	//
+	// // Lade generierte HFiles in HBase
+	// LoadIncrementalHFiles loader = new LoadIncrementalHFiles(
+	// configuration);
+	// loader.doBulkLoad(new Path("/tmp/" + WORKING_DIR + "/" + tablename
+	// + "_" + BUFFER_HFILE_NAME), hTable);
+	//
+	// } catch (TableNotFoundException e) {
+	// e.printStackTrace();
+	// } catch (IOException e) {
+	// e.printStackTrace();
+	// } catch (Exception e) {
+	// e.printStackTrace();
+	// }
+	// }
 
 	/**
 	 * Gibt eine Zeile anhand des rowKeys zurück.

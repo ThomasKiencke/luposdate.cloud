@@ -34,9 +34,9 @@ public abstract class HBaseDistributionStrategy {
 			case HexaDistributionTableStrategy.STRAGEGY_ID:
 				instance = new HexaDistributionTableStrategy();
 				break;
-//			case Strategy2HBaseTableStrategy.STRAGEGY_ID:
-//				instance = new Strategy2HBaseTableStrategy();
-//				break;
+			case HexaSubkeyDistributionTableStrategy.STRAGEGY_ID:
+				instance = new HexaSubkeyDistributionTableStrategy();
+				break;
 			default:
 				instance = new HexaDistributionTableStrategy();
 				break;

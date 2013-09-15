@@ -60,11 +60,11 @@ public class CloudManagement {
 	/** The cur variable list. */
 	ArrayList<String> curVariableList = null;
 
-	boolean PRINT_PIGLATIN_PROGRAMM = false;
+	boolean PRINT_PIGLATIN_PROGRAMM = true;
 
 	boolean TESTING_MODE = false;
 
-	public static int PARALLEL_REDUCE_OPERATIONS = 1;
+	public static int PARALLEL_REDUCE_OPERATIONS = 5;
 
 	/**
 	 * Instantiates a new cloud management.
@@ -76,6 +76,8 @@ public class CloudManagement {
 		try {
 			HBaseConnection.init();
 			pigServer = new PigServer(ExecType.MAPREDUCE);
+//			pigServer.getPigContext().getProperties().setProperty("pig.tmpfilecompression", "true");
+//			pigServer.getPigContext().getProperties().setProperty("pig.tmpfilecompression.codec", "lzo");
 			for (String tablename : HBaseDistributionStrategy
 					.getTableInstance().getTableNames()) {
 				HBaseConnection.createTable(tablename,
@@ -190,7 +192,14 @@ public class CloudManagement {
 														LiteralFactory
 																.createURILiteral(tuple
 																		.get(i)
-																		.toString()));
+																		.toString()
+																		.substring(
+																				0,
+																				tuple.get(
+																						i)
+																						.toString()
+																						.lastIndexOf(
+																								">") + 1)));
 											} else if (curTupel
 													.startsWith("\"")) {
 												String content = curTupel.substring(

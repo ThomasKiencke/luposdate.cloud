@@ -68,7 +68,7 @@ public class QueryExecuter {
 
 		// Tests ausführen:
 		try {
-			System.out.println("Tests werden ausgeführt:");
+			System.out.println("Tests werden ausgefuehrt:");
 
 			for (int i = 0; i < args.length - 1; i++) {
 				testQuery(i, args[i + 1]);

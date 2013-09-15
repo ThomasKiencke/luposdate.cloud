@@ -9,6 +9,10 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.util.bloom.HashFunction;
+import org.apache.hadoop.util.bloom.Key;
+import org.apache.hadoop.util.hash.Hash;
+
 import au.com.bytecode.opencsv.CSVParser;
 
 /**
@@ -24,6 +28,8 @@ public class HBaseKVMapper extends
 
 	/** The table name. */
 	String tableName = "";
+	
+	public static final int VECTORSIZE = 10000;
 
 	/*
 	 * (non-Javadoc)
@@ -58,15 +64,55 @@ public class HBaseKVMapper extends
 			return;
 		}
 
+		if (fields.length < 4) {
+			context.getCounter("HBaseKVMapper", "TRIPLE_ERROR").increment(1);
+			return;
+		}
+
 		ImmutableBytesWritable ibKey = new ImmutableBytesWritable(
 				Bytes.toBytes(fields[1]));
 
-		KeyValue kv = new KeyValue(ibKey.get(), fields[0].getBytes(),
+		// S P O Content
+		KeyValue kv1 = new KeyValue(ibKey.get(), fields[0].getBytes(),
 				fields[2].getBytes(), fields[3].getBytes());
 
-		context.write(ibKey, kv);
+		context.write(ibKey, kv1);
 
-		context.getCounter("HBaseKVMapper", "NUM_MSGS").increment(1);
+		String toSplit = fields[2];
+		String elem1 = null;
+		String elem2 = null;
+		if (toSplit.contains(",")) {
+			elem1 = toSplit.substring(0, toSplit.indexOf(","));
+			elem2 = toSplit.substring(toSplit.indexOf(",") + 1,
+					toSplit.length());
+		} else {
+			elem1 = toSplit.substring(0, toSplit.length());
+		}
+		// Bloomfilter
+		if (!(elem1 == null)) {
+			int hash = elem1.hashCode();
+			if (hash < 0) {
+				hash = hash * (-1);
+			}
+			Integer position = hash % VECTORSIZE;
+			KeyValue kv2 = new KeyValue(ibKey.get(), "bloomfilter1".getBytes(),
+					position.toString().getBytes(), "".getBytes());
+			context.write(ibKey, kv2);
+		}
+		
+		if (!(elem2 == null)) {
+			int hash = elem2.hashCode();
+			if (hash < 0) {
+				hash = hash * (-1);
+			}
+			Integer position = hash % VECTORSIZE;
+			KeyValue kv2 = new KeyValue(ibKey.get(), "bloomfilter2".getBytes(),
+					position.toString().getBytes(), "".getBytes());
+			context.write(ibKey, kv2);
+		}
+
+		
+		context.getCounter("HBaseKVMapper", "TRIPLE_IMPORTED").increment(1);
 
 	}
 }

@@ -71,7 +71,11 @@ public class HexaSubkeyDistributionTableStrategy extends HBaseDistributionStrate
 				} else {
 					column += ",";
 				}
-				hashValues.add(getInputValue(column_name_string, triple).get(key).hashCode() % k);
+				int hashValue = getInputValue(column_name_string, triple).get(key).hashCode() % k;
+				if (hashValue < 0) {
+					hashValue = hashValue * (-1);
+				}
+				hashValues.add(hashValue);
 				column += getInputValue(column_name_string, triple).get(key);
 			}
 			

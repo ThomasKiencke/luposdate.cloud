@@ -29,81 +29,161 @@ public class PigIndexScanOperator implements IPigOperator {
 	 *            the triple pattern
 	 * @return the string
 	 */
-	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
-			boolean debug, ArrayList<PigFilterOperator> filterOps) {
-		this.intermediateJoins = intermediateBags;
-		this.debug = debug;
-		StringBuilder result = new StringBuilder();
-		for (TriplePattern triplePattern : this.triplePatternCollection) {
-			JoinInformation curPattern = getHBaseTable(triplePattern);
+//	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
+//			boolean debug, ArrayList<PigFilterOperator> filterOps) {
+//		this.intermediateJoins = intermediateBags;
+//		this.debug = debug;
+//		StringBuilder result = new StringBuilder();
+//		for (TriplePattern triplePattern : this.triplePatternCollection) {
+//			JoinInformation curPattern = getHBaseTable(triplePattern);
+//
+//			if (debug) {
+//				result.append("-- TriplePattern: " + triplePattern.toN3String()
+//						+ "\n");
+//			}
+//			/**
+//			 * Für Triplepattern ?s ?p ?o wird eine beliebige Tabelle komplett
+//			 * geladen und alle Informationen zuürck gegeben.
+//			 */
+//			if (curPattern.allElementsAreVariables()) {
+//				result.append(curPattern.getTablename()
+//						+ "_DATA = "
+//						+ "load 'hbase://"
+//						+ curPattern.getTablename()
+//						+ "' "
+//						+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('"
+//						+ HBaseDistributionStrategy.getTableInstance()
+//								.getColumnFamilyName()
+//						+ "', '-loadKey true') as (rowkey_"
+//						+ tripleCounter + ":chararray, columncontent_"
+//						+ tripleCounter + ":map[]);" + "\n");
+//
+//				result.append(curPattern.getName()
+//						+ " = foreach "
+//						+ curPattern.getTablename()
+//						+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1));\n");
+//			} else if (curPattern.allElementsAreLiterals()) {
+//				// do nothing, maybe add in future
+//				return "";
+//			} else {
+//				result.append(
+//				/**
+//				 * Für alle anderen Triplepattern wird in den jeweiligen
+//				 * Tabellen gesucht und nur das Ergebniss (der Spaltenname)
+//				 * zurückgegeben.
+//				 */
+//						curPattern.getName()
+//						+ " = "
+//						+ "load 'hbase://"
+//						+ curPattern.getTablename()
+//						+ "' "
+//						+ "using lupos.cloud.pig.udfs.HBaseLoadBagUDF('"
+//						+ HBaseDistributionStrategy.getTableInstance()
+//								.getColumnFamilyName() + "', '','"
+//						+ curPattern.getLiterals() + "') as"
+//						+ ((curPattern.getJoinElements().size() == 1) ? "(output"
+//								+ tripleCounter + ":chararray);"
+//								: "(output1_" + tripleCounter
+//										+ ":chararray, output2_"
+//										+ tripleCounter + ":chararray); ")
+//						+ "\n");
+//						
+//
+////				result.append(curPattern.getName()
+////						+ " = foreach PATTERN_"
+////						+ curPattern.getPatternId()
+////						+ " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as "
+////						+ ((curPattern.getJoinElements().size() == 1) ? "(output"
+////								+ tripleCounter + ":chararray);"
+////								: "(output1_" + tripleCounter
+////										+ ":chararray, output2_"
+////										+ tripleCounter + ":chararray); ")
+////						+ "\n");
+//			}
+//			intermediateJoins.add(curPattern);
+//
+//			if (debug) {
+//				result.append("\n");
+//			}
+//			tripleCounter++;
+//		}
+//		return result.toString();
+//	}
+		public String buildQuery(ArrayList<JoinInformation> intermediateBags,
+				boolean debug, ArrayList<PigFilterOperator> filterOps) {
+			this.intermediateJoins = intermediateBags;
+			this.debug = debug;
+			StringBuilder result = new StringBuilder();
+			for (TriplePattern triplePattern : this.triplePatternCollection) {
+				JoinInformation curPattern = getHBaseTable(triplePattern);
 
-			if (debug) {
-				result.append("-- TriplePattern: " + triplePattern.toN3String()
-						+ "\n");
-			}
-			/**
-			 * Für Triplepattern ?s ?p ?o wird eine beliebige Tabelle komplett
-			 * geladen und alle Informationen zuürck gegeben.
-			 */
-			if (curPattern.allElementsAreVariables()) {
-				result.append(curPattern.getTablename()
-						+ "_DATA = "
-						+ "load 'hbase://"
-						+ curPattern.getTablename()
-						+ "' "
-						+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('"
-						+ HBaseDistributionStrategy.getTableInstance()
-								.getColumnFamilyName()
-						+ "', '-loadKey true -caching 10') as (rowkey_" + tripleCounter
-						+ ":chararray, columncontent_" + tripleCounter
-						+ ":map[]);" + "\n");
-
-				result.append(curPattern.getName()
-						+ " = foreach "
-						+ curPattern.getTablename()
-						+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1));\n");
-			} else if (curPattern.allElementsAreLiterals()) {
-				// do nothing, maybe add in future
-				return "";
-			} else {
-				result.append(
+				if (debug) {
+					result.append("-- TriplePattern: " + triplePattern.toN3String()
+							+ "\n");
+				}
 				/**
-				 * Für alle anderen Triplepattern wird in den jeweiligen
-				 * Tabellen gesucht und nur das Ergebniss (der Spaltenname)
-				 * zurückgegeben.
+				 * Für Triplepattern ?s ?p ?o wird eine beliebige Tabelle komplett
+				 * geladen und alle Informationen zuürck gegeben.
 				 */
-				"PATTERN_"
-						+ curPattern.getPatternId()
-						+ " = "
-						+ "load 'hbase://"
-						+ curPattern.getTablename()
-						+ "' "
-						+ "using lupos.cloud.pig.udfs.HBaseLoadUDF('"
-						+ HBaseDistributionStrategy.getTableInstance()
-								.getColumnFamilyName() + "', '-caching 10','"
-						+ curPattern.getLiterals() + "') as (columncontent_"
-						+ tripleCounter + ":map[]);" + "\n");
+				if (curPattern.allElementsAreVariables()) {
+					result.append(curPattern.getTablename()
+							+ "_DATA = "
+							+ "load 'hbase://"
+							+ curPattern.getTablename()
+							+ "' "
+							+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('"
+							+ HBaseDistributionStrategy.getTableInstance()
+									.getColumnFamilyName()
+							+ "', '-loadKey true -caching 10') as (rowkey_" + tripleCounter
+							+ ":chararray, columncontent_" + tripleCounter
+							+ ":map[]);" + "\n");
 
-				result.append(curPattern.getName()
-						+ " = foreach PATTERN_"
-						+ curPattern.getPatternId()
-						+ " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as "
-						+ ((curPattern.getJoinElements().size() == 1) ? "(output"
-								+ tripleCounter + ":chararray);"
-								: "(output1_" + tripleCounter
-										+ ":chararray, output2_"
-										+ tripleCounter + ":chararray); ")
-						+ "\n");
-			}
-			intermediateJoins.add(curPattern);
+					result.append(curPattern.getName()
+							+ " = foreach "
+							+ curPattern.getTablename()
+							+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1));\n");
+				} else if (curPattern.allElementsAreLiterals()) {
+					// do nothing, maybe add in future
+					return "";
+				} else {
+					result.append(
+					/**
+					 * Für alle anderen Triplepattern wird in den jeweiligen
+					 * Tabellen gesucht und nur das Ergebniss (der Spaltenname)
+					 * zurückgegeben.
+					 */
+					"PATTERN_"
+							+ curPattern.getPatternId()
+							+ " = "
+							+ "load 'hbase://"
+							+ curPattern.getTablename()
+							+ "' "
+							+ "using lupos.cloud.pig.udfs.HBaseLoadUDF('"
+							+ HBaseDistributionStrategy.getTableInstance()
+									.getColumnFamilyName() + "', '-caching 10','"
+							+ curPattern.getLiterals() + "') as (columncontent_"
+							+ tripleCounter + ":map[]);" + "\n");
 
-			if (debug) {
-				result.append("\n");
+					result.append(curPattern.getName()
+							+ " = foreach PATTERN_"
+							+ curPattern.getPatternId()
+							+ " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as "
+							+ ((curPattern.getJoinElements().size() == 1) ? "(output"
+									+ tripleCounter + ":chararray);"
+									: "(output1_" + tripleCounter
+											+ ":chararray, output2_"
+											+ tripleCounter + ":chararray); ")
+							+ "\n");
+				}
+				intermediateJoins.add(curPattern);
+
+				if (debug) {
+					result.append("\n");
+				}
+				tripleCounter++;
 			}
-			tripleCounter++;
+			return result.toString();
 		}
-		return result.toString();
-	}
 
 	/**
 	 * Gibt für ein Tripel-Muster die korrespondierende HBase Tabelle zurück.
@@ -331,9 +411,8 @@ public class PigIndexScanOperator implements IPigOperator {
 		}
 
 		if (debug) {
-			result.append("-- Join over "+ joinElement.toString() +"\n");
+			result.append("-- Join over " + joinElement.toString() + "\n");
 		}
-
 
 		JoinInformation curJoinInfo = new JoinInformation("INTERMEDIATE_BAG_"
 				+ JoinInformation.idCounter);
@@ -350,7 +429,8 @@ public class PigIndexScanOperator implements IPigOperator {
 				result.append(",");
 			} else {
 				if (CloudManagement.PARALLEL_REDUCE_OPERATIONS > 1) {
-					result.append(" PARALLEL " + CloudManagement.PARALLEL_REDUCE_OPERATIONS);
+					result.append(" PARALLEL "
+							+ CloudManagement.PARALLEL_REDUCE_OPERATIONS);
 				}
 				result.append(";\n");
 			}
@@ -362,6 +442,8 @@ public class PigIndexScanOperator implements IPigOperator {
 		curJoinInfo.setPatternId(JoinInformation.idCounter);
 		curJoinInfo.addAppliedFilters(JoinInformation
 				.mergeAppliedFilters(joinOverItem));
+		
+		result.append(removeDuplicatedAliases(curJoinInfo));
 		intermediateJoins.add(curJoinInfo);
 		JoinInformation.idCounter++;
 
@@ -383,12 +465,12 @@ public class PigIndexScanOperator implements IPigOperator {
 		}
 
 		if (debug) {
-			result.append("-- Join over "+ joinElements.toString() +"\n");
+			result.append("-- Join over " + joinElements.toString() + "\n");
 		}
-		
+
 		JoinInformation curJoinInfo = new JoinInformation("INTERMEDIATE_BAG_"
 				+ JoinInformation.idCounter);
-		
+
 		result.append(curJoinInfo.getName() + " = JOIN");
 		int i = 0;
 		for (JoinInformation curPattern : joinOverItem) {
@@ -413,13 +495,48 @@ public class PigIndexScanOperator implements IPigOperator {
 		curJoinInfo.addAppliedFilters(JoinInformation
 				.mergeAppliedFilters(joinOverItem));
 
+		result.append(removeDuplicatedAliases(curJoinInfo));
 		intermediateJoins.add(curJoinInfo);
 		JoinInformation.idCounter++;
-
+		
 		return result.toString();
 	}
 
 	public String getFinalAlias() {
 		return intermediateJoins.get(0).getName();
+	}
+
+	public String removeDuplicatedAliases(JoinInformation oldJoin) {
+		return "";
+//		StringBuilder result = new StringBuilder();
+//		// prüfe ob es doppelte Aliases gibt und entferne diese
+//		ArrayList<String> newElements = new ArrayList<String>();
+//		boolean foundDuplicate = false;
+//		
+//		for (String elem : oldJoin.getJoinElements()) {
+//			if (newElements.contains(elem)) {
+//				foundDuplicate = true;
+//			} else {
+//				newElements.add(elem);
+//			}
+//		}
+//
+//		if (foundDuplicate) {
+//			result.append(oldJoin.getName() + " = FOREACH " + oldJoin.getName()
+//					+ " GENERATE ");
+//			boolean first = true;
+//			for (String elem : newElements) {
+//				if (!first) {
+//					result.append(", ");
+//				}
+//				result.append("$" + oldJoin.getItemPos(elem));
+//				first = false;
+//			}
+//			result.append(";\n");
+//			oldJoin.setJoinElements(newElements);
+//		}
+//		
+//		return result.toString();
+
 	}
 }

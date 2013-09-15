@@ -29,12 +29,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.joda.time.DateTime;
 import org.apache.commons.cli.CommandLine;
@@ -398,7 +401,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		scan = new Scan();
 		// scan.setRaw(true);
 
-		scan.setBatch(10000);
+		scan.setBatch(12500);
 		
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
@@ -638,10 +641,12 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 						// values found
 						NavigableMap<byte[], byte[]> cfResults = resultsMap
 								.get(columnInfo.getColumnFamily());
-						Map<String, DataByteArray> cfMap = new HashMap<String, DataByteArray>();
+//						Map<String, DataByteArray> cfMap = new HashMap<String, DataByteArray>();
+						Map<String, DataByteArray> cfMap = new LinkedHashMap<String, DataByteArray>();
 
 						if (cfResults != null) {
 							for (byte[] quantifier : cfResults.keySet()) {
+								String bla = Bytes.toString(quantifier);
 								// We need to check against the prefix filter to
 								// see if this value should be included. We
 								// can't
@@ -657,6 +662,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 									DataByteArray value = cell == null ? null
 											: new DataByteArray(cell);
 									cfMap.put(Bytes.toString(quantifier), value);
+//									columnList.add(Bytes.toString(quantifier));
 								}
 							}
 						}
