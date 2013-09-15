@@ -1,0 +1,26 @@
+define bb lupos.cloud.pig.udfs.CloudBuildBloom('jenkins', '100', '0.1');
+-- TriplePattern: ?journal <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Journal> .
+INTERMEDIATE_BAG_0 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadBagUDF('Hexa', '','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>,<http://localhost/vocabulary/bench/Journal>') as(output0:chararray);
+grp0 = group INTERMEDIATE_BAG_0 all; 
+bloom0 = foreach grp0 generate bb(INTERMEDIATE_BAG_0.$0);
+
+-- TriplePattern: ?journal <http://purl.org/dc/elements/1.1/title> "Journal 1 (1940)"^^<http://www.w3.org/2001/XMLSchema#string> .
+INTERMEDIATE_BAG_1 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadBagUDF('Hexa', '','<http://purl.org/dc/elements/1.1/title>,"Journal 1 (1940)"^^<http://www.w3.org/2001/XMLSchema#string>') as(output1:chararray);
+grp1 = group INTERMEDIATE_BAG_1 all; 
+bloom1 = foreach grp1 generate bb(INTERMEDIATE_BAG_1.$0);
+
+-- TriplePattern: ?journal <http://purl.org/dc/terms/issued> ?yr .
+INTERMEDIATE_BAG_2 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadBagUDF('Hexa', '','<http://purl.org/dc/terms/issued>') as(output1_2:chararray, output2_2:chararray); 
+grp2 = group INTERMEDIATE_BAG_2 all; 
+bloom2 = foreach grp2 generate bb(INTERMEDIATE_BAG_2.$0);
+
+-- Join over ?journal
+INTERMEDIATE_BAG_0a = FILTER INTERMEDIATE_BAG_0 by lupos.cloud.pig.udfs.CloudBloom(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.CloudBloom(bloom2.$0, $0);
+INTERMEDIATE_BAG_1b = FILTER INTERMEDIATE_BAG_1 by lupos.cloud.pig.udfs.CloudBloom(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.CloudBloom(bloom2.$0, $0);
+INTERMEDIATE_BAG_2c = FILTER INTERMEDIATE_BAG_2 by lupos.cloud.pig.udfs.CloudBloom(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.CloudBloom(bloom1.$0, $0);
+INTERMEDIATE_BAG_3 = JOIN INTERMEDIATE_BAG_0a BY $0, INTERMEDIATE_BAG_1b BY $0, INTERMEDIATE_BAG_2c BY $0 PARALLEL 3;
+
+-- Projection: ?yr
+-- X = FOREACH INTERMEDIATE_BAG_3 GENERATE $3;
+--X = INTERMEDIATE_BAG_1b;
+X = bloom0;

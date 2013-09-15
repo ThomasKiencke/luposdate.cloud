@@ -1,0 +1,83 @@
+-- TriplePattern: ?inproc <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Inproceedings> .
+PATTERN_0 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>,<http://localhost/vocabulary/bench/Inproceedings>') as (columncontent_0:map[]);
+INTERMEDIATE_BAG_0 = foreach PATTERN_0 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output0:chararray);
+bloom0i = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>,<http://localhost/vocabulary/bench/Inproceedings>') as (bloom1:map[]);
+bloom0 = foreach bloom0i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- TriplePattern: ?inproc <http://purl.org/dc/elements/1.1/creator> ?author .
+PATTERN_1 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://purl.org/dc/elements/1.1/creator>') as (columncontent_1:map[]);
+INTERMEDIATE_BAG_1 = foreach PATTERN_1 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_1:chararray, output2_1:chararray);
+bloom1i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://purl.org/dc/elements/1.1/creator>') as (bloom1:map[]);
+bloom1 = foreach bloom1i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- TriplePattern: ?inproc <http://localhost/vocabulary/bench/booktitle> ?booktitle .
+PATTERN_2 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://localhost/vocabulary/bench/booktitle>') as (columncontent_2:map[]);
+INTERMEDIATE_BAG_2 = foreach PATTERN_2 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_2:chararray, output2_2:chararray);
+bloom2i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://localhost/vocabulary/bench/booktitle>') as (bloom1:map[]);
+bloom2 = foreach bloom2i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- TriplePattern: ?inproc <http://purl.org/dc/elements/1.1/title> ?title .
+PATTERN_3 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://purl.org/dc/elements/1.1/title>') as (columncontent_3:map[]);
+INTERMEDIATE_BAG_3 = foreach PATTERN_3 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_3:chararray, output2_3:chararray);
+bloom3i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://purl.org/dc/elements/1.1/title>') as (bloom1:map[]);
+bloom3 = foreach bloom3i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- TriplePattern: ?inproc <http://purl.org/dc/terms/partOf> ?proc .
+PATTERN_4 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://purl.org/dc/terms/partOf>') as (columncontent_4:map[]);
+INTERMEDIATE_BAG_4 = foreach PATTERN_4 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_4:chararray, output2_4:chararray);
+bloom4i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://purl.org/dc/terms/partOf>') as (bloom1:map[]);
+bloom4 = foreach bloom4i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- TriplePattern: ?inproc <http://www.w3.org/2000/01/rdf-schema#seeAlso> ?ee .
+PATTERN_5 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://www.w3.org/2000/01/rdf-schema#seeAlso>') as (columncontent_5:map[]);
+INTERMEDIATE_BAG_5 = foreach PATTERN_5 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_5:chararray, output2_5:chararray);
+bloom5i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://www.w3.org/2000/01/rdf-schema#seeAlso>') as (bloom1:map[]);
+bloom5 = foreach bloom5i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- TriplePattern: ?inproc <http://swrc.ontoware.org/ontology#pages> ?page .
+PATTERN_6 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://swrc.ontoware.org/ontology#pages>') as (columncontent_6:map[]);
+INTERMEDIATE_BAG_6 = foreach PATTERN_6 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_6:chararray, output2_6:chararray);
+bloom6i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://swrc.ontoware.org/ontology#pages>') as (bloom1:map[]);
+bloom6 = foreach bloom6i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- TriplePattern: ?inproc <http://xmlns.com/foaf/0.1/homepage> ?url .
+PATTERN_7 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://xmlns.com/foaf/0.1/homepage>') as (columncontent_7:map[]);
+INTERMEDIATE_BAG_7 = foreach PATTERN_7 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_7:chararray, output2_7:chararray);
+bloom7i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://xmlns.com/foaf/0.1/homepage>') as (bloom1:map[]);
+bloom7 = foreach bloom7i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- TriplePattern: ?inproc <http://purl.org/dc/terms/issued> ?yr .
+PATTERN_8 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://purl.org/dc/terms/issued>') as (columncontent_8:map[]);
+INTERMEDIATE_BAG_8 = foreach PATTERN_8 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_8:chararray, output2_8:chararray);
+bloom8i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://purl.org/dc/terms/issued>') as (bloom1:map[]);
+bloom8 = foreach bloom8i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- Join over ?inproc
+
+INTERMEDIATE_BAG_0f = FILTER INTERMEDIATE_BAG_0 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
+INTERMEDIATE_BAG_1f = FILTER INTERMEDIATE_BAG_1 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
+INTERMEDIATE_BAG_2f = FILTER INTERMEDIATE_BAG_2 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
+INTERMEDIATE_BAG_3f = FILTER INTERMEDIATE_BAG_3 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
+INTERMEDIATE_BAG_4f = FILTER INTERMEDIATE_BAG_4 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
+INTERMEDIATE_BAG_5f = FILTER INTERMEDIATE_BAG_5 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
+INTERMEDIATE_BAG_6f = FILTER INTERMEDIATE_BAG_6 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
+INTERMEDIATE_BAG_7f = FILTER INTERMEDIATE_BAG_7 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
+INTERMEDIATE_BAG_8f = FILTER INTERMEDIATE_BAG_8 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0);
+
+INTERMEDIATE_BAG_9 = JOIN INTERMEDIATE_BAG_0f BY $0, INTERMEDIATE_BAG_1f BY $0, INTERMEDIATE_BAG_2f BY $0, INTERMEDIATE_BAG_3f BY $0, INTERMEDIATE_BAG_4f BY $0, INTERMEDIATE_BAG_5f BY $0, INTERMEDIATE_BAG_6f BY $0, INTERMEDIATE_BAG_7f BY $0, INTERMEDIATE_BAG_8f BY $0 PARALLEL 5;
+
+-- Projection: ?author, ?inproc, ?title, ?ee, ?url, ?booktitle, ?yr, ?proc, ?page
+INTERMEDIATE_BAG_10 = FOREACH INTERMEDIATE_BAG_9 GENERATE $2, $0, $6, $10, $14, $4, $16, $8, $12;
+
+-- TriplePattern: ?inproc <http://localhost/vocabulary/bench/abstract> ?abstract .
+PATTERN_11 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://localhost/vocabulary/bench/abstract>') as (columncontent_0:map[]);
+INTERMEDIATE_BAG_11 = foreach PATTERN_11 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_0:chararray, output2_0:chararray);
+bloom11i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://localhost/vocabulary/bench/abstract>') as (bloom1:map[]);
+bloom11 = foreach bloom11i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- Optional Join over ?inproc
+INTERMEDIATE_BAG_12 = JOIN INTERMEDIATE_BAG_10 BY $1 LEFT OUTER, INTERMEDIATE_BAG_11 BY $0;
+
+INTERMEDIATE_BAG_12 = FOREACH INTERMEDIATE_BAG_12 GENERATE $0, $1, $2, $3, $4, $5, $6, $7, $8, $10;
+-- ORDER BY ?yr
+X = ORDER INTERMEDIATE_BAG_12 BY $6 PARALLEL 5;
