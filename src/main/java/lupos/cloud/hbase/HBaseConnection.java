@@ -150,6 +150,8 @@ public class HBaseConnection {
 			HColumnDescriptor familyb1 = new HColumnDescriptor("bloomfilter1");
 			HColumnDescriptor familyb2 = new HColumnDescriptor("bloomfilter2");
 			family.setCompressionType(Algorithm.LZO);
+			familyb1.setCompressionType(Algorithm.LZO);
+			familyb2.setCompressionType(Algorithm.LZO);
 			descriptor.addFamily(family);
 			descriptor.addFamily(familyb1);
 			descriptor.addFamily(familyb2);
