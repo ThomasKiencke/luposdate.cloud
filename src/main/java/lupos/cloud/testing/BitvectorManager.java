@@ -1,5 +1,8 @@
 package lupos.cloud.testing;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -35,19 +38,23 @@ public class BitvectorManager {
 			BitSet bitVector = mergeBitSet(bitSetList);
 
 			// write Bitvector to hdfs
-			FSDataOutputStream output = HBaseConnection.getHdfs_fileSystem()
-					.create(new Path("/tmp/cloudBloomfilter_"
-							+ var.replace("?", "")));
-			byte[] toAdd = toByteArray(bitVector);
-			
-			BitSet blab = fromByteArray(toAdd);
-			output.write(toByteArray(bitVector));
+			// FSDataOutputStream output = HBaseConnection.getHdfs_fileSystem()
+			// .create(new Path("/tmp/cloudBloomfilter_"
+			// + var.replace("?", "")));
+			// output.write("blaaa".getBytes());
+			// output.flush();
+
+			Path local = new Path("cloudBloomfilter_" + var.replace("?", ""));
+			Path remote = new Path("/tmp/cloudBloomfilter_" + var.replace("?", ""));
+			writeByteToDisk(toByteArray(bitVector), local);
+			HBaseConnection.getHdfs_fileSystem().copyFromLocalFile(true, true, local, remote);
+			new File(local.getName()).delete();
 			System.out.print("Bitvectorsize for " + var + ": ");
 			printPos(bitVector);
 		}
 
 	}
-	
+
 	public static BitSet fromByteArray(byte[] bytes) {
 		BitSet bits = new BitSet();
 		for (int i = 0; i < bytes.length * 8; i++) {
@@ -78,6 +85,13 @@ public class BitvectorManager {
 		}
 		return bitvector;
 	}
+	
+	public static void writeByteToDisk(byte[] toWrite, Path path) throws IOException {
+		FileOutputStream fos = new FileOutputStream(path.getName());
+		fos.write(toWrite);
+		fos.flush();
+		fos.close();
+	}
 
 	public static BitSet mergeBitSet(ArrayList<BitSet> bitSetList)
 			throws IOException {
@@ -101,10 +115,10 @@ public class BitvectorManager {
 		for (int i = 0; i < bitvector.length(); i++) {
 			if (bitvector.get(i)) {
 				num++;
-//				System.out.println(i);
+				// System.out.println(i);
 			}
 		}
-		System.out.println("Anzahl Set Bits: "+ num);
+		System.out.println(num);
 	}
 
 	public static BitSet getFullSetBitvector() {

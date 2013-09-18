@@ -264,6 +264,8 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 			}
 			FSDataInputStream input = fs.open(path);
 			bitvector = fromByteArray(ByteStreams.toByteArray(input));
+//			bitvector = longToBitSet(input.readLong());
+			input.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -279,6 +281,20 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 		}
 		return bits;
 	}
+	
+	public static BitSet longToBitSet(long value) {
+		BitSet bits = new BitSet();
+		int index = 0;
+		while (value != 0L) {
+			if (value % 2L != 0) {
+				bits.set(index);
+			}
+			++index;
+			value = value >>> 1;
+		}
+		return bits;
+	}
+
 
 	/**
 	 * Constructor. Construct a HBase Table LoadFunc and StoreFunc to load or
@@ -720,11 +736,14 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 												.hasPrefixMatch(quantifier)) {
 									String toSplit = Bytes.toString(quantifier);
 									if (toSplit.contains(",")) {
+//										boolean element1IsNecessary = true;
+//										boolean element2IsNecessary = true;
 										// 1
 										String toAdd1 = toSplit.substring(0,
 												toSplit.indexOf(","));
-										if (bloomfilterCheck(toAdd1, bitvector1)) {
-											return null;
+										if (bitvector1 != null  && !isElementPartOfBitvector(toAdd1, bitvector1)) {
+//											element1IsNecessary = false;
+											return TupleFactory.getInstance().newTuple(tupleList.size());
 										}
 										tupleList.add(toAdd1);
 
@@ -733,15 +752,22 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 												toSplit.indexOf(",") + 1,
 												toSplit.length());
 
-										if (bloomfilterCheck(toAdd2, bitvector2)) {
-											return null;
-										}
+										if (bitvector2 != null && !isElementPartOfBitvector(toAdd2, bitvector2)) {
+//											element2IsNecessary = false;
+											return TupleFactory.getInstance().newTuple(tupleList.size());
+										}										
 										tupleList.add(toAdd2);
+										
+//										if (!element1IsNecessary || !element2IsNecessary) {
+////											return null;
+//											return TupleFactory.getInstance().newTuple(0);
+//										}
 									} else {
 										String toAdd = Bytes
 												.toString(quantifier);
-										if (bloomfilterCheck(toAdd, bitvector1)) {
-											return null;
+										if (bitvector1 != null  && !isElementPartOfBitvector(toAdd, bitvector1)) {
+//											return null;
+											return TupleFactory.getInstance().newTuple(tupleList.size());
 										}
 										tupleList.add(toAdd);
 									}
@@ -782,10 +808,7 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 		return null;
 	}
 
-	private boolean bloomfilterCheck(String element, BitSet bitvector) {
-		if (bitvector == null) {
-			return true;
-		}
+	private boolean isElementPartOfBitvector(String element, BitSet bitvector) {
 		int hash = element.hashCode();
 		if (hash < 0) {
 			hash = hash * (-1);
