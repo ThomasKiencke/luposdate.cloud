@@ -2,9 +2,6 @@ package lupos.cloud.pig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-
 import lupos.cloud.pig.operator.PigDistinctOperator;
 import lupos.cloud.pig.operator.PigFilterExectuer;
 import lupos.cloud.pig.operator.PigFilterOperator;
@@ -12,7 +9,8 @@ import lupos.cloud.pig.operator.PigIndexScanOperator;
 import lupos.cloud.pig.operator.IPigOperator;
 import lupos.cloud.pig.operator.PigLimitOperator;
 import lupos.cloud.pig.operator.PigOrderByOperator;
-import lupos.cloud.pig.operator.PigProjectionOperator;;
+import lupos.cloud.pig.operator.PigProjectionOperator;
+import lupos.cloud.testing.BitvectorManager;
 
 /**
  * In dieser Klassen werden Informationen über das PigQuery abgespeichert z.B.
@@ -22,6 +20,8 @@ public class SinglePigQuery {
 
 	/** The pig latin. */
 	StringBuilder pigLatin = new StringBuilder();
+	
+	BitvectorManager bitvectorManager = new BitvectorManager();
 
 	/* Projektion die für den Container gültig ist */
 	private PigProjectionOperator globalProjection = null;
@@ -216,5 +216,9 @@ public class SinglePigQuery {
 
 	public  HashMap<String, String> getAddBindings() {
 		return this.addBinding;
+	}
+	
+	public BitvectorManager getBitvectorManager() {
+		return bitvectorManager;
 	}
 }

@@ -25,10 +25,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +50,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -81,13 +86,16 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.pig.Expression;
 import org.apache.pig.LoadCaster;
 import org.apache.pig.LoadFunc;
+import org.apache.pig.LoadMetadata;
 import org.apache.pig.LoadPushDown;
 import org.apache.pig.LoadStoreCaster;
 import org.apache.pig.OrderedLoadFunc;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
+import org.apache.pig.ResourceStatistics;
 import org.apache.pig.StoreFuncInterface;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
 import org.apache.pig.backend.hadoop.hbase.HBaseBinaryConverter;
@@ -104,7 +112,9 @@ import org.apache.pig.impl.util.Utils;
 import org.apache.pig.impl.util.ObjectSerializer;
 import org.apache.pig.impl.util.UDFContext;
 
+
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteStreams;
 
 /**
  * Diese UDF Funktion ist eine angepasste Variante der originalen HBaseStorage()
@@ -160,6 +170,10 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 
 	private ResourceSchema schema_;
 	private RequiredFieldList requiredFieldList;
+
+	private DataByteArray bloomfilter;
+
+	private Object bitvector;
 
 	private static void populateValidOptions() {
 		validOptions_.addOption("loadKey", false, "Load Key");
@@ -219,10 +233,31 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 	 *             when unable to parse arguments
 	 * @throws IOException
 	 */
-	public HBaseLoadUDF(String columnList, String rowKey) throws ParseException,
-			IOException {
+	public HBaseLoadUDF(String columnList, String rowKey)
+			throws ParseException, IOException {
 		this(columnList, "", rowKey);
 	}
+
+//	public HBaseLoadUDF(String columnList, String optString, String rowKey,
+//			String bitvectorPath) throws ParseException, IOException {
+//		this(columnList, optString, rowKey);
+//
+//		FSDataInputStream input = FileSystem.get(HBaseConfiguration.create())
+//				.open(new Path(bitvectorPath));
+//
+//
+//		bitvector = fromByteArray( ByteStreams.toByteArray(input));
+//	}
+//
+//	public static BitSet fromByteArray(byte[] bytes) {
+//		BitSet bits = new BitSet();
+//		for (int i = 0; i < bytes.length * 8; i++) {
+//			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
+//				bits.set(i);
+//			}
+//		}
+//		return bits;
+//	}
 
 	/**
 	 * Constructor. Construct a HBase Table LoadFunc and StoreFunc to load or
@@ -402,7 +437,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		// scan.setRaw(true);
 
 		scan.setBatch(12500);
-		
+
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
 			// add random string because stopRow is exclusiv
@@ -641,7 +676,8 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 						// values found
 						NavigableMap<byte[], byte[]> cfResults = resultsMap
 								.get(columnInfo.getColumnFamily());
-//						Map<String, DataByteArray> cfMap = new HashMap<String, DataByteArray>();
+						// Map<String, DataByteArray> cfMap = new
+						// HashMap<String, DataByteArray>();
 						Map<String, DataByteArray> cfMap = new LinkedHashMap<String, DataByteArray>();
 
 						if (cfResults != null) {
@@ -662,7 +698,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 									DataByteArray value = cell == null ? null
 											: new DataByteArray(cell);
 									cfMap.put(Bytes.toString(quantifier), value);
-//									columnList.add(Bytes.toString(quantifier));
+									// columnList.add(Bytes.toString(quantifier));
 								}
 							}
 						}
@@ -1324,4 +1360,30 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		}
 		return incremented;
 	}
+
+	// @Override
+	// public String[] getPartitionKeys(String arg0, Job arg1) throws
+	// IOException {
+	// // TODO Auto-generated method stub
+	// return null;
+	// }
+	//
+	// @Override
+	// public ResourceSchema getSchema(String arg0, Job arg1) throws IOException
+	// {
+	// return null;
+	// }
+	//
+	// @Override
+	// public ResourceStatistics getStatistics(String arg0, Job arg1)
+	// throws IOException {
+	// // TODO Auto-generated method stub
+	// return null;
+	// }
+	//
+	// @Override
+	// public void setPartitionFilter(Expression arg0) throws IOException {
+	// // TODO Auto-generated method stub
+	//
+	// }
 }

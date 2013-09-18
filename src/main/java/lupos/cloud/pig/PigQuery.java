@@ -11,6 +11,7 @@ import lupos.cloud.pig.operator.PigJoinOperator;
 import lupos.cloud.pig.operator.PigLimitOperator;
 import lupos.cloud.pig.operator.PigOrderByOperator;
 import lupos.cloud.pig.operator.PigProjectionOperator;
+import lupos.cloud.testing.CloudBitvector;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.Root;
 import lupos.engine.operators.singleinput.AddBinding;
@@ -167,5 +168,9 @@ public class PigQuery {
 
 	public void append(String toAdd) {
 		this.pigLatin.append(toAdd);
+	}
+
+	public HashMap<String, ArrayList<CloudBitvector>> getBitvectors() {
+		return this.intermediateBags.get(0).getBitVectors();
 	}
 }

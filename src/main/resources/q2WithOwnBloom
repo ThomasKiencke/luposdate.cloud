@@ -52,17 +52,19 @@ INTERMEDIATE_BAG_8 = foreach PATTERN_8 generate flatten(lupos.cloud.pig.udfs.Map
 bloom8i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://purl.org/dc/terms/issued>') as (bloom1:map[]);
 bloom8 = foreach bloom8i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
 
+bloom = foreach bloom0 generate lupos.cloud.pig.udfs.MergeBloomfilterUDF(bloom0.$0,bloom1.$0,bloom2.$0,bloom3.$0,bloom4.$0,bloom5.$0,bloom6.$0,bloom7.$0,bloom8.$0);
+
 -- Join over ?inproc
 
-INTERMEDIATE_BAG_0f = FILTER INTERMEDIATE_BAG_0 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
-INTERMEDIATE_BAG_1f = FILTER INTERMEDIATE_BAG_1 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
-INTERMEDIATE_BAG_2f = FILTER INTERMEDIATE_BAG_2 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
-INTERMEDIATE_BAG_3f = FILTER INTERMEDIATE_BAG_3 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
-INTERMEDIATE_BAG_4f = FILTER INTERMEDIATE_BAG_4 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
-INTERMEDIATE_BAG_5f = FILTER INTERMEDIATE_BAG_5 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
-INTERMEDIATE_BAG_6f = FILTER INTERMEDIATE_BAG_6 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
-INTERMEDIATE_BAG_7f = FILTER INTERMEDIATE_BAG_7 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom8.$0, $0);
-INTERMEDIATE_BAG_8f = FILTER INTERMEDIATE_BAG_8 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom1.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom2.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom3.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom4.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom5.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom6.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom7.$0, $0) AND  lupos.cloud.pig.udfs.BloomfilterUDF(bloom0.$0, $0);
+INTERMEDIATE_BAG_0f = FILTER INTERMEDIATE_BAG_0 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom.$0, $0);
+INTERMEDIATE_BAG_1f = FILTER INTERMEDIATE_BAG_1 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom.$0, $0);
+INTERMEDIATE_BAG_2f = FILTER INTERMEDIATE_BAG_2 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom.$0, $0);
+INTERMEDIATE_BAG_3f = FILTER INTERMEDIATE_BAG_3 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom.$0, $0);
+INTERMEDIATE_BAG_4f = FILTER INTERMEDIATE_BAG_4 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom.$0, $0);
+INTERMEDIATE_BAG_5f = FILTER INTERMEDIATE_BAG_5 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom.$0, $0);
+INTERMEDIATE_BAG_6f = FILTER INTERMEDIATE_BAG_6 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom.$0, $0);
+INTERMEDIATE_BAG_7f = FILTER INTERMEDIATE_BAG_7 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom.$0, $0);
+INTERMEDIATE_BAG_8f = FILTER INTERMEDIATE_BAG_8 by lupos.cloud.pig.udfs.BloomfilterUDF(bloom.$0, $0);
 
 INTERMEDIATE_BAG_9 = JOIN INTERMEDIATE_BAG_0f BY $0, INTERMEDIATE_BAG_1f BY $0, INTERMEDIATE_BAG_2f BY $0, INTERMEDIATE_BAG_3f BY $0, INTERMEDIATE_BAG_4f BY $0, INTERMEDIATE_BAG_5f BY $0, INTERMEDIATE_BAG_6f BY $0, INTERMEDIATE_BAG_7f BY $0, INTERMEDIATE_BAG_8f BY $0 PARALLEL 5;
 
@@ -74,6 +76,9 @@ PATTERN_11 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa',
 INTERMEDIATE_BAG_11 = foreach PATTERN_11 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_0:chararray, output2_0:chararray);
 bloom11i = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('bloomfilter1', '','<http://localhost/vocabulary/bench/abstract>') as (bloom1:map[]);
 bloom11 = foreach bloom11i generate lupos.cloud.pig.udfs.BloomfilterMapToByteArrayUDF($0);
+
+-- bloom = foreach bloom generate lupos.cloud.pig.udfs.MergeBloomfilterUDF(bloom.$0,bloom11.$0);
+
 
 -- Optional Join over ?inproc
 INTERMEDIATE_BAG_12 = JOIN INTERMEDIATE_BAG_10 BY $1 LEFT OUTER, INTERMEDIATE_BAG_11 BY $0;

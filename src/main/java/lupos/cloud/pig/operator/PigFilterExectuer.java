@@ -75,6 +75,7 @@ public class PigFilterExectuer implements IPigOperator {
 				newJoin.setPatternId(JoinInformation.idCounter);
 				newJoin.setJoinElements(curJoin.getJoinElements());
 				newJoin.addAppliedFilters(curJoin.getAppliedFilters());
+				newJoin.setBitVectors(curJoin.getBitVectors());
 
 				toRemove.add(curJoin);
 

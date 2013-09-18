@@ -27,7 +27,7 @@ public class PigScriptTester {
 		long start = System.currentTimeMillis();
 
 		pigServer = new PigServer(ExecType.MAPREDUCE);
-//		pigServer.getPigContext().getConf().setProperty("hbase.zookeeper.quorum", "pc11:2181");
+//		pigServer.getPigContext().getConf().setProperty("hbase.zookeeper.quorum", "pc08:2181");
 		
 		String pigInputProgramm = readFile(args[0]);
 		pigServer.registerQuery(pigInputProgramm);

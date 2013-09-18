@@ -37,9 +37,8 @@ public class BloomfilterMapToByteArrayUDF extends EvalFunc<DataByteArray> {
 	public DataByteArray exec(Tuple input) throws IOException {
 			@SuppressWarnings("unchecked")
 			Map<String, Object> map = (Map<String, Object>) input.get(0);
-			BitSet bitvector = null;
+			BitSet bitvector = new BitSet(HBaseKVMapper.VECTORSIZE);;
 			if (map != null) {
-				bitvector =  new BitSet(HBaseKVMapper.VECTORSIZE);
 				for (Entry<String, Object> entry : map.entrySet()) {
 					Integer pos = Integer.parseInt(entry.getKey());
 					bitvector.set(pos);

@@ -35,6 +35,7 @@ public class PigDistinctOperator implements IPigOperator {
 		newJoin.setPatternId(JoinInformation.idCounter);
 		newJoin.setJoinElements(curJoin.getJoinElements());
 		newJoin.addAppliedFilters(curJoin.getAppliedFilters());
+		newJoin.setBitVectors(curJoin.getBitVectors());
 
 		intermediateJoins.remove(curJoin);
 		intermediateJoins.add(newJoin);

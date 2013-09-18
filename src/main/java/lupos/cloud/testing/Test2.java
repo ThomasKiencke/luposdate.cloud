@@ -2,8 +2,10 @@ package lupos.cloud.testing;
 
 import java.util.LinkedList;
 
+import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler;
 import org.apache.pig.builtin.Bloom;
 import org.apache.pig.builtin.BuildBloom;
+import org.apache.pig.builtin.JsonMetadata;
 
 import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.datastructures.items.literal.URILiteral;
@@ -28,6 +30,8 @@ public class Test2 {
 		
 		BuildBloom a;
 		Bloom b;
+		JsonMetadata c;
+		JobControlCompiler d;
 
 	}
 

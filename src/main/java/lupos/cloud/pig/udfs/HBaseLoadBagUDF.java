@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,6 +41,8 @@ import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
+
 import org.joda.time.DateTime;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -49,6 +52,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -107,6 +112,7 @@ import org.apache.pig.impl.util.ObjectSerializer;
 import org.apache.pig.impl.util.UDFContext;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteStreams;
 
 /**
  * Diese UDF Funktion ist eine angepasste Variante der originalen HBaseStorage()
@@ -163,6 +169,12 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 	private ResourceSchema schema_;
 	private RequiredFieldList requiredFieldList;
 
+	private BitSet bitvector1 = null;
+	private BitSet bitvector2 = null;
+	private FileSystem fs = null;
+	private Path bitvectorPath1 = null;
+	private Path bitvectorPath2 = null;
+	
 	private static void populateValidOptions() {
 		validOptions_.addOption("loadKey", false, "Load Key");
 		validOptions_.addOption("gt", true,
@@ -224,6 +236,48 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 	public HBaseLoadBagUDF(String columnList, String rowKey)
 			throws ParseException, IOException {
 		this(columnList, "", rowKey);
+	}
+
+	public HBaseLoadBagUDF(String columnList, String optString, String rowKey,
+			String bitvectorPath) throws ParseException, IOException {
+		this(columnList, optString, rowKey);
+
+		this.bitvectorPath1 = new Path(bitvectorPath);
+
+	}
+
+	public HBaseLoadBagUDF(String columnList, String optString, String rowKey,
+			String bitvectorPath1, String bitvectorPath2)
+			throws ParseException, IOException {
+		this(columnList, optString, rowKey);
+
+		this.bitvectorPath1 = new Path(bitvectorPath1);
+		this.bitvectorPath2 = new Path(bitvectorPath2);
+		
+	}
+
+	private BitSet readBloomfilter(Path path) {
+		BitSet bitvector = null;
+		try {
+			if (fs == null) {
+				fs = FileSystem.get(HBaseConfiguration.create());
+			}
+			FSDataInputStream input = fs.open(path);
+			bitvector = fromByteArray(ByteStreams.toByteArray(input));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return bitvector;
+	}
+
+	public static BitSet fromByteArray(byte[] bytes) {
+		BitSet bits = new BitSet();
+		for (int i = 0; i < bytes.length * 8; i++) {
+			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
+				bits.set(i);
+			}
+		}
+		return bits;
 	}
 
 	/**
@@ -403,9 +457,8 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 		scan = new Scan();
 		// scan.setRaw(true);
 
-
 		scan.setBatch(1);
-		
+
 		scan.setCaching(10000);
 
 		if (rowKey != null) {
@@ -613,6 +666,13 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 	@Override
 	public Tuple getNext() throws IOException {
 		try {
+			if (bitvector1 == null) {
+				bitvector1 = readBloomfilter(bitvectorPath1);
+				if (bitvectorPath2 != null) {
+					bitvector2 = readBloomfilter(bitvectorPath2);
+				}
+			}
+			
 			if (reader.nextKeyValue()) {
 				Result result = (Result) reader.getCurrentValue();
 
@@ -624,31 +684,16 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 				NavigableMap<byte[], NavigableMap<byte[], byte[]>> resultsMap = result
 						.getNoVersionMap();
 
-//				if (loadRowKey_) {
-//					tupleSize++;
-//				}
-
-//				String key = Bytes.toString(rowKey.get());
-
-//				boolean twoColumnsAvailable = true;
-//				if (Bytes.toString(rowKey.get()).contains(",")) {
-//					twoColumnsAvailable = false;
-//				} else {
-//					tupleSize++;
-//				}
-
-//				Tuple tuple = TupleFactory.getInstance().newTuple(tupleSize);
 				ArrayList<String> tupleList = new ArrayList<String>();
-				int startIndex = 0;
+
 				if (loadRowKey_) {
 					ImmutableBytesWritable rowKey = (ImmutableBytesWritable) reader
 							.getCurrentKey();
 					tupleList.add(Bytes.toString(rowKey.get()));
-					startIndex++;
 				}
-				
+
 				for (int i = 0; i < columnInfo_.size(); ++i) {
-//					int currentIndex = startIndex + i;
+					// int currentIndex = startIndex + i;
 
 					ColumnInfo columnInfo = columnInfo_.get(i);
 					if (columnInfo.isColumnMap()) {
@@ -673,22 +718,39 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 								if (columnInfo.getColumnPrefix() == null
 										|| columnInfo
 												.hasPrefixMatch(quantifier)) {
-									String toSplit = Bytes
-											.toString(quantifier);
+									String toSplit = Bytes.toString(quantifier);
 									if (toSplit.contains(",")) {
-										tupleList.add(toSplit.substring(0,
-												toSplit.indexOf(",")));
-										tupleList.add(toSplit.substring(
+										// 1
+										String toAdd1 = toSplit.substring(0,
+												toSplit.indexOf(","));
+										if (bloomfilterCheck(toAdd1, bitvector1)) {
+											return null;
+										}
+										tupleList.add(toAdd1);
+
+										// 2
+										String toAdd2 = toSplit.substring(
 												toSplit.indexOf(",") + 1,
-												toSplit.length()));
+												toSplit.length());
+
+										if (bloomfilterCheck(toAdd2, bitvector2)) {
+											return null;
+										}
+										tupleList.add(toAdd2);
 									} else {
-										tupleList.add(Bytes.toString(quantifier));
+										String toAdd = Bytes
+												.toString(quantifier);
+										if (bloomfilterCheck(toAdd, bitvector1)) {
+											return null;
+										}
+										tupleList.add(toAdd);
 									}
 
 								}
 							}
 						}
-						tuple = TupleFactory.getInstance().newTuple(tupleList.size());
+						tuple = TupleFactory.getInstance().newTuple(
+								tupleList.size());
 						int tuplePos = 0;
 						for (String elem : tupleList) {
 							tuple.set(tuplePos, elem);
@@ -697,20 +759,20 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 					} else {
 						// kommt nicht vor
 						// It's a column so set the value
-//						byte[] cell = result.getValue(
-//								columnInfo.getColumnFamily(),
-//								columnInfo.getColumnName());
-//						DataByteArray value = cell == null ? null
-//								: new DataByteArray(cell);
-//						tuple.set(currentIndex, value);
+						// byte[] cell = result.getValue(
+						// columnInfo.getColumnFamily(),
+						// columnInfo.getColumnName());
+						// DataByteArray value = cell == null ? null
+						// : new DataByteArray(cell);
+						// tuple.set(currentIndex, value);
 					}
 				}
 
-//				if (LOG.isDebugEnabled()) {
-//					for (int i = 0; i < tuple.size(); i++) {
-//						LOG.debug("tuple value:" + tuple.get(i));
-//					}
-//				}
+				// if (LOG.isDebugEnabled()) {
+				// for (int i = 0; i < tuple.size(); i++) {
+				// LOG.debug("tuple value:" + tuple.get(i));
+				// }
+				// }
 
 				return tuple;
 			}
@@ -718,6 +780,22 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 			throw new IOException(e);
 		}
 		return null;
+	}
+
+	private boolean bloomfilterCheck(String element, BitSet bitvector) {
+		if (bitvector == null) {
+			return true;
+		}
+		int hash = element.hashCode();
+		if (hash < 0) {
+			hash = hash * (-1);
+		}
+		Integer position = hash % HBaseKVMapper.VECTORSIZE;
+		if (bitvector.get(position)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	@Override

@@ -379,7 +379,40 @@ public class HBaseConnection {
 			Put row = new Put(Bytes.toBytes(row_key));
 			row.add(Bytes.toBytes(columnFamily), Bytes.toBytes(column),
 					Bytes.toBytes(value));
+			
+			String toSplit = column;
+			String elem1 = null;
+			String elem2 = null;
+			if (toSplit.contains(",")) {
+				elem1 = toSplit.substring(0, toSplit.indexOf(","));
+				elem2 = toSplit.substring(toSplit.indexOf(",") + 1,
+						toSplit.length());
+			} else {
+				elem1 = toSplit.substring(0, toSplit.length());
+			}
+			// Bloomfilter
+			if (!(elem1 == null)) {
+				int hash = elem1.hashCode();
+				if (hash < 0) {
+					hash = hash * (-1);
+				}
+				Integer position = hash % HBaseKVMapper.VECTORSIZE;
+				row.add(Bytes.toBytes("bloomfilter1"), Bytes.toBytes(position.toString()),
+						Bytes.toBytes(""));
+			}
+			
+			if (!(elem2 == null)) {
+				int hash = elem2.hashCode();
+				if (hash < 0) {
+					hash = hash * (-1);
+				}
+				Integer position = hash % HBaseKVMapper.VECTORSIZE;
+				row.add(Bytes.toBytes("bloomfilter2"), Bytes.toBytes(position.toString()),
+						Bytes.toBytes(""));
+			}
+			
 			table.put(row);
+
 		}
 	}
 
@@ -524,7 +557,7 @@ public class HBaseConnection {
 	 * @return the row with column
 	 */
 	public static Result getRowWithColumn(final String tablename,
-			final String row_key, final String cf, final String column) {
+			final String row_key, final String cf) {
 		try {
 			init();
 			HTable table = hTables.get(tablename);
@@ -534,7 +567,7 @@ public class HBaseConnection {
 			}
 			Get g = new Get(Bytes.toBytes(row_key));
 			g.addFamily(cf.getBytes());
-			g.setFilter(new ColumnPrefixFilter(column.getBytes()));
+			//g.setFilter(new ColumnPrefixFilter(column.getBytes()));
 			Result result = table.get(g);
 			if (result != null) {
 				return result;
@@ -574,5 +607,12 @@ public class HBaseConnection {
 	 */
 	public static Configuration getConfiguration() {
 		return configuration;
+	}
+	
+	public static FileSystem getHdfs_fileSystem() throws IOException {
+		if (hdfs_fileSystem == null) {
+			hdfs_fileSystem = FileSystem.get(configuration);
+		}
+		return hdfs_fileSystem;
 	}
 }

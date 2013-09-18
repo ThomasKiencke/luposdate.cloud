@@ -1,9 +1,11 @@
 package lupos.cloud.pig;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import lupos.cloud.pig.operator.PigFilterOperator;
+import lupos.cloud.testing.CloudBitvector;
 import lupos.datastructures.items.Item;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
@@ -32,7 +34,9 @@ public class JoinInformation {
 
 	ArrayList<PigFilterOperator> appliedFilters = new ArrayList<PigFilterOperator>();
 
-	private Object tablename;
+	private String tablename;
+
+	private HashMap<String, ArrayList<CloudBitvector>> bitVectors = new HashMap<String, ArrayList<CloudBitvector>>();
 
 	public JoinInformation() {
 		this.name = "INTERMEDIATE_BAG_" + JoinInformation.idCounter;
@@ -159,6 +163,32 @@ public class JoinInformation {
 		return result.toString();
 	}
 
+//	public String getFirstLiteral() {
+//		boolean first = true;
+//		for (Item item : triplePattern.getItems()) {
+//			if (!item.isVariable()) {
+//				if (first) {
+//					return item.toString();
+//				}
+//				first = false;
+//			}
+//		}
+//		return null;
+//	}
+//
+//	public String getSecondLiteral() {
+//		boolean first = true;
+//		for (Item item : triplePattern.getItems()) {
+//			if (!item.isVariable()) {
+//				if (!first) {
+//					return item.toString();
+//				}
+//				first = false;
+//			}
+//		}
+//		return null;
+//	}
+
 	public boolean isVariableOptional(String var) {
 		return optionalJoinElements.contains(var);
 	}
@@ -219,7 +249,7 @@ public class JoinInformation {
 		return true;
 	}
 
-	public Object getTablename() {
+	public String getTablename() {
 		return tablename;
 	}
 
@@ -272,4 +302,46 @@ public class JoinInformation {
 			this.optionalJoinElements.add(var);
 		}
 	}
+
+	public void addBitvector(String var, CloudBitvector vector) {
+		ArrayList<CloudBitvector> list = this.bitVectors.get(var);
+		if (list == null) {
+			list = new ArrayList<CloudBitvector>();
+			list.add(vector);
+			this.bitVectors.put(var, list);
+		} else {
+			list.add(vector);
+		}
+	}
+
+	public HashMap<String, ArrayList<CloudBitvector>> getBitVectors() {
+		return bitVectors;
+	}
+
+	public ArrayList<CloudBitvector> getBitVector(String var) {
+		return bitVectors.get(var);
+	}
+	
+	public void setBitVectors(
+			HashMap<String, ArrayList<CloudBitvector>> bitVectors) {
+		this.bitVectors = bitVectors;
+	}
+
+	public void addBitvector(String var, ArrayList<CloudBitvector> bitVectors) {
+		ArrayList<CloudBitvector> list = this.bitVectors.get(var);
+		if (list == null) {
+			list = new ArrayList<CloudBitvector>();
+			for (CloudBitvector v : bitVectors) {
+				list.add(v);
+			}
+			this.bitVectors.put(var, list);
+
+		} else {
+			for (CloudBitvector v : bitVectors) {
+				list.add(v);
+			}
+			this.bitVectors.put(var, list);
+		}
+	}
+
 }

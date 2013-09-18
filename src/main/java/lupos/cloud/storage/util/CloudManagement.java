@@ -36,10 +36,12 @@ import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
 import lupos.cloud.hbase.HBaseTriple;
 import lupos.cloud.pig.PigQuery;
+import lupos.cloud.testing.BitvectorManager;
 import lupos.datastructures.bindings.Bindings;
 import lupos.datastructures.items.Variable;
 import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.datastructures.queryresult.QueryResult;
+import lupos.misc.BitVector;
 import lupos.misc.util.ImmutableIterator;
 
 /**
@@ -60,7 +62,7 @@ public class CloudManagement {
 	/** The cur variable list. */
 	ArrayList<String> curVariableList = null;
 
-	boolean PRINT_PIGLATIN_PROGRAMM = true;
+	boolean PRINT_PIGLATIN_PROGRAMM = false;
 
 	boolean TESTING_MODE = false;
 
@@ -145,6 +147,13 @@ public class CloudManagement {
 		QueryResult result = null;
 		long start = System.currentTimeMillis();
 		try {
+			long start2 = System.currentTimeMillis();
+			BitvectorManager.generateBitvector(query.getBitvectors());
+			long stop2 = System.currentTimeMillis();
+			System.out.println("Bitvector generated in "
+					+ ((stop2 - start2) ) + "ms!");
+			
+			
 			if (PRINT_PIGLATIN_PROGRAMM) {
 				System.out.println("Generated PigLatin Program:");
 				System.out.println(query.getPigLatin());
