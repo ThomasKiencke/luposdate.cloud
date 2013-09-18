@@ -32,6 +32,7 @@ public class Test2 {
 		Bloom b;
 		JsonMetadata c;
 		JobControlCompiler d;
+//		org.apache.hadoop.hbase.filter.FuzzyRowFilter
 
 	}
 

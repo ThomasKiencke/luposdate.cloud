@@ -112,7 +112,6 @@ import org.apache.pig.impl.util.Utils;
 import org.apache.pig.impl.util.ObjectSerializer;
 import org.apache.pig.impl.util.UDFContext;
 
-
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 
@@ -171,9 +170,12 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 	private ResourceSchema schema_;
 	private RequiredFieldList requiredFieldList;
 
-	private DataByteArray bloomfilter;
 
-	private Object bitvector;
+	private BitSet bitvector1 = null;
+	private BitSet bitvector2 = null;
+	private FileSystem fs = null;
+	private Path bitvectorPath1 = null;
+	private Path bitvectorPath2 = null;
 
 	private static void populateValidOptions() {
 		validOptions_.addOption("loadKey", false, "Load Key");
@@ -237,27 +239,49 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 			throws ParseException, IOException {
 		this(columnList, "", rowKey);
 	}
+	public HBaseLoadUDF(String columnList, String optString, String rowKey,
+			String bitvectorPath) throws ParseException, IOException {
+		this(columnList, optString, rowKey);
 
-//	public HBaseLoadUDF(String columnList, String optString, String rowKey,
-//			String bitvectorPath) throws ParseException, IOException {
-//		this(columnList, optString, rowKey);
-//
-//		FSDataInputStream input = FileSystem.get(HBaseConfiguration.create())
-//				.open(new Path(bitvectorPath));
-//
-//
-//		bitvector = fromByteArray( ByteStreams.toByteArray(input));
-//	}
-//
-//	public static BitSet fromByteArray(byte[] bytes) {
-//		BitSet bits = new BitSet();
-//		for (int i = 0; i < bytes.length * 8; i++) {
-//			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
-//				bits.set(i);
-//			}
-//		}
-//		return bits;
-//	}
+		this.bitvectorPath1 = new Path(bitvectorPath);
+
+	}
+
+	public HBaseLoadUDF(String columnList, String optString, String rowKey,
+			String bitvectorPath1, String bitvectorPath2)
+			throws ParseException, IOException {
+		this(columnList, optString, rowKey);
+
+		this.bitvectorPath1 = new Path(bitvectorPath1);
+		this.bitvectorPath2 = new Path(bitvectorPath2);
+		
+	}
+
+	private BitSet readBloomfilter(Path path) {
+		BitSet bitvector = null;
+		try {
+			if (fs == null) {
+				fs = FileSystem.get(HBaseConfiguration.create());
+			}
+			FSDataInputStream input = fs.open(path);
+			bitvector = fromByteArray(ByteStreams.toByteArray(input));
+//			bitvector = longToBitSet(input.readLong());
+			input.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return bitvector;
+	}
+
+	public static BitSet fromByteArray(byte[] bytes) {
+		BitSet bits = new BitSet();
+		for (int i = 0; i < bytes.length * 8; i++) {
+			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
+				bits.set(i);
+			}
+		}
+		return bits;
+	}
 
 	/**
 	 * Constructor. Construct a HBase Table LoadFunc and StoreFunc to load or

@@ -42,6 +42,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
+import lupos.cloud.hbase.filter.BitvectorFilter;
 
 import org.joda.time.DateTime;
 import org.apache.commons.cli.CommandLine;
@@ -174,7 +175,7 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 	private FileSystem fs = null;
 	private Path bitvectorPath1 = null;
 	private Path bitvectorPath2 = null;
-	
+
 	private static void populateValidOptions() {
 		validOptions_.addOption("loadKey", false, "Load Key");
 		validOptions_.addOption("gt", true,
@@ -233,27 +234,27 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 	 *             when unable to parse arguments
 	 * @throws IOException
 	 */
-	public HBaseLoadBagUDF(String columnList, String rowKey)
-			throws ParseException, IOException {
-		this(columnList, "", rowKey);
-	}
+//	public HBaseLoadBagUDF(String columnList, String rowKey)
+//			throws ParseException, IOException {
+//		this(columnList, "", rowKey, null, null);
+//	}
 
 	public HBaseLoadBagUDF(String columnList, String optString, String rowKey,
 			String bitvectorPath) throws ParseException, IOException {
-		this(columnList, optString, rowKey);
+		this(columnList, optString, rowKey, new Path(bitvectorPath), null);
 
-		this.bitvectorPath1 = new Path(bitvectorPath);
+		// this.bitvectorPath1 = new Path(bitvectorPath);
 
 	}
 
 	public HBaseLoadBagUDF(String columnList, String optString, String rowKey,
 			String bitvectorPath1, String bitvectorPath2)
 			throws ParseException, IOException {
-		this(columnList, optString, rowKey);
+		this(columnList, optString, rowKey, new Path(bitvectorPath1), new Path(bitvectorPath2));
 
-		this.bitvectorPath1 = new Path(bitvectorPath1);
-		this.bitvectorPath2 = new Path(bitvectorPath2);
-		
+//		this.bitvectorPath1 = new Path(bitvectorPath1);
+//		this.bitvectorPath2 = new Path(bitvectorPath2);
+
 	}
 
 	private BitSet readBloomfilter(Path path) {
@@ -264,7 +265,23 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 			}
 			FSDataInputStream input = fs.open(path);
 			bitvector = fromByteArray(ByteStreams.toByteArray(input));
-//			bitvector = longToBitSet(input.readLong());
+			// bitvector = longToBitSet(input.readLong());
+			input.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return bitvector;
+	}
+
+	private byte[] readBloomfilterToByte(Path path) {
+		byte[] bitvector = null;
+		try {
+			if (fs == null) {
+				fs = FileSystem.get(new Configuration());
+			}
+			FSDataInputStream input = fs.open(path);
+			bitvector = ByteStreams.toByteArray(input);
+			// bitvector = longToBitSet(input.readLong());
 			input.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -281,20 +298,6 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 		}
 		return bits;
 	}
-	
-	public static BitSet longToBitSet(long value) {
-		BitSet bits = new BitSet();
-		int index = 0;
-		while (value != 0L) {
-			if (value % 2L != 0) {
-				bits.set(index);
-			}
-			++index;
-			value = value >>> 1;
-		}
-		return bits;
-	}
-
 
 	/**
 	 * Constructor. Construct a HBase Table LoadFunc and StoreFunc to load or
@@ -330,9 +333,13 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 	 * @throws ParseException
 	 * @throws IOException
 	 */
-	public HBaseLoadBagUDF(String columnList, String optString, String rowKey)
-			throws ParseException, IOException {
+	public HBaseLoadBagUDF(String columnList, String optString, String rowKey,
+			Path bitvectorPath1, Path bitvectorPath2) throws ParseException,
+			IOException {
 		populateValidOptions();
+
+		this.bitvectorPath1 = bitvectorPath1;
+		this.bitvectorPath2 = bitvectorPath2;
 
 		String[] optsArr = optString.split(" ");
 		try {
@@ -470,7 +477,21 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 	}
 
 	private void initScan(String rowKey) throws IOException {
+		byte[] bvector1 = readBloomfilterToByte(bitvectorPath1);
+		byte[] bvector2 = "0".getBytes();
+		if (bitvectorPath2 != null) {
+			bvector2 = readBloomfilterToByte(bitvectorPath2);
+
+		}
+
 		scan = new Scan();
+		
+		if (bitvectorPath2 == null) {
+			scan.setFilter(new BitvectorFilter(bvector1));
+		} else {
+			scan.setFilter(new BitvectorFilter(bvector1, bvector2));
+		}
+
 		// scan.setRaw(true);
 
 		scan.setBatch(1);
@@ -682,13 +703,13 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 	@Override
 	public Tuple getNext() throws IOException {
 		try {
-			if (bitvector1 == null) {
-				bitvector1 = readBloomfilter(bitvectorPath1);
-				if (bitvectorPath2 != null) {
-					bitvector2 = readBloomfilter(bitvectorPath2);
-				}
-			}
-			
+			// if (bitvector1 == null) {
+			// bitvector1 = readBloomfilter(bitvectorPath1);
+			// if (bitvectorPath2 != null) {
+			// bitvector2 = readBloomfilter(bitvectorPath2);
+			// }
+			// }
+
 			if (reader.nextKeyValue()) {
 				Result result = (Result) reader.getCurrentValue();
 
@@ -736,15 +757,18 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 												.hasPrefixMatch(quantifier)) {
 									String toSplit = Bytes.toString(quantifier);
 									if (toSplit.contains(",")) {
-//										boolean element1IsNecessary = true;
-//										boolean element2IsNecessary = true;
+										// boolean element1IsNecessary = true;
+										// boolean element2IsNecessary = true;
 										// 1
 										String toAdd1 = toSplit.substring(0,
 												toSplit.indexOf(","));
-										if (bitvector1 != null  && !isElementPartOfBitvector(toAdd1, bitvector1)) {
-//											element1IsNecessary = false;
-											return TupleFactory.getInstance().newTuple(tupleList.size());
-										}
+										// if (bitvector1 != null
+										// && !isElementPartOfBitvector(
+										// toAdd1, bitvector1)) {
+										// element1IsNecessary = false;
+										// return TupleFactory.getInstance()
+										// .newTuple(tupleList.size());
+										// }
 										tupleList.add(toAdd1);
 
 										// 2
@@ -752,23 +776,31 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 												toSplit.indexOf(",") + 1,
 												toSplit.length());
 
-										if (bitvector2 != null && !isElementPartOfBitvector(toAdd2, bitvector2)) {
-//											element2IsNecessary = false;
-											return TupleFactory.getInstance().newTuple(tupleList.size());
-										}										
+										// if (bitvector2 != null
+										// && !isElementPartOfBitvector(
+										// toAdd2, bitvector2)) {
+										// // element2IsNecessary = false;
+										// return TupleFactory.getInstance()
+										// .newTuple(tupleList.size());
+										// }
 										tupleList.add(toAdd2);
-										
-//										if (!element1IsNecessary || !element2IsNecessary) {
-////											return null;
-//											return TupleFactory.getInstance().newTuple(0);
-//										}
+
+										// if (!element1IsNecessary ||
+										// !element2IsNecessary) {
+										// // return null;
+										// return
+										// TupleFactory.getInstance().newTuple(0);
+										// }
 									} else {
 										String toAdd = Bytes
 												.toString(quantifier);
-										if (bitvector1 != null  && !isElementPartOfBitvector(toAdd, bitvector1)) {
-//											return null;
-											return TupleFactory.getInstance().newTuple(tupleList.size());
-										}
+										// if (bitvector1 != null
+										// && !isElementPartOfBitvector(
+										// toAdd, bitvector1)) {
+										// // return null;
+										// return TupleFactory.getInstance()
+										// .newTuple(tupleList.size());
+										// }
 										tupleList.add(toAdd);
 									}
 
@@ -808,6 +840,7 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 		return null;
 	}
 
+	@Deprecated
 	private boolean isElementPartOfBitvector(String element, BitSet bitvector) {
 		int hash = element.hashCode();
 		if (hash < 0) {
