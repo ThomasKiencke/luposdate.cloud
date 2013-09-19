@@ -487,9 +487,9 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 		scan = new Scan();
 		
 		if (bitvectorPath2 == null) {
-			scan.setFilter(new BitvectorFilter(bvector1));
+//			scan.setFilter(new BitvectorFilter(bvector1));
 		} else {
-			scan.setFilter(new BitvectorFilter(bvector1, bvector2));
+//			scan.setFilter(new BitvectorFilter(bvector1, bvector2));
 		}
 
 		// scan.setRaw(true);

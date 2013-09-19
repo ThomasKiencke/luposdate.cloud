@@ -1,6 +1,7 @@
 package lupos.cloud.hbase.bulkLoad;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
@@ -12,6 +13,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.bloom.HashFunction;
 import org.apache.hadoop.util.bloom.Key;
 import org.apache.hadoop.util.hash.Hash;
+import org.python.antlr.PythonParser.return_stmt_return;
 
 import au.com.bytecode.opencsv.CSVParser;
 
@@ -29,7 +31,7 @@ public class HBaseKVMapper extends
 	/** The table name. */
 	String tableName = "";
 	
-	public static final int VECTORSIZE = 10000;
+	public static final int VECTORSIZE = 10000000;
 
 	/*
 	 * (non-Javadoc)
@@ -96,7 +98,7 @@ public class HBaseKVMapper extends
 			}
 			Integer position = hash % VECTORSIZE;
 			KeyValue kv2 = new KeyValue(ibKey.get(), "bloomfilter1".getBytes(),
-					position.toString().getBytes(), "".getBytes());
+					IntegerToByteArray(position), "".getBytes());
 			context.write(ibKey, kv2);
 		}
 		
@@ -107,12 +109,16 @@ public class HBaseKVMapper extends
 			}
 			Integer position = hash % VECTORSIZE;
 			KeyValue kv2 = new KeyValue(ibKey.get(), "bloomfilter2".getBytes(),
-					position.toString().getBytes(), "".getBytes());
+					IntegerToByteArray(position), "".getBytes());
 			context.write(ibKey, kv2);
 		}
 
 		
 		context.getCounter("HBaseKVMapper", "TRIPLE_IMPORTED").increment(1);
 
+	}
+	
+	public static byte[] IntegerToByteArray(Integer pos) {
+		return ByteBuffer.allocate(4).putInt(pos).array();
 	}
 }

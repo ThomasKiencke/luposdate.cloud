@@ -35,7 +35,7 @@ public class PigLimitOperator implements IPigOperator {
 		newJoin.setJoinElements(curJoin.getJoinElements());
 		newJoin.addAppliedFilters(curJoin.getAppliedFilters());
 		newJoin.mergeOptionalVariables(curJoin);
-		newJoin.setBitVectors(curJoin.getBitVectors());
+		newJoin.addBitVectors(curJoin.getBitVectors());
 
 		intermediateJoins.remove(curJoin);
 		intermediateJoins.add(newJoin);

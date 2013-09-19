@@ -41,6 +41,8 @@ import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
+
 import org.joda.time.DateTime;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -170,12 +172,12 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 	private ResourceSchema schema_;
 	private RequiredFieldList requiredFieldList;
 
-
 	private BitSet bitvector1 = null;
 	private BitSet bitvector2 = null;
 	private FileSystem fs = null;
 	private Path bitvectorPath1 = null;
 	private Path bitvectorPath2 = null;
+	private boolean bitVectorIsLoaded = false;
 
 	private static void populateValidOptions() {
 		validOptions_.addOption("loadKey", false, "Load Key");
@@ -239,6 +241,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 			throws ParseException, IOException {
 		this(columnList, "", rowKey);
 	}
+
 	public HBaseLoadUDF(String columnList, String optString, String rowKey,
 			String bitvectorPath) throws ParseException, IOException {
 		this(columnList, optString, rowKey);
@@ -254,7 +257,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 
 		this.bitvectorPath1 = new Path(bitvectorPath1);
 		this.bitvectorPath2 = new Path(bitvectorPath2);
-		
+
 	}
 
 	private BitSet readBloomfilter(Path path) {
@@ -265,11 +268,17 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 			}
 			FSDataInputStream input = fs.open(path);
 			bitvector = fromByteArray(ByteStreams.toByteArray(input));
-//			bitvector = longToBitSet(input.readLong());
+			// bitvector = longToBitSet(input.readLong());
 			input.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		// Wenn alle bits 1 sind, ignoriere den bitvector
+		if (bitvector.cardinality() == bitvector.size()) {
+			bitvector = null;
+		}	
+		this.bitVectorIsLoaded = true;
 		return bitvector;
 	}
 
@@ -667,6 +676,13 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 	@Override
 	public Tuple getNext() throws IOException {
 		try {
+			if (!bitVectorIsLoaded && bitvectorPath1 != null) {
+				bitvector1 = readBloomfilter(bitvectorPath1);
+				if (bitvectorPath2 != null) {
+					bitvector2 = readBloomfilter(bitvectorPath2);
+				}
+			}
+
 			if (reader.nextKeyValue()) {
 				ImmutableBytesWritable rowKey = (ImmutableBytesWritable) reader
 						.getCurrentKey();
@@ -706,24 +722,42 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 
 						if (cfResults != null) {
 							for (byte[] quantifier : cfResults.keySet()) {
-								String bla = Bytes.toString(quantifier);
-								// We need to check against the prefix filter to
-								// see if this value should be included. We
-								// can't
-								// just rely on the server-side filter, since a
-								// user could specify multiple CF filters for
-								// the
-								// same CF.
-								if (columnInfo.getColumnPrefix() == null
-										|| columnInfo
-												.hasPrefixMatch(quantifier)) {
+								// bitfilter
+								if (bitvector1 != null & bitvector2 != null) {
+									String toSplit = Bytes.toString(quantifier);
+									if (toSplit.contains(",")) {
+										String toAdd1 = toSplit.substring(0,
+												toSplit.indexOf(","));
+										if (bitvector1 != null
+												&& !isElementPartOfBitvector(
+														toAdd1, bitvector1)) {
+											continue;
+										}
 
-									byte[] cell = cfResults.get(quantifier);
-									DataByteArray value = cell == null ? null
-											: new DataByteArray(cell);
-									cfMap.put(Bytes.toString(quantifier), value);
-									// columnList.add(Bytes.toString(quantifier));
+										// 2
+										String toAdd2 = toSplit.substring(
+												toSplit.indexOf(",") + 1,
+												toSplit.length());
+
+										if (bitvector2 != null
+												&& !isElementPartOfBitvector(
+														toAdd2, bitvector2)) {
+											continue;
+										}
+									} else {
+										String toAdd = Bytes
+												.toString(quantifier);
+										if (bitvector1 != null
+												&& !isElementPartOfBitvector(
+														toAdd, bitvector1)) {
+											continue;
+										}
+									}
 								}
+
+								// add
+								cfMap.put(Bytes.toString(quantifier), null);
+
 							}
 						}
 						tuple.set(currentIndex, cfMap);
@@ -750,6 +784,19 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 			throw new IOException(e);
 		}
 		return null;
+	}
+
+	private boolean isElementPartOfBitvector(String element, BitSet bitvector) {
+		int hash = element.hashCode();
+		if (hash < 0) {
+			hash = hash * (-1);
+		}
+		Integer position = hash % HBaseKVMapper.VECTORSIZE;
+		if (bitvector.get(position)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	@Override

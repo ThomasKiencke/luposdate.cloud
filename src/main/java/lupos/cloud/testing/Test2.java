@@ -2,6 +2,7 @@ package lupos.cloud.testing;
 
 import java.util.LinkedList;
 
+import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler;
 import org.apache.pig.builtin.Bloom;
 import org.apache.pig.builtin.BuildBloom;
@@ -32,6 +33,7 @@ public class Test2 {
 		Bloom b;
 		JsonMetadata c;
 		JobControlCompiler d;
+		SingleColumnValueFilter asd;
 //		org.apache.hadoop.hbase.filter.FuzzyRowFilter
 
 	}

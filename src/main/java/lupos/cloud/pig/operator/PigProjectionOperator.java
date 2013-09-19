@@ -89,7 +89,7 @@ public class PigProjectionOperator implements IPigOperator {
 
 					newJoin.mergeOptionalVariables(curJoin);
 					newJoin.addAppliedFilters(curJoin.getAppliedFilters());
-					newJoin.setBitVectors(curJoin.getBitVectors());
+					newJoin.addBitVectors(curJoin.getBitVectors());
 
 					intermediateJoins.remove(curJoin);
 					intermediateJoins.add(newJoin);

@@ -2,6 +2,7 @@ package lupos.cloud.pig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import lupos.cloud.pig.operator.IPigOperator;
 import lupos.cloud.pig.operator.PigDistinctOperator;
@@ -170,7 +171,7 @@ public class PigQuery {
 		this.pigLatin.append(toAdd);
 	}
 
-	public HashMap<String, ArrayList<CloudBitvector>> getBitvectors() {
+	public HashMap<String, HashSet<CloudBitvector>> getBitvectors() {
 		return this.intermediateBags.get(0).getBitVectors();
 	}
 }

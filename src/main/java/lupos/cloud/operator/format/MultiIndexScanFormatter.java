@@ -80,8 +80,8 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 		// ArrayList<BasicOperator> containerOperations = new
 		// ArrayList<BasicOperator>();
 		for (Integer id : container.getContainerList().keySet()) {
-			LinkedList<BasicOperator> curList = container.getContainerList().get(
-					id);
+			LinkedList<BasicOperator> curList = container.getContainerList()
+					.get(id);
 			ArrayList<JoinInformation> multiInputist = new ArrayList<JoinInformation>();
 			for (BasicOperator op : curList) {
 				if (op instanceof IndexScanContainer) {
@@ -113,31 +113,34 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 								+ container.getMappingTree().get(id).getClass());
 			}
 
-//			HashSet<String> variables = new HashSet<String>();
+			// HashSet<String> variables = new HashSet<String>();
 			for (JoinInformation toRemove : multiInputist) {
-//				variables.addAll(toRemove.getJoinElements());
+				// variables.addAll(toRemove.getJoinElements());
 				newJoin.addAppliedFilters(toRemove.getAppliedFilters());
 				pigQuery.removeIntermediateBags(toRemove);
+				for (String var : toRemove.getJoinElements()) {
+					newJoin.addBitvector(var, toRemove.getBitVector(var));
+				}
 			}
 
-//			newJoin.setJoinElements(new ArrayList<String>(variables));
+			// newJoin.setJoinElements(new ArrayList<String>(variables));
 			newJoin.mergeOptionalVariables(multiInputist);
-			
+
 			pigQuery.append(removeDuplicatedAliases(newJoin));
-			
+
 			pigQuery.addIntermediateBags(newJoin);
 		}
 
 		pigQuery.addAndExecuteOperation(container.getOperators());
 		return pigQuery.getLastAddedBag();
 	}
-	
+
 	public String removeDuplicatedAliases(JoinInformation oldJoin) {
 		StringBuilder result = new StringBuilder();
 		// prüfe ob es doppelte Aliases gibt und entferne diese
 		ArrayList<String> newElements = new ArrayList<String>();
 		boolean foundDuplicate = false;
-		
+
 		for (String elem : oldJoin.getJoinElements()) {
 			if (newElements.contains(elem)) {
 				foundDuplicate = true;
@@ -160,7 +163,7 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 			result.append(";\n");
 			oldJoin.setJoinElements(newElements);
 		}
-		
+
 		return result.toString();
 
 	}

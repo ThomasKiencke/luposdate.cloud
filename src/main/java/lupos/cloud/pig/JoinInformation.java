@@ -36,7 +36,7 @@ public class JoinInformation {
 
 	private String tablename;
 
-	private HashMap<String, ArrayList<CloudBitvector>> bitVectors = new HashMap<String, ArrayList<CloudBitvector>>();
+	private HashMap<String, HashSet<CloudBitvector>> bitVectors = new HashMap<String, HashSet<CloudBitvector>>();
 
 	public JoinInformation() {
 		this.name = "INTERMEDIATE_BAG_" + JoinInformation.idCounter;
@@ -304,9 +304,9 @@ public class JoinInformation {
 	}
 
 	public void addBitvector(String var, CloudBitvector vector) {
-		ArrayList<CloudBitvector> list = this.bitVectors.get(var);
+		HashSet<CloudBitvector> list = this.bitVectors.get(var);
 		if (list == null) {
-			list = new ArrayList<CloudBitvector>();
+			list = new HashSet<CloudBitvector>();
 			list.add(vector);
 			this.bitVectors.put(var, list);
 		} else {
@@ -314,23 +314,42 @@ public class JoinInformation {
 		}
 	}
 
-	public HashMap<String, ArrayList<CloudBitvector>> getBitVectors() {
+	public HashMap<String, HashSet<CloudBitvector>> getBitVectors() {
 		return bitVectors;
 	}
 
-	public ArrayList<CloudBitvector> getBitVector(String var) {
+	public HashSet<CloudBitvector> getBitVector(String var) {
 		return bitVectors.get(var);
 	}
 	
-	public void setBitVectors(
-			HashMap<String, ArrayList<CloudBitvector>> bitVectors) {
-		this.bitVectors = bitVectors;
+	public void addBitVectors(
+			HashMap<String, HashSet<CloudBitvector>> bitVectors) {
+		for (String key : bitVectors.keySet()) {
+			HashSet<CloudBitvector> list = this.bitVectors.get(key);
+			if (list == null) {
+				list = new HashSet<CloudBitvector>();
+				for (CloudBitvector v : bitVectors.get(key)) {
+					list.add(v);
+				}
+				this.bitVectors.put(key, list);
+
+			} else {
+				for (CloudBitvector v : bitVectors.get(key)) {
+					list.add(v);
+				}
+				this.bitVectors.put(key, list);
+			}
+		}
 	}
 
-	public void addBitvector(String var, ArrayList<CloudBitvector> bitVectors) {
-		ArrayList<CloudBitvector> list = this.bitVectors.get(var);
+	public void addBitvector(String var, HashSet<CloudBitvector> bitVectors) {
+		if (bitVectors == null) {
+			return;
+		}
+		
+		HashSet<CloudBitvector> list = this.bitVectors.get(var);
 		if (list == null) {
-			list = new ArrayList<CloudBitvector>();
+			list = new HashSet<CloudBitvector>();
 			for (CloudBitvector v : bitVectors) {
 				list.add(v);
 			}

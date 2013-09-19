@@ -3,6 +3,7 @@ package lupos.cloud.hbase;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -397,7 +398,7 @@ public class HBaseConnection {
 					hash = hash * (-1);
 				}
 				Integer position = hash % HBaseKVMapper.VECTORSIZE;
-				row.add(Bytes.toBytes("bloomfilter1"), Bytes.toBytes(position.toString()),
+				row.add(Bytes.toBytes("bloomfilter1"), integerToByteArray(position),
 						Bytes.toBytes(""));
 			}
 			
@@ -407,13 +408,17 @@ public class HBaseConnection {
 					hash = hash * (-1);
 				}
 				Integer position = hash % HBaseKVMapper.VECTORSIZE;
-				row.add(Bytes.toBytes("bloomfilter2"), Bytes.toBytes(position.toString()),
+				row.add(Bytes.toBytes("bloomfilter2"), integerToByteArray(position),
 						Bytes.toBytes(""));
 			}
 			
 			table.put(row);
 
 		}
+	}
+	
+	public static byte[] integerToByteArray(Integer pos) {
+		return ByteBuffer.allocate(4).putInt(pos).array();
 	}
 
 	public static void startBulkLoad() throws IOException {

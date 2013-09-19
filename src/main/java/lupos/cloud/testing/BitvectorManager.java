@@ -5,10 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.NavigableMap;
 
 import lupos.cloud.hbase.HBaseConnection;
@@ -24,7 +26,7 @@ public class BitvectorManager {
 	JoinInformation currentSet = null;
 
 	public static void generateBitvector(
-			HashMap<String, ArrayList<CloudBitvector>> bitvectors)
+			HashMap<String, HashSet<CloudBitvector>> bitvectors)
 			throws IOException {
 		System.out.println("# bitvectors: " + bitvectors.size());
 		for (String var : bitvectors.keySet()) {
@@ -35,22 +37,33 @@ public class BitvectorManager {
 				bitSetList.add(resultToBitSet(res, bv.getColumnFamily()));
 			}
 
-			BitSet bitVector = mergeBitSet(bitSetList);
+			boolean bitVectorIgnored = false;
+			BitSet bitVector = null;
 
-			// write Bitvector to hdfs
-			// FSDataOutputStream output = HBaseConnection.getHdfs_fileSystem()
-			// .create(new Path("/tmp/cloudBloomfilter_"
-			// + var.replace("?", "")));
-			// output.write("blaaa".getBytes());
-			// output.flush();
+			// Wenn nur ein bitvector vorahnden ist ignroriere diesen
+			if (bitSetList.size() == 1) {
+				bitVector = new BitSet(HBaseKVMapper.VECTORSIZE);
+				bitVector.set(0, bitVector.length());
+				bitVectorIgnored = true;
+			} else {
+				bitVector = mergeBitSet(bitvectors.get(var), var, bitSetList);
+			}
+
+			System.out.print("bitvectorsize for " + var + ": ");
+			if (bitVectorIgnored || bitVector.cardinality() == bitVector.size()) {
+				System.out.print(" vector ignored");
+			} else {
+				System.out.print(bitVector.cardinality());
+			}
+			System.out.println();
 
 			Path local = new Path("cloudBloomfilter_" + var.replace("?", ""));
-			Path remote = new Path("/tmp/cloudBloomfilter_" + var.replace("?", ""));
+			Path remote = new Path("/tmp/cloudBloomfilter_"
+					+ var.replace("?", ""));
 			writeByteToDisk(toByteArray(bitVector), local);
-			HBaseConnection.getHdfs_fileSystem().copyFromLocalFile(true, true, local, remote);
+			HBaseConnection.getHdfs_fileSystem().copyFromLocalFile(true, true,
+					local, remote);
 			new File(local.getName()).delete();
-			System.out.print("Bitvectorsize for " + var + ": ");
-			printPos(bitVector);
 		}
 
 	}
@@ -79,23 +92,35 @@ public class BitvectorManager {
 		BitSet bitvector = new BitSet(HBaseKVMapper.VECTORSIZE);
 		if (cfResults != null) {
 			for (byte[] entry : cfResults.keySet()) {
-				Integer pos = Integer.parseInt(new String(entry));
+				Integer pos = byteArrayToInteger(entry);
 				bitvector.set(pos);
 			}
 		}
 		return bitvector;
 	}
-	
-	public static void writeByteToDisk(byte[] toWrite, Path path) throws IOException {
+
+	private static Integer byteArrayToInteger(byte[] arr) {
+		return ByteBuffer.wrap(arr).getInt();
+	}
+
+	public static void writeByteToDisk(byte[] toWrite, Path path)
+			throws IOException {
 		FileOutputStream fos = new FileOutputStream(path.getName());
 		fos.write(toWrite);
 		fos.flush();
 		fos.close();
 	}
 
-	public static BitSet mergeBitSet(ArrayList<BitSet> bitSetList)
+	public static BitSet mergeBitSet(HashSet<CloudBitvector> hashSet, String var, ArrayList<BitSet> bitSetList)
 			throws IOException {
+		System.out.println("\n--- Merge BitSet for " + var + " ----");
 		BitSet bitvector = new BitSet(HBaseKVMapper.VECTORSIZE);
+		int j = 0;
+		ArrayList<CloudBitvector> list = new ArrayList<CloudBitvector>(hashSet);
+		for (BitSet bs : bitSetList) {
+			System.out.println("Size before " + bs.cardinality() + " for " + list.get(j).getRow() + " in table " + list.get(j).getTablename());
+			j++;
+		}
 		for (int i = 0; i < bitvector.size(); i++) {
 			boolean setBit = true;
 			for (BitSet bits : bitSetList) {
@@ -107,18 +132,8 @@ public class BitvectorManager {
 				bitvector.set(i);
 			}
 		}
+		System.out.println("----> after: " + bitvector.cardinality() + "\n");
 		return bitvector;
-	}
-
-	public static void printPos(BitSet bitvector) {
-		int num = 0;
-		for (int i = 0; i < bitvector.length(); i++) {
-			if (bitvector.get(i)) {
-				num++;
-				// System.out.println(i);
-			}
-		}
-		System.out.println(num);
 	}
 
 	public static BitSet getFullSetBitvector() {
