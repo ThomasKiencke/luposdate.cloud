@@ -24,6 +24,7 @@
 package lupos.cloud.storage.util;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -69,6 +70,7 @@ public class CloudManagement {
 	public static int PARALLEL_REDUCE_OPERATIONS = 5;
 
 	public double bitvectorTime = 0;
+
 	/**
 	 * Instantiates a new cloud management.
 	 */
@@ -79,8 +81,10 @@ public class CloudManagement {
 		try {
 			HBaseConnection.init();
 			pigServer = new PigServer(ExecType.MAPREDUCE);
-//			pigServer.getPigContext().getProperties().setProperty("pig.tmpfilecompression", "true");
-//			pigServer.getPigContext().getProperties().setProperty("pig.tmpfilecompression.codec", "lzo");
+			// pigServer.getPigContext().getProperties().setProperty("pig.tmpfilecompression",
+			// "true");
+			// pigServer.getPigContext().getProperties().setProperty("pig.tmpfilecompression.codec",
+			// "lzo");
 			for (String tablename : HBaseDistributionStrategy
 					.getTableInstance().getTableNames()) {
 				HBaseConnection.createTable(tablename,
@@ -151,11 +155,14 @@ public class CloudManagement {
 			long start2 = System.currentTimeMillis();
 			BitvectorManager.generateBitvector(query.getBitvectors());
 			long stop2 = System.currentTimeMillis();
-			System.out.println("Bitvector generated in "
-					+ ((stop2 - start2) / 1000 ) + "s!");
-			
+			System.out
+					.println("Bitvector generated in "
+							+ new DecimalFormat("#.##")
+									.format(((double) stop2 - (double) start2) / (double) 1000)
+											+ "s!");
+
 			bitvectorTime = (stop2 - start2) / 1000.0;
-			
+
 			if (PRINT_PIGLATIN_PROGRAMM) {
 				System.out.println("Generated PigLatin Program:");
 				System.out.println(query.getPigLatin());
@@ -283,7 +290,7 @@ public class CloudManagement {
 	public void shutdown() {
 		pigServer.shutdown();
 	}
-	
+
 	public double getBitvectorTime() {
 		return bitvectorTime;
 	}
