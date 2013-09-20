@@ -80,6 +80,7 @@ public class BitvectorManager {
 		s.setStartRow(Bytes.toBytes(row));
 		s.setStopRow(Bytes.toBytes(row + "z"));
 		s.setBatch(100000);
+		s.setCacheBlocks(false);
 		
 		// get Result and store it to BitSet
 		HTable hTable = new HTable(HBaseConnection.getConfiguration(), tablename);
