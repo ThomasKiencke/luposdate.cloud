@@ -31,7 +31,7 @@ public class HBaseKVMapper extends
 	/** The table name. */
 	String tableName = "";
 	
-	public static final int VECTORSIZE = 10000000;
+	public static final int VECTORSIZE = 10000;
 
 	/*
 	 * (non-Javadoc)

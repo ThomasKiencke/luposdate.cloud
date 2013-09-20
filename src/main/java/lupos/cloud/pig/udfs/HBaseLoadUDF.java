@@ -273,11 +273,12 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		// Wenn alle bits 1 sind, ignoriere den bitvector
-		if (bitvector.cardinality() == HBaseKVMapper.VECTORSIZE) {
+
+		// Wenn 95% der Bits im Vector gesetzt sind fuehre den Bitvector nicht
+		// aus, da der Overhead zu gross ist
+		if (((double) bitvector.cardinality()) >= ((double) HBaseKVMapper.VECTORSIZE * (double) 0.95)) {
 			bitvector = null;
-		}	
+		}
 		this.bitVectorIsLoaded = true;
 		return bitvector;
 	}
@@ -470,7 +471,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		// scan.setRaw(true);
 
 		scan.setBatch(12500);
-		scan.setCaching(30000);
+//		scan.setCaching(30000);
 
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
@@ -757,7 +758,8 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 								}
 
 								// add
-								cfMap.put(Bytes.toString(quantifier), new DataByteArray("".getBytes()));
+								cfMap.put(Bytes.toString(quantifier),
+										new DataByteArray("".getBytes()));
 								tuple.set(currentIndex, cfMap);
 							}
 						}

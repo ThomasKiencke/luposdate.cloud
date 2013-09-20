@@ -589,36 +589,36 @@ public class PigIndexScanOperator implements IPigOperator {
 	}
 
 	public String removeDuplicatedAliases(JoinInformation oldJoin) {
-		return "";
-		// StringBuilder result = new StringBuilder();
-		// // prüfe ob es doppelte Aliases gibt und entferne diese
-		// ArrayList<String> newElements = new ArrayList<String>();
-		// boolean foundDuplicate = false;
-		//
-		// for (String elem : oldJoin.getJoinElements()) {
-		// if (newElements.contains(elem)) {
-		// foundDuplicate = true;
-		// } else {
-		// newElements.add(elem);
-		// }
-		// }
-		//
-		// if (foundDuplicate) {
-		// result.append(oldJoin.getName() + " = FOREACH " + oldJoin.getName()
-		// + " GENERATE ");
-		// boolean first = true;
-		// for (String elem : newElements) {
-		// if (!first) {
-		// result.append(", ");
-		// }
-		// result.append("$" + oldJoin.getItemPos(elem));
-		// first = false;
-		// }
-		// result.append(";\n");
-		// oldJoin.setJoinElements(newElements);
-		// }
-		//
-		// return result.toString();
+//		return "";
+		StringBuilder result = new StringBuilder();
+		// prüfe ob es doppelte Aliases gibt und entferne diese
+		ArrayList<String> newElements = new ArrayList<String>();
+		boolean foundDuplicate = false;
+
+		for (String elem : oldJoin.getJoinElements()) {
+			if (newElements.contains(elem)) {
+				foundDuplicate = true;
+			} else {
+				newElements.add(elem);
+			}
+		}
+
+		if (foundDuplicate) {
+			result.append(oldJoin.getName() + " = FOREACH " + oldJoin.getName()
+					+ " GENERATE ");
+			boolean first = true;
+			for (String elem : newElements) {
+				if (!first) {
+					result.append(", ");
+				}
+				result.append("$" + oldJoin.getItemPos(elem));
+				first = false;
+			}
+			result.append(";\n");
+			oldJoin.setJoinElements(newElements);
+		}
+
+		return result.toString();
 
 	}
 }
