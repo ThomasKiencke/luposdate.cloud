@@ -51,10 +51,10 @@ public class PigScriptTester {
 		while (t.hasNext()) {
 			Tuple tupel = t.next();
 			i++;
-//			String out = tupel.toString();
+			String out = tupel.toString();
 			// if (merki < out.length())
 			// merken = out;
-//			System.out.println(out);
+			System.out.println(out);
 		}
 		System.out.println("Anzahl: " + i);
 		// System.out.println(merken);

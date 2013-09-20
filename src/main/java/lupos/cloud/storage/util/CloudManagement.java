@@ -68,6 +68,7 @@ public class CloudManagement {
 
 	public static int PARALLEL_REDUCE_OPERATIONS = 5;
 
+	public double bitvectorTime = 0;
 	/**
 	 * Instantiates a new cloud management.
 	 */
@@ -151,8 +152,9 @@ public class CloudManagement {
 			BitvectorManager.generateBitvector(query.getBitvectors());
 			long stop2 = System.currentTimeMillis();
 			System.out.println("Bitvector generated in "
-					+ ((stop2 - start2) ) + "ms!");
+					+ ((stop2 - start2) / 1000 ) + "s!");
 			
+			bitvectorTime = (stop2 - start2) / 1000.0;
 			
 			if (PRINT_PIGLATIN_PROGRAMM) {
 				System.out.println("Generated PigLatin Program:");
@@ -280,5 +282,9 @@ public class CloudManagement {
 
 	public void shutdown() {
 		pigServer.shutdown();
+	}
+	
+	public double getBitvectorTime() {
+		return bitvectorTime;
 	}
 }

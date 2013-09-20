@@ -46,25 +46,27 @@ public class QueryExecuter {
 	private static CloudEvaluator cloudEvaluator;
 	private static double[] result_time;
 	private static double[] result_queryresult;
+	private static double[] result_bitvectorTime;
 	private static boolean printResults = true;
 
 	public static void main(String[] args) throws Exception {
 		if (args.length == 0) {
 			System.exit(0);
 		}
-		
+
 		CloudManagement.PARALLEL_REDUCE_OPERATIONS = Integer.parseInt(args[0]);
 
 		cloudEvaluator = new CloudEvaluator();
-		
+
 		Bindings.instanceClass = BindingsMap.class;
-		
+
 		LiteralFactory.setType(MapType.NOCODEMAP);
-		
+
 		QueryResult.type = QueryResult.TYPE.ADAPTIVE;
 
 		result_time = new double[args.length - 1];
 		result_queryresult = new double[args.length - 1];
+		result_bitvectorTime = new double[args.length - 1];
 
 		// Tests ausführen:
 		try {
@@ -86,7 +88,8 @@ public class QueryExecuter {
 		System.out.println("CSV Format: ");
 		int i = 0;
 		for (double result : result_time) {
-			System.out.println(result + "\t" + result_queryresult[i]);
+			System.out.println(result + "\t" + result_bitvectorTime[i] + "\t"
+					+ result_queryresult[i]);
 			i++;
 		}
 	}
@@ -130,5 +133,7 @@ public class QueryExecuter {
 			System.out.print("- Results: " + resultSize);
 		}
 		System.out.println();
+		result_bitvectorTime[number] = cloudEvaluator.getCloudManagement()
+				.getBitvectorTime();
 	}
 }

@@ -229,4 +229,8 @@ public class CloudEvaluator extends QueryClient {
 	public void shutdown() {
 		cloudManagement.shutdown();
 	}
+	
+	public CloudManagement getCloudManagement() {
+		return cloudManagement;
+	}
 }

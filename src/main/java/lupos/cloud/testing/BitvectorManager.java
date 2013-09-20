@@ -19,7 +19,11 @@ import lupos.cloud.pig.JoinInformation;
 
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.util.Bytes;
 
 public class BitvectorManager {
 
@@ -31,19 +35,19 @@ public class BitvectorManager {
 		System.out.println("# bitvectors: " + bitvectors.size());
 		for (String var : bitvectors.keySet()) {
 			ArrayList<BitSet> bitSetList = new ArrayList<BitSet>();
-			for (CloudBitvector bv : bitvectors.get(var)) {
-				Result res = getBitvectorHbaseResult(bv.getTablename(),
-						bv.getColumnFamily(), bv.getRow());
-				bitSetList.add(resultToBitSet(res, bv.getColumnFamily()));
+			if (bitvectors.get(var).size() > 1) {
+				for (CloudBitvector bv : bitvectors.get(var)) {
+					bitSetList.add(getBitSetFromeHbaseTable(bv.getTablename(), bv.getRow(), bv.getColumnFamily()));
+				}
 			}
 
 			boolean bitVectorIgnored = false;
 			BitSet bitVector = null;
 
 			// Wenn nur ein bitvector vorahnden ist ignroriere diesen
-			if (bitSetList.size() == 1) {
+			if (bitSetList.size() == 0) {
 				bitVector = new BitSet(HBaseKVMapper.VECTORSIZE);
-				bitVector.set(0, bitVector.length());
+				bitVector.set(0, HBaseKVMapper.VECTORSIZE);
 				bitVectorIgnored = true;
 			} else {
 				bitVector = mergeBitSet(bitvectors.get(var), var, bitSetList);
@@ -67,16 +71,29 @@ public class BitvectorManager {
 		}
 
 	}
-
-	public static BitSet fromByteArray(byte[] bytes) {
-		BitSet bits = new BitSet();
-		for (int i = 0; i < bytes.length * 8; i++) {
-			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
-				bits.set(i);
-			}
+	
+	private static BitSet getBitSetFromeHbaseTable(String tablename, String row, String cf) throws IOException {
+		BitSet bitvector = new BitSet(HBaseKVMapper.VECTORSIZE);
+		
+		//init scan
+		Scan s = new Scan();
+		s.setStartRow(Bytes.toBytes(row));
+		s.setStopRow(Bytes.toBytes(row + "z"));
+		s.setBatch(100000);
+		
+		// get Result and store it to BitSet
+		HTable hTable = new HTable(HBaseConnection.getConfiguration(), tablename);
+		ResultScanner scanner = hTable.getScanner(s);
+		for (Result res = scanner.next(); res != null; res = scanner.next()) {
+			 addResultToBitSet(bitvector, res, cf);
 		}
-		return bits;
+		
+		// cleanup
+		hTable.close();
+		
+		return bitvector;
 	}
+
 
 	public static Result getBitvectorHbaseResult(String tablename,
 			String columnFamily, String column) throws IOException {
@@ -85,11 +102,10 @@ public class BitvectorManager {
 				.getRowWithColumn(tablename, column, columnFamily);
 	}
 
-	public static BitSet resultToBitSet(Result resultMap, String cf)
+	public static BitSet addResultToBitSet(BitSet bitvector, Result resultMap, String cf)
 			throws IOException {
 		NavigableMap<byte[], byte[]> cfResults = resultMap.getFamilyMap(cf
 				.getBytes());
-		BitSet bitvector = new BitSet(HBaseKVMapper.VECTORSIZE);
 		if (cfResults != null) {
 			for (byte[] entry : cfResults.keySet()) {
 				Integer pos = byteArrayToInteger(entry);
@@ -111,14 +127,16 @@ public class BitvectorManager {
 		fos.close();
 	}
 
-	public static BitSet mergeBitSet(HashSet<CloudBitvector> hashSet, String var, ArrayList<BitSet> bitSetList)
-			throws IOException {
+	public static BitSet mergeBitSet(HashSet<CloudBitvector> hashSet,
+			String var, ArrayList<BitSet> bitSetList) throws IOException {
 		System.out.println("\n--- Merge BitSet for " + var + " ----");
 		BitSet bitvector = new BitSet(HBaseKVMapper.VECTORSIZE);
 		int j = 0;
 		ArrayList<CloudBitvector> list = new ArrayList<CloudBitvector>(hashSet);
 		for (BitSet bs : bitSetList) {
-			System.out.println("Size before " + bs.cardinality() + " for " + list.get(j).getRow() + " in table " + list.get(j).getTablename());
+			System.out.println("Size before " + bs.cardinality() + " for "
+					+ list.get(j).getRow() + " in table "
+					+ list.get(j).getTablename());
 			j++;
 		}
 		for (int i = 0; i < bitvector.size(); i++) {

@@ -275,7 +275,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		}
 		
 		// Wenn alle bits 1 sind, ignoriere den bitvector
-		if (bitvector.cardinality() == bitvector.size()) {
+		if (bitvector.cardinality() == HBaseKVMapper.VECTORSIZE) {
 			bitvector = null;
 		}	
 		this.bitVectorIsLoaded = true;
@@ -470,6 +470,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		// scan.setRaw(true);
 
 		scan.setBatch(12500);
+		scan.setCaching(30000);
 
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
@@ -723,7 +724,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 						if (cfResults != null) {
 							for (byte[] quantifier : cfResults.keySet()) {
 								// bitfilter
-								if (bitvector1 != null & bitvector2 != null) {
+								if (bitvector1 != null && bitvector2 != null) {
 									String toSplit = Bytes.toString(quantifier);
 									if (toSplit.contains(",")) {
 										String toAdd1 = toSplit.substring(0,
@@ -756,11 +757,10 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 								}
 
 								// add
-								cfMap.put(Bytes.toString(quantifier), null);
-
+								cfMap.put(Bytes.toString(quantifier), new DataByteArray("".getBytes()));
+								tuple.set(currentIndex, cfMap);
 							}
 						}
-						tuple.set(currentIndex, cfMap);
 					} else {
 						// It's a column so set the value
 						byte[] cell = result.getValue(
