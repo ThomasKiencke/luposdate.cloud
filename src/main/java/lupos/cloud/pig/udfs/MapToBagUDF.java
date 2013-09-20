@@ -1,6 +1,7 @@
 package lupos.cloud.pig.udfs;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -31,26 +32,48 @@ public class MapToBagUDF extends EvalFunc<DataBag> implements OrderedLoadFunc {
 	 * @see org.apache.pig.EvalFunc#exec(org.apache.pig.data.Tuple)
 	 */
 	@Override
+	@SuppressWarnings("unchecked")
 	public DataBag exec(Tuple input) throws IOException {
 		try {
-			@SuppressWarnings("unchecked")
-			Map<String, Object> map = (Map<String, Object>) input.get(0);
-			DataBag result = null;
-			Tuple tuple = null;
-			if (map != null) {
-				result = bagFactory.newDefaultBag();
-				for (Entry<String, Object> entry : map.entrySet()) {
-					String toSplit = entry.getKey().toString();
-					if (toSplit.contains(",")) {
-						tuple = tupleFactory.newTuple(2);
-						tuple.set(0, toSplit.substring(0, toSplit.indexOf(",")));
-						tuple.set(1, toSplit.substring(
-								toSplit.indexOf(",") + 1, toSplit.length()));
-					} else {
-						tuple = tupleFactory.newTuple(1);
-						tuple.set(0, toSplit.substring(0, toSplit.length()));
-					}
+			int mapSize = input.size();
 
+			DataBag result = bagFactory.newDefaultBag();
+			Tuple tuple = tupleFactory.newTuple(mapSize);
+
+			if (mapSize == 1) {
+				List<String> map1 = (List<String>) input.get(0);
+				for (String entry : map1) {
+					tuple.set(0, entry);
+					result.add(tuple);
+				}
+			} else if (mapSize == 2) {
+				List<String> map1 = (List<String>) input.get(0);
+				List<String> map2 = (List<String>) input.get(1);
+				if (map1.size() != map2.size()) {
+					throw new RuntimeException(
+							"MapToBag error: size not equals");
+				}
+				int i = 0;
+				for (String entry : map1) {
+					tuple.set(0, entry);
+					tuple.set(1, map2.get(i));
+					i++;
+					result.add(tuple);
+				}
+			} else if (mapSize == 3) {
+				List<String> map1 = (List<String>) input.get(0);
+				List<String> map2 = (List<String>) input.get(1);
+				List<String> map3 = (List<String>) input.get(2);
+				if (map1.size() != map2.size()) {
+					throw new RuntimeException(
+							"MapToBag error: size not equals");
+				}
+				int i = 0;
+				for (String entry : map1) {
+					tuple.set(0, entry);
+					tuple.set(1, map2.get(i));
+					tuple.set(2, map3.get(i));
+					i++;
 					result.add(tuple);
 				}
 			}

@@ -19,6 +19,7 @@ import lupos.cloud.pig.JoinInformation;
 
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
@@ -37,7 +38,8 @@ public class BitvectorManager {
 			ArrayList<BitSet> bitSetList = new ArrayList<BitSet>();
 			if (bitvectors.get(var).size() > 1) {
 				for (CloudBitvector bv : bitvectors.get(var)) {
-					bitSetList.add(getBitSetFromeHbaseTable(bv.getTablename(), bv.getRow(), bv.getColumnFamily()));
+					bitSetList.add(getBitSetFromeHbaseTable(bv.getTablename(),
+							bv.getRow(), bv.getColumnFamily()));
 				}
 			}
 
@@ -71,30 +73,31 @@ public class BitvectorManager {
 		}
 
 	}
-	
-	private static BitSet getBitSetFromeHbaseTable(String tablename, String row, String cf) throws IOException {
+
+	private static BitSet getBitSetFromeHbaseTable(String tablename,
+			String row, byte[] cf) throws IOException {
 		BitSet bitvector = new BitSet(HBaseKVMapper.VECTORSIZE);
-		
-		//init scan
+		HTable hTable = new HTable(HBaseConnection.getConfiguration(),
+				tablename);
+
+
 		Scan s = new Scan();
 		s.setStartRow(Bytes.toBytes(row));
 		s.setStopRow(Bytes.toBytes(row + "z"));
-		s.setBatch(100000);
+		s.setBatch(250000);
 		s.setCacheBlocks(false);
-		
-		// get Result and store it to BitSet
-		HTable hTable = new HTable(HBaseConnection.getConfiguration(), tablename);
+		s.addFamily(cf);
+
 		ResultScanner scanner = hTable.getScanner(s);
 		for (Result res = scanner.next(); res != null; res = scanner.next()) {
-			 addResultToBitSet(bitvector, res, cf);
+			addResultToBitSet(bitvector, res, cf);
 		}
-		
+
 		// cleanup
 		hTable.close();
-		
+
 		return bitvector;
 	}
-
 
 	public static Result getBitvectorHbaseResult(String tablename,
 			String columnFamily, String column) throws IOException {
@@ -103,10 +106,9 @@ public class BitvectorManager {
 				.getRowWithColumn(tablename, column, columnFamily);
 	}
 
-	public static BitSet addResultToBitSet(BitSet bitvector, Result resultMap, String cf)
-			throws IOException {
-		NavigableMap<byte[], byte[]> cfResults = resultMap.getFamilyMap(cf
-				.getBytes());
+	public static BitSet addResultToBitSet(BitSet bitvector, Result resultMap,
+			byte[] cf) throws IOException {
+		NavigableMap<byte[], byte[]> cfResults = resultMap.getFamilyMap(cf);
 		if (cfResults != null) {
 			for (byte[] entry : cfResults.keySet()) {
 				Integer pos = byteArrayToInteger(entry);

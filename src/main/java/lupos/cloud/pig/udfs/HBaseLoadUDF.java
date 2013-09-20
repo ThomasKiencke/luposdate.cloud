@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -50,6 +51,7 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.collections.map.LinkedMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -103,6 +105,7 @@ import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
 import org.apache.pig.backend.hadoop.hbase.HBaseBinaryConverter;
 import org.apache.pig.backend.hadoop.hbase.HBaseTableInputFormat.HBaseTableIFBuilder;
 import org.apache.pig.builtin.Utf8StorageConverter;
+import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
@@ -110,6 +113,8 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.PigContext;
 import org.apache.pig.impl.logicalLayer.FrontendException;
+import org.apache.pig.impl.util.LinkedMultiMap;
+import org.apache.pig.impl.util.MultiMap;
 import org.apache.pig.impl.util.Utils;
 import org.apache.pig.impl.util.ObjectSerializer;
 import org.apache.pig.impl.util.UDFContext;
@@ -471,7 +476,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		// scan.setRaw(true);
 
 		scan.setBatch(12500);
-//		scan.setCaching(30000);
+		// scan.setCaching(30000);
 
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
@@ -701,6 +706,14 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 				if (loadRowKey_) {
 					tupleSize++;
 				}
+				boolean twoElements;
+				if (new String(rowKey.get()).contains(",")) {
+					twoElements = false;
+				} else {
+					twoElements = true;
+					tupleSize++;
+				}
+
 				Tuple tuple = TupleFactory.getInstance().newTuple(tupleSize);
 
 				int startIndex = 0;
@@ -708,75 +721,65 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 					tuple.set(0, new DataByteArray(rowKey.get()));
 					startIndex++;
 				}
+
 				for (int i = 0; i < columnInfo_.size(); ++i) {
 					int currentIndex = startIndex + i;
 
 					ColumnInfo columnInfo = columnInfo_.get(i);
 					if (columnInfo.isColumnMap()) {
-						// It's a column family so we need to iterate and set
-						// all
-						// values found
 						NavigableMap<byte[], byte[]> cfResults = resultsMap
 								.get(columnInfo.getColumnFamily());
-						// Map<String, DataByteArray> cfMap = new
-						// HashMap<String, DataByteArray>();
-						Map<String, DataByteArray> cfMap = new LinkedHashMap<String, DataByteArray>();
+
+						// MultiMap<String, DataByteArray> cfMap1 = new
+						// LinkedMultiMap<String, DataByteArray>();
+						// MultiMap<String, DataByteArray> cfMap2 = new
+						// LinkedMultiMap<String, DataByteArray>();
+						LinkedList<String> list1 = new LinkedList<String>();
+						LinkedList<String> list2 = new LinkedList<String>();
 
 						if (cfResults != null) {
 							for (byte[] quantifier : cfResults.keySet()) {
 								// bitfilter
-								if (bitvector1 != null && bitvector2 != null) {
-									String toSplit = Bytes.toString(quantifier);
-									if (toSplit.contains(",")) {
-										String toAdd1 = toSplit.substring(0,
-												toSplit.indexOf(","));
-										if (bitvector1 != null
-												&& !isElementPartOfBitvector(
-														toAdd1, bitvector1)) {
-											continue;
-										}
-
-										// 2
-										String toAdd2 = toSplit.substring(
-												toSplit.indexOf(",") + 1,
-												toSplit.length());
-
-										if (bitvector2 != null
-												&& !isElementPartOfBitvector(
-														toAdd2, bitvector2)) {
-											continue;
-										}
-									} else {
-										String toAdd = Bytes
-												.toString(quantifier);
-										if (bitvector1 != null
-												&& !isElementPartOfBitvector(
-														toAdd, bitvector1)) {
-											continue;
-										}
+								// if (bitvector1 != null && bitvector2 != null)
+								// {
+								String[] columnname = Bytes
+										.toString(quantifier).split(",");
+								if (twoElements) {
+									if (bitvector1 != null
+											&& !isElementPartOfBitvector(
+													columnname[0], bitvector1)) {
+										continue;
 									}
-								}
 
-								// add
-								cfMap.put(Bytes.toString(quantifier),
-										new DataByteArray("".getBytes()));
-								tuple.set(currentIndex, cfMap);
+									// 2
+									if (bitvector2 != null
+											&& !isElementPartOfBitvector(
+													columnname[1], bitvector2)) {
+										continue;
+									}
+
+									// add
+									list1.push(columnname[0]);
+									list2.push(columnname[1]);
+
+								} else {
+									if (bitvector1 != null
+											&& !isElementPartOfBitvector(
+													columnname[0], bitvector1)) {
+										continue;
+									}
+									list1.add(columnname[0]);
+								}
+							}
+
+							if (twoElements) {
+								tuple.set(currentIndex, list1);
+								currentIndex++;
+								tuple.set(currentIndex, list2);
+							} else {
+								tuple.set(currentIndex, list1);
 							}
 						}
-					} else {
-						// It's a column so set the value
-						byte[] cell = result.getValue(
-								columnInfo.getColumnFamily(),
-								columnInfo.getColumnName());
-						DataByteArray value = cell == null ? null
-								: new DataByteArray(cell);
-						tuple.set(currentIndex, value);
-					}
-				}
-
-				if (LOG.isDebugEnabled()) {
-					for (int i = 0; i < tuple.size(); i++) {
-						LOG.debug("tuple value:" + tuple.get(i));
 					}
 				}
 

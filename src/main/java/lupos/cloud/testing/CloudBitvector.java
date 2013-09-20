@@ -2,12 +2,12 @@ package lupos.cloud.testing;
 
 public class CloudBitvector {
 	String row;
-	String columnFamily;
+	byte[] columnFamily;
 	private String tablename;
 	private static int idCounter = 0;
 	Integer id = null;
 	
-	public CloudBitvector(String tablename, String row, String columnFamily) {
+	public CloudBitvector(String tablename, String row, byte[] columnFamily) {
 		super();
 		this.tablename = tablename;
 		this.row = row;
@@ -16,7 +16,7 @@ public class CloudBitvector {
 		idCounter++;
 	}
 	
-	public String getColumnFamily() {
+	public byte[] getColumnFamily() {
 		return columnFamily;
 	}
 	

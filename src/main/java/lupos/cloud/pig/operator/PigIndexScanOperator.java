@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import lupos.cloud.hbase.HBaseDistributionStrategy;
+import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.pig.JoinInformation;
 import lupos.cloud.pig.SinglePigQuery;
 import lupos.cloud.storage.util.CloudManagement;
@@ -31,121 +32,122 @@ public class PigIndexScanOperator implements IPigOperator {
 	 *            the triple pattern
 	 * @return the string
 	 */
-//	public String buildQuery2(ArrayList<JoinInformation> intermediateBags,
-//			boolean debug, ArrayList<PigFilterOperator> filterOps) {
-//		this.intermediateJoins = intermediateBags;
-//		this.debug = debug;
-//		StringBuilder result = new StringBuilder();
-//		for (TriplePattern triplePattern : this.triplePatternCollection) {
-//			JoinInformation curPattern = getHBaseTable(triplePattern);
-//
-//			if (debug) {
-//				result.append("-- TriplePattern: " + triplePattern.toN3String()
-//						+ "\n");
-//			}
-//			/**
-//			 * Für Triplepattern ?s ?p ?o wird eine beliebige Tabelle komplett
-//			 * geladen und alle Informationen zuürck gegeben.
-//			 */
-//			if (curPattern.allElementsAreVariables()) {
-//				result.append(curPattern.getTablename()
-//						+ "_DATA = "
-//						+ "load 'hbase://"
-//						+ curPattern.getTablename()
-//						+ "' "
-//						+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('"
-//						+ HBaseDistributionStrategy.getTableInstance()
-//								.getColumnFamilyName()
-//						+ "', '-loadKey true') as (rowkey_" + tripleCounter
-//						+ ":chararray, columncontent_" + tripleCounter
-//						+ ":map[]);" + "\n");
-//
-//				result.append(curPattern.getName()
-//						+ " = foreach "
-//						+ curPattern.getTablename()
-//						+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1));\n");
-//			} else if (curPattern.allElementsAreLiterals()) {
-//				// do nothing, maybe add in future
-//				return "";
-//			} else {
-//				result.append(
-//				/**
-//				 * Für alle anderen Triplepattern wird in den jeweiligen
-//				 * Tabellen gesucht und nur das Ergebniss (der Spaltenname)
-//				 * zurückgegeben.
-//				 */
-//				curPattern.getName()
-//						+ " = "
-//						+ "load 'hbase://"
-//						+ curPattern.getTablename()
-//						+ "' "
-//						+ "using lupos.cloud.pig.udfs.HBaseLoadBagUDF('"
-//						+ HBaseDistributionStrategy.getTableInstance()
-//								.getColumnFamilyName()
-//						+ "', '','"
-//						+ curPattern.getLiterals()
-//						// + "') as"
-//						+ ((curPattern.getJoinElements().size() == 1) ? "', '/tmp/cloudBloomfilter_"
-//								+ curPattern.getJoinElements().get(0)
-//										.replace("?", "")
-//								+ "') as (output"
-//								+ tripleCounter + ":chararray);"
-//								: "', '/tmp/cloudBloomfilter_"
-//										+ curPattern.getJoinElements().get(0)
-//												.replace("?", "")
-//										+ "', '/tmp/cloudBloomfilter_"
-//										+ curPattern.getJoinElements().get(1)
-//												.replace("?", "")
-//										+ "') as (output1_" + tripleCounter
-//										+ ":chararray, output2_"
-//										+ tripleCounter + ":chararray); ")
-//						+ "\n");
-//
-//				// result.append(curPattern.getName()
-//				// + " = foreach PATTERN_"
-//				// + curPattern.getPatternId()
-//				// +
-//				// " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as "
-//				// + ((curPattern.getJoinElements().size() == 1) ? "(output"
-//				// + tripleCounter + ":chararray);"
-//				// : "(output1_" + tripleCounter
-//				// + ":chararray, output2_"
-//				// + tripleCounter + ":chararray); ")
-//				// + "\n");
-//			}
-//			intermediateJoins.add(curPattern);
-//
-//			// add bitvector
-//			if ((curPattern.getJoinElements().size() == 1)) {
-//				curPattern.addBitvector(curPattern.getJoinElements().get(0),
-//						new CloudBitvector(curPattern.getTablename(),
-//								curPattern.getLiterals(), "bloomfilter1"));
-//			} else if ((curPattern.getJoinElements().size() == 2)) {
-//				curPattern.addBitvector(curPattern.getJoinElements().get(0),
-//						new CloudBitvector(curPattern.getTablename(),
-//								curPattern.getLiterals(), "bloomfilter1"));
-//				curPattern.addBitvector(curPattern.getJoinElements().get(1),
-//						new CloudBitvector(curPattern.getTablename(),
-//								curPattern.getLiterals(), "bloomfilter2"));
-//			} else if ((curPattern.getJoinElements().size() == 3)) {
-//				curPattern.addBitvector(curPattern.getJoinElements().get(0),
-//						new CloudBitvector(curPattern.getTablename(),
-//								curPattern.getLiterals(), "bloomfilterSetAll"));
-//				curPattern.addBitvector(curPattern.getJoinElements().get(1),
-//						new CloudBitvector(curPattern.getTablename(),
-//								curPattern.getLiterals(), "bloomfilter1"));
-//				curPattern.addBitvector(curPattern.getJoinElements().get(2),
-//						new CloudBitvector(curPattern.getTablename(),
-//								curPattern.getLiterals(), "bloomfilter2"));
-//			}
-//
-//			if (debug) {
-//				result.append("\n");
-//			}
-//			tripleCounter++;
-//		}
-//		return result.toString();
-//	}
+	// public String buildQuery2(ArrayList<JoinInformation> intermediateBags,
+	// boolean debug, ArrayList<PigFilterOperator> filterOps) {
+	// this.intermediateJoins = intermediateBags;
+	// this.debug = debug;
+	// StringBuilder result = new StringBuilder();
+	// for (TriplePattern triplePattern : this.triplePatternCollection) {
+	// JoinInformation curPattern = getHBaseTable(triplePattern);
+	//
+	// if (debug) {
+	// result.append("-- TriplePattern: " + triplePattern.toN3String()
+	// + "\n");
+	// }
+	// /**
+	// * Für Triplepattern ?s ?p ?o wird eine beliebige Tabelle komplett
+	// * geladen und alle Informationen zuürck gegeben.
+	// */
+	// if (curPattern.allElementsAreVariables()) {
+	// result.append(curPattern.getTablename()
+	// + "_DATA = "
+	// + "load 'hbase://"
+	// + curPattern.getTablename()
+	// + "' "
+	// + "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('"
+	// + HBaseDistributionStrategy.getTableInstance()
+	// .getColumnFamilyName()
+	// + "', '-loadKey true') as (rowkey_" + tripleCounter
+	// + ":chararray, columncontent_" + tripleCounter
+	// + ":map[]);" + "\n");
+	//
+	// result.append(curPattern.getName()
+	// + " = foreach "
+	// + curPattern.getTablename()
+	// + "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1));\n");
+	// } else if (curPattern.allElementsAreLiterals()) {
+	// // do nothing, maybe add in future
+	// return "";
+	// } else {
+	// result.append(
+	// /**
+	// * Für alle anderen Triplepattern wird in den jeweiligen
+	// * Tabellen gesucht und nur das Ergebniss (der Spaltenname)
+	// * zurückgegeben.
+	// */
+	// curPattern.getName()
+	// + " = "
+	// + "load 'hbase://"
+	// + curPattern.getTablename()
+	// + "' "
+	// + "using lupos.cloud.pig.udfs.HBaseLoadBagUDF('"
+	// + HBaseDistributionStrategy.getTableInstance()
+	// .getColumnFamilyName()
+	// + "', '','"
+	// + curPattern.getLiterals()
+	// // + "') as"
+	// + ((curPattern.getJoinElements().size() == 1) ?
+	// "', '/tmp/cloudBloomfilter_"
+	// + curPattern.getJoinElements().get(0)
+	// .replace("?", "")
+	// + "') as (output"
+	// + tripleCounter + ":chararray);"
+	// : "', '/tmp/cloudBloomfilter_"
+	// + curPattern.getJoinElements().get(0)
+	// .replace("?", "")
+	// + "', '/tmp/cloudBloomfilter_"
+	// + curPattern.getJoinElements().get(1)
+	// .replace("?", "")
+	// + "') as (output1_" + tripleCounter
+	// + ":chararray, output2_"
+	// + tripleCounter + ":chararray); ")
+	// + "\n");
+	//
+	// // result.append(curPattern.getName()
+	// // + " = foreach PATTERN_"
+	// // + curPattern.getPatternId()
+	// // +
+	// // " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as "
+	// // + ((curPattern.getJoinElements().size() == 1) ? "(output"
+	// // + tripleCounter + ":chararray);"
+	// // : "(output1_" + tripleCounter
+	// // + ":chararray, output2_"
+	// // + tripleCounter + ":chararray); ")
+	// // + "\n");
+	// }
+	// intermediateJoins.add(curPattern);
+	//
+	// // add bitvector
+	// if ((curPattern.getJoinElements().size() == 1)) {
+	// curPattern.addBitvector(curPattern.getJoinElements().get(0),
+	// new CloudBitvector(curPattern.getTablename(),
+	// curPattern.getLiterals(), HBaseKVMapper.bloomfilter1ColumnFamily));
+	// } else if ((curPattern.getJoinElements().size() == 2)) {
+	// curPattern.addBitvector(curPattern.getJoinElements().get(0),
+	// new CloudBitvector(curPattern.getTablename(),
+	// curPattern.getLiterals(), HBaseKVMapper.bloomfilter1ColumnFamily));
+	// curPattern.addBitvector(curPattern.getJoinElements().get(1),
+	// new CloudBitvector(curPattern.getTablename(),
+	// curPattern.getLiterals(), HBaseKVMapper.bloomfilter2ColumnFamily));
+	// } else if ((curPattern.getJoinElements().size() == 3)) {
+	// curPattern.addBitvector(curPattern.getJoinElements().get(0),
+	// new CloudBitvector(curPattern.getTablename(),
+	// curPattern.getLiterals(), "bloomfilterSetAll"));
+	// curPattern.addBitvector(curPattern.getJoinElements().get(1),
+	// new CloudBitvector(curPattern.getTablename(),
+	// curPattern.getLiterals(), HBaseKVMapper.bloomfilter1ColumnFamily));
+	// curPattern.addBitvector(curPattern.getJoinElements().get(2),
+	// new CloudBitvector(curPattern.getTablename(),
+	// curPattern.getLiterals(), HBaseKVMapper.bloomfilter2ColumnFamily));
+	// }
+	//
+	// if (debug) {
+	// result.append("\n");
+	// }
+	// tripleCounter++;
+	// }
+	// return result.toString();
+	// }
 
 	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
@@ -208,20 +210,25 @@ public class PigIndexScanOperator implements IPigOperator {
 								+ "')"
 								+ "as (columncontent_"
 								+ tripleCounter
-								+ ":map[]);\n"
+								+ ":bytearray);\n"
 								: "', '/tmp/cloudBloomfilter_"
 										+ curPattern.getJoinElements().get(0)
 												.replace("?", "")
 										+ "', '/tmp/cloudBloomfilter_"
 										+ curPattern.getJoinElements().get(1)
 												.replace("?", "") + "') "
-										+ " as (columncontent_" + tripleCounter
-										+ ":map[]);" + "\n"));
+										+ " as (columncontent1_"
+										+ tripleCounter
+										+ ":bytearray, columncontent2_"
+										+ tripleCounter + ":bytearray); ") + "\n");
 
 				result.append(curPattern.getName()
 						+ " = foreach PATTERN_"
 						+ curPattern.getPatternId()
-						+ " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as "
+						+ " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF("
+						+ ((curPattern.getJoinElements().size() == 1) ? "$0"
+								: "$0, $1")
+						+ ")) as "
 						+ ((curPattern.getJoinElements().size() == 1) ? "(output"
 								+ tripleCounter + ":chararray);"
 								: "(output1_" + tripleCounter
@@ -235,24 +242,29 @@ public class PigIndexScanOperator implements IPigOperator {
 			if ((curPattern.getJoinElements().size() == 1)) {
 				curPattern.addBitvector(curPattern.getJoinElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
-								curPattern.getLiterals(), "bloomfilter1"));
+								curPattern.getLiterals(),
+								HBaseKVMapper.bloomfilter1ColumnFamily));
 			} else if ((curPattern.getJoinElements().size() == 2)) {
 				curPattern.addBitvector(curPattern.getJoinElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
-								curPattern.getLiterals(), "bloomfilter1"));
+								curPattern.getLiterals(),
+								HBaseKVMapper.bloomfilter1ColumnFamily));
 				curPattern.addBitvector(curPattern.getJoinElements().get(1),
 						new CloudBitvector(curPattern.getTablename(),
-								curPattern.getLiterals(), "bloomfilter2"));
+								curPattern.getLiterals(),
+								HBaseKVMapper.bloomfilter2ColumnFamily));
 			} else if ((curPattern.getJoinElements().size() == 3)) {
 				curPattern.addBitvector(curPattern.getJoinElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
-								curPattern.getLiterals(), "bloomfilterSetAll"));
+								curPattern.getLiterals(), null));
 				curPattern.addBitvector(curPattern.getJoinElements().get(1),
 						new CloudBitvector(curPattern.getTablename(),
-								curPattern.getLiterals(), "bloomfilter1"));
+								curPattern.getLiterals(),
+								HBaseKVMapper.bloomfilter1ColumnFamily));
 				curPattern.addBitvector(curPattern.getJoinElements().get(2),
 						new CloudBitvector(curPattern.getTablename(),
-								curPattern.getLiterals(), "bloomfilter2"));
+								curPattern.getLiterals(),
+								HBaseKVMapper.bloomfilter2ColumnFamily));
 			}
 
 			if (debug) {
@@ -515,7 +527,7 @@ public class PigIndexScanOperator implements IPigOperator {
 
 			for (String elem : curPattern.getOptionalJoinElements()) {
 				curJoinInfo.addOptionalElements(elem);
-			}			
+			}
 			curJoinInfo.addBitVectors(curPattern.getBitVectors());
 		}
 		curJoinInfo.setPatternId(JoinInformation.idCounter);
@@ -569,7 +581,7 @@ public class PigIndexScanOperator implements IPigOperator {
 			for (String elem : curPattern.getOptionalJoinElements()) {
 				curJoinInfo.addOptionalElements(elem);
 			}
-			
+
 			curJoinInfo.addBitVectors(curPattern.getBitVectors());
 
 		}
@@ -589,7 +601,7 @@ public class PigIndexScanOperator implements IPigOperator {
 	}
 
 	public String removeDuplicatedAliases(JoinInformation oldJoin) {
-//		return "";
+		// return "";
 		StringBuilder result = new StringBuilder();
 		// prüfe ob es doppelte Aliases gibt und entferne diese
 		ArrayList<String> newElements = new ArrayList<String>();

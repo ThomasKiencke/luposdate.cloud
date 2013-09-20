@@ -148,8 +148,8 @@ public class HBaseConnection {
 			HTableDescriptor descriptor = new HTableDescriptor(
 					Bytes.toBytes(tablename));
 			HColumnDescriptor family = new HColumnDescriptor(familyname);
-			HColumnDescriptor familyb1 = new HColumnDescriptor("bloomfilter1");
-			HColumnDescriptor familyb2 = new HColumnDescriptor("bloomfilter2");
+			HColumnDescriptor familyb1 = new HColumnDescriptor(HBaseKVMapper.bloomfilter1ColumnFamily);
+			HColumnDescriptor familyb2 = new HColumnDescriptor(HBaseKVMapper.bloomfilter2ColumnFamily);
 			family.setCompressionType(Algorithm.LZO);
 			familyb1.setCompressionType(Algorithm.LZO);
 			familyb2.setCompressionType(Algorithm.LZO);
@@ -232,7 +232,7 @@ public class HBaseConnection {
 		table.delete(row);
 		if (message) {
 			System.out.println(rowKey + " und Spalte " + colunmnname
-					+ " wurden gelöscht");
+					+ " wurden geloescht");
 		}
 	}
 
@@ -398,7 +398,7 @@ public class HBaseConnection {
 					hash = hash * (-1);
 				}
 				Integer position = hash % HBaseKVMapper.VECTORSIZE;
-				row.add(Bytes.toBytes("bloomfilter1"), integerToByteArray(position),
+				row.add(HBaseKVMapper.bloomfilter1ColumnFamily, integerToByteArray(4, position),
 						Bytes.toBytes(""));
 			}
 			
@@ -408,7 +408,7 @@ public class HBaseConnection {
 					hash = hash * (-1);
 				}
 				Integer position = hash % HBaseKVMapper.VECTORSIZE;
-				row.add(Bytes.toBytes("bloomfilter2"), integerToByteArray(position),
+				row.add(HBaseKVMapper.bloomfilter2ColumnFamily, integerToByteArray(4, position),
 						Bytes.toBytes(""));
 			}
 			
@@ -417,8 +417,8 @@ public class HBaseConnection {
 		}
 	}
 	
-	public static byte[] integerToByteArray(Integer pos) {
-		return ByteBuffer.allocate(4).putInt(pos).array();
+	public static byte[] integerToByteArray(int allocate, Integer pos) {
+		return ByteBuffer.allocate(allocate).putInt(pos).array();
 	}
 
 	public static void startBulkLoad() throws IOException {

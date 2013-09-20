@@ -171,7 +171,7 @@ public class CloudManagement {
 			//
 			if (TESTING_MODE)
 				return null; // testing purpose
-			System.out.println("PigLatin Programm wird ausgeführt...");
+			System.out.println("PigLatin Programm wird ausgefuehrt...");
 			pigServer.registerQuery(query.getPigLatin());
 			curVariableList = query.getVariableList();
 			pigQueryResult = pigServer.openIterator("X");

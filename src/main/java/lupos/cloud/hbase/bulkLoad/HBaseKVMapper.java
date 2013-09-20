@@ -30,8 +30,10 @@ public class HBaseKVMapper extends
 
 	/** The table name. */
 	String tableName = "";
-	
-	public static final int VECTORSIZE = 10000;
+
+	public static final int VECTORSIZE = 10000000;
+	public static final byte[] bloomfilter1ColumnFamily = "1".getBytes();
+	public static final byte[] bloomfilter2ColumnFamily = "2".getBytes();
 
 	/*
 	 * (non-Javadoc)
@@ -97,28 +99,27 @@ public class HBaseKVMapper extends
 				hash = hash * (-1);
 			}
 			Integer position = hash % VECTORSIZE;
-			KeyValue kv2 = new KeyValue(ibKey.get(), "bloomfilter1".getBytes(),
-					IntegerToByteArray(position), "".getBytes());
+			KeyValue kv2 = new KeyValue(ibKey.get(), bloomfilter1ColumnFamily,
+					IntegerToByteArray(4, position), "".getBytes());
 			context.write(ibKey, kv2);
 		}
-		
+
 		if (!(elem2 == null)) {
 			int hash = elem2.hashCode();
 			if (hash < 0) {
 				hash = hash * (-1);
 			}
 			Integer position = hash % VECTORSIZE;
-			KeyValue kv2 = new KeyValue(ibKey.get(), "bloomfilter2".getBytes(),
-					IntegerToByteArray(position), "".getBytes());
+			KeyValue kv2 = new KeyValue(ibKey.get(), bloomfilter2ColumnFamily,
+					IntegerToByteArray(4, position), "".getBytes());
 			context.write(ibKey, kv2);
 		}
 
-		
 		context.getCounter("HBaseKVMapper", "TRIPLE_IMPORTED").increment(1);
 
 	}
-	
-	public static byte[] IntegerToByteArray(Integer pos) {
-		return ByteBuffer.allocate(4).putInt(pos).array();
+
+	public static byte[] IntegerToByteArray(int allocate, Integer pos) {
+		return ByteBuffer.allocate(allocate).putInt(pos).array();
 	}
 }
