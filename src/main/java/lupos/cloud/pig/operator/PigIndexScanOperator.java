@@ -78,7 +78,11 @@ public class PigIndexScanOperator implements IPigOperator {
 				result.append(curPattern.getName()
 						+ " = foreach "
 						+ curPattern.getTablename()
-						+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBag($1, $2, $3));\n");
+						+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1");
+				if (CloudManagement.bloomfilter_active) {
+					result.append(", $2, $3");
+				}
+				result.append("));\n");
 			} else if (curPattern.allElementsAreLiterals()) {
 				// do nothing, maybe add in future
 				return "";
