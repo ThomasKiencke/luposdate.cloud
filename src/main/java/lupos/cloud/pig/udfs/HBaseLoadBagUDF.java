@@ -43,6 +43,7 @@ import java.util.TreeMap;
 
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.hbase.filter.BitvectorFilter;
+import lupos.cloud.testing.BitvectorManager;
 
 import org.joda.time.DateTime;
 import org.apache.commons.cli.CommandLine;
@@ -842,11 +843,7 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 
 	@Deprecated
 	private boolean isElementPartOfBitvector(String element, BitSet bitvector) {
-		int hash = element.hashCode();
-		if (hash < 0) {
-			hash = hash * (-1);
-		}
-		Integer position = hash % HBaseKVMapper.VECTORSIZE;
+		Integer position = BitvectorManager.hash(element.getBytes());
 		if (bitvector.get(position)) {
 			return true;
 		} else {

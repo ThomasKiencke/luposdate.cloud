@@ -71,6 +71,8 @@ public class CloudManagement {
 
 	public double bitvectorTime = 0;
 
+	public static boolean bloomfilter_active = true;
+
 	/**
 	 * Instantiates a new cloud management.
 	 */
@@ -152,17 +154,17 @@ public class CloudManagement {
 		QueryResult result = null;
 		long start = System.currentTimeMillis();
 		try {
-			long start2 = System.currentTimeMillis();
-			BitvectorManager.generateBitvector(query.getBitvectors());
-			long stop2 = System.currentTimeMillis();
-			System.out
-					.println("Bitvector generated in "
-							+ new DecimalFormat("#.##")
-									.format(((double) stop2 - (double) start2) / (double) 1000)
-											+ "s!");
+			if (bloomfilter_active) {
+				long start2 = System.currentTimeMillis();
+				BitvectorManager.generateBitvector(query.getBitvectors());
+				long stop2 = System.currentTimeMillis();
+				System.out.println("Bitvector generated in "
+						+ new DecimalFormat("#.##")
+								.format(((double) stop2 - (double) start2)
+										/ (double) 1000) + "s!");
 
-			bitvectorTime = (stop2 - start2) / 1000.0;
-
+				bitvectorTime = (stop2 - start2) / 1000.0;
+			}
 			if (PRINT_PIGLATIN_PROGRAMM) {
 				System.out.println("Generated PigLatin Program:");
 				System.out.println(query.getPigLatin());

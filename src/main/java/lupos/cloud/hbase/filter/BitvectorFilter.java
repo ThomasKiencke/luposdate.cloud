@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
+import lupos.cloud.testing.BitvectorManager;
 
 import com.google.common.base.Preconditions;
 
@@ -79,11 +80,7 @@ public class BitvectorFilter extends FilterBase {
 	}
 
 	private boolean isElementPartOfBitvector(String element, BitSet bitvector) {
-		int hash = element.hashCode();
-		if (hash < 0) {
-			hash = hash * (-1);
-		}
-		Integer position = hash % HBaseKVMapper.VECTORSIZE;
+		Integer position = BitvectorManager.hash(element.getBytes());
 		if (bitvector.get(position)) {
 			return true;
 		} else {

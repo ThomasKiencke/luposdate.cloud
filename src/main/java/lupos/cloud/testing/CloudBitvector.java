@@ -6,6 +6,8 @@ public class CloudBitvector {
 	private String tablename;
 	private static int idCounter = 0;
 	Integer id = null;
+	Integer setId = null;
+			
 	
 	public CloudBitvector(String tablename, String row, byte[] columnFamily) {
 		super();
@@ -14,6 +16,7 @@ public class CloudBitvector {
 		this.columnFamily = columnFamily;
 		this.id = idCounter;
 		idCounter++;
+		setId = 0;
 	}
 	
 	public byte[] getColumnFamily() {
@@ -28,7 +31,15 @@ public class CloudBitvector {
 		return tablename;
 	}
 	
-	public Integer getId() {
-		return id;
+//	public Integer getId() {
+//		return id;
+//	}
+	
+	public void setInc() {
+		this.setId++;
+	}
+	
+	public Integer getSetId() {
+		return setId;
 	}
 }

@@ -9,6 +9,7 @@ import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.pig.JoinInformation;
 import lupos.cloud.pig.SinglePigQuery;
 import lupos.cloud.storage.util.CloudManagement;
+import lupos.cloud.testing.BitvectorManager;
 import lupos.cloud.testing.CloudBitvector;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.tripleoperator.TriplePattern;
@@ -32,123 +33,6 @@ public class PigIndexScanOperator implements IPigOperator {
 	 *            the triple pattern
 	 * @return the string
 	 */
-	// public String buildQuery2(ArrayList<JoinInformation> intermediateBags,
-	// boolean debug, ArrayList<PigFilterOperator> filterOps) {
-	// this.intermediateJoins = intermediateBags;
-	// this.debug = debug;
-	// StringBuilder result = new StringBuilder();
-	// for (TriplePattern triplePattern : this.triplePatternCollection) {
-	// JoinInformation curPattern = getHBaseTable(triplePattern);
-	//
-	// if (debug) {
-	// result.append("-- TriplePattern: " + triplePattern.toN3String()
-	// + "\n");
-	// }
-	// /**
-	// * Für Triplepattern ?s ?p ?o wird eine beliebige Tabelle komplett
-	// * geladen und alle Informationen zuürck gegeben.
-	// */
-	// if (curPattern.allElementsAreVariables()) {
-	// result.append(curPattern.getTablename()
-	// + "_DATA = "
-	// + "load 'hbase://"
-	// + curPattern.getTablename()
-	// + "' "
-	// + "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('"
-	// + HBaseDistributionStrategy.getTableInstance()
-	// .getColumnFamilyName()
-	// + "', '-loadKey true') as (rowkey_" + tripleCounter
-	// + ":chararray, columncontent_" + tripleCounter
-	// + ":map[]);" + "\n");
-	//
-	// result.append(curPattern.getName()
-	// + " = foreach "
-	// + curPattern.getTablename()
-	// + "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1));\n");
-	// } else if (curPattern.allElementsAreLiterals()) {
-	// // do nothing, maybe add in future
-	// return "";
-	// } else {
-	// result.append(
-	// /**
-	// * Für alle anderen Triplepattern wird in den jeweiligen
-	// * Tabellen gesucht und nur das Ergebniss (der Spaltenname)
-	// * zurückgegeben.
-	// */
-	// curPattern.getName()
-	// + " = "
-	// + "load 'hbase://"
-	// + curPattern.getTablename()
-	// + "' "
-	// + "using lupos.cloud.pig.udfs.HBaseLoadBagUDF('"
-	// + HBaseDistributionStrategy.getTableInstance()
-	// .getColumnFamilyName()
-	// + "', '','"
-	// + curPattern.getLiterals()
-	// // + "') as"
-	// + ((curPattern.getJoinElements().size() == 1) ?
-	// "', '/tmp/cloudBloomfilter_"
-	// + curPattern.getJoinElements().get(0)
-	// .replace("?", "")
-	// + "') as (output"
-	// + tripleCounter + ":chararray);"
-	// : "', '/tmp/cloudBloomfilter_"
-	// + curPattern.getJoinElements().get(0)
-	// .replace("?", "")
-	// + "', '/tmp/cloudBloomfilter_"
-	// + curPattern.getJoinElements().get(1)
-	// .replace("?", "")
-	// + "') as (output1_" + tripleCounter
-	// + ":chararray, output2_"
-	// + tripleCounter + ":chararray); ")
-	// + "\n");
-	//
-	// // result.append(curPattern.getName()
-	// // + " = foreach PATTERN_"
-	// // + curPattern.getPatternId()
-	// // +
-	// // " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as "
-	// // + ((curPattern.getJoinElements().size() == 1) ? "(output"
-	// // + tripleCounter + ":chararray);"
-	// // : "(output1_" + tripleCounter
-	// // + ":chararray, output2_"
-	// // + tripleCounter + ":chararray); ")
-	// // + "\n");
-	// }
-	// intermediateJoins.add(curPattern);
-	//
-	// // add bitvector
-	// if ((curPattern.getJoinElements().size() == 1)) {
-	// curPattern.addBitvector(curPattern.getJoinElements().get(0),
-	// new CloudBitvector(curPattern.getTablename(),
-	// curPattern.getLiterals(), HBaseKVMapper.bloomfilter1ColumnFamily));
-	// } else if ((curPattern.getJoinElements().size() == 2)) {
-	// curPattern.addBitvector(curPattern.getJoinElements().get(0),
-	// new CloudBitvector(curPattern.getTablename(),
-	// curPattern.getLiterals(), HBaseKVMapper.bloomfilter1ColumnFamily));
-	// curPattern.addBitvector(curPattern.getJoinElements().get(1),
-	// new CloudBitvector(curPattern.getTablename(),
-	// curPattern.getLiterals(), HBaseKVMapper.bloomfilter2ColumnFamily));
-	// } else if ((curPattern.getJoinElements().size() == 3)) {
-	// curPattern.addBitvector(curPattern.getJoinElements().get(0),
-	// new CloudBitvector(curPattern.getTablename(),
-	// curPattern.getLiterals(), "bloomfilterSetAll"));
-	// curPattern.addBitvector(curPattern.getJoinElements().get(1),
-	// new CloudBitvector(curPattern.getTablename(),
-	// curPattern.getLiterals(), HBaseKVMapper.bloomfilter1ColumnFamily));
-	// curPattern.addBitvector(curPattern.getJoinElements().get(2),
-	// new CloudBitvector(curPattern.getTablename(),
-	// curPattern.getLiterals(), HBaseKVMapper.bloomfilter2ColumnFamily));
-	// }
-	//
-	// if (debug) {
-	// result.append("\n");
-	// }
-	// tripleCounter++;
-	// }
-	// return result.toString();
-	// }
-
 	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		this.intermediateJoins = intermediateBags;
@@ -172,17 +56,29 @@ public class PigIndexScanOperator implements IPigOperator {
 						+ "load 'hbase://"
 						+ curPattern.getTablename()
 						+ "' "
-						+ "using org.apache.pig.backend.hadoop.hbase.HBaseStorage('"
+						+ "using lupos.cloud.pig.udfs.HBaseLoadUDF('"
 						+ HBaseDistributionStrategy.getTableInstance()
-								.getColumnFamilyName()
-						+ "', '-loadKey true', '/tmp/cloudBloomfilter') as (rowkey_"
-						+ tripleCounter + ":chararray, columncontent_"
-						+ tripleCounter + ":map[]);" + "\n");
+								.getColumnFamilyName() + "', '-loadKey true'");
+				if (CloudManagement.bloomfilter_active) {
+					result.append(", '', "
+							+ " '/tmp/cloudBloomfilter_"
+							+ curPattern.getJoinElements().get(0)
+									.replace("?", "")
+							+ "', '/tmp/cloudBloomfilter_"
+							+ curPattern.getJoinElements().get(1)
+									.replace("?", "") + "'");
+				}
 
+				result.append(") as (rowkey:chararray, columncontent_"
+						+ tripleCounter + ":map[]");
+				if (CloudManagement.bloomfilter_active) {
+					result.append(", bloomfilter1:bytearray, bloomfilter2:bytearray");
+				}
+				result.append(");\n");
 				result.append(curPattern.getName()
 						+ " = foreach "
 						+ curPattern.getTablename()
-						+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1));\n");
+						+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBag($1, $2, $3));\n");
 			} else if (curPattern.allElementsAreLiterals()) {
 				// do nothing, maybe add in future
 				return "";
@@ -201,34 +97,38 @@ public class PigIndexScanOperator implements IPigOperator {
 						+ "' "
 						+ "using lupos.cloud.pig.udfs.HBaseLoadUDF('"
 						+ HBaseDistributionStrategy.getTableInstance()
-								.getColumnFamilyName()
-						+ "', '','"
-						+ curPattern.getLiterals()
-						+ ((curPattern.getJoinElements().size() == 1) ? "', '/tmp/cloudBloomfilter_"
-								+ curPattern.getJoinElements().get(0)
-										.replace("?", "")
-								+ "')"
-								+ "as (columncontent_"
-								+ tripleCounter
-								+ ":bytearray);\n"
-								: "', '/tmp/cloudBloomfilter_"
-										+ curPattern.getJoinElements().get(0)
-												.replace("?", "")
-										+ "', '/tmp/cloudBloomfilter_"
-										+ curPattern.getJoinElements().get(1)
-												.replace("?", "") + "') "
-										+ " as (columncontent1_"
-										+ tripleCounter
-										+ ":bytearray, columncontent2_"
-										+ tripleCounter + ":bytearray); ") + "\n");
+								.getColumnFamilyName() + "', '', '"
+						+ curPattern.getLiterals() + "'");
+				if (CloudManagement.bloomfilter_active) {
+					result.append(((curPattern.getJoinElements().size() == 1) ? ", '/tmp/cloudBloomfilter_"
+							+ curPattern.getJoinElements().get(0)
+									.replace("?", "")
+							: ", '/tmp/cloudBloomfilter_"
+									+ curPattern.getJoinElements().get(0)
+											.replace("?", "")
+									+ "', '/tmp/cloudBloomfilter_"
+									+ curPattern.getJoinElements().get(1)
+											.replace("?", ""))
+							+ "'");
+				}
 
-				result.append(curPattern.getName()
-						+ " = foreach PATTERN_"
+				result.append(") as (columncontent_" + tripleCounter + ":map[]");
+				if (CloudManagement.bloomfilter_active) {
+					result.append(((curPattern.getJoinElements().size() == 1) ? ", bloomfilter1:bytearray"
+							: ", bloomfilter1:bytearray, bloomfilter2:bytearray"));
+				}
+				result.append(");\n");
+
+				result.append(curPattern.getName() + " = foreach PATTERN_"
 						+ curPattern.getPatternId()
 						+ " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF("
-						+ ((curPattern.getJoinElements().size() == 1) ? "$0"
-								: "$0, $1")
-						+ ")) as "
+						+ "$0");
+				if (CloudManagement.bloomfilter_active) {
+					result.append(((curPattern.getJoinElements().size() == 1) ? ", $1"
+							: ", $1, $2"));
+				}
+
+				result.append(")) as "
 						+ ((curPattern.getJoinElements().size() == 1) ? "(output"
 								+ tripleCounter + ":chararray);"
 								: "(output1_" + tripleCounter
@@ -243,16 +143,16 @@ public class PigIndexScanOperator implements IPigOperator {
 				curPattern.addBitvector(curPattern.getJoinElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
-								HBaseKVMapper.bloomfilter1ColumnFamily));
+								BitvectorManager.bloomfilter1ColumnFamily));
 			} else if ((curPattern.getJoinElements().size() == 2)) {
 				curPattern.addBitvector(curPattern.getJoinElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
-								HBaseKVMapper.bloomfilter1ColumnFamily));
+								BitvectorManager.bloomfilter1ColumnFamily));
 				curPattern.addBitvector(curPattern.getJoinElements().get(1),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
-								HBaseKVMapper.bloomfilter2ColumnFamily));
+								BitvectorManager.bloomfilter2ColumnFamily));
 			} else if ((curPattern.getJoinElements().size() == 3)) {
 				curPattern.addBitvector(curPattern.getJoinElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
@@ -260,11 +160,11 @@ public class PigIndexScanOperator implements IPigOperator {
 				curPattern.addBitvector(curPattern.getJoinElements().get(1),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
-								HBaseKVMapper.bloomfilter1ColumnFamily));
+								BitvectorManager.bloomfilter1ColumnFamily));
 				curPattern.addBitvector(curPattern.getJoinElements().get(2),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
-								HBaseKVMapper.bloomfilter2ColumnFamily));
+								BitvectorManager.bloomfilter2ColumnFamily));
 			}
 
 			if (debug) {

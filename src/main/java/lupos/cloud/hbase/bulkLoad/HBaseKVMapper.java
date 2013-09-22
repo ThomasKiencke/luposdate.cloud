@@ -3,6 +3,9 @@ package lupos.cloud.hbase.bulkLoad;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import lupos.cloud.testing.BitvectorManager;
+import lupos.misc.BitVector;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
@@ -30,10 +33,7 @@ public class HBaseKVMapper extends
 
 	/** The table name. */
 	String tableName = "";
-
-	public static final int VECTORSIZE = 10000000;
-	public static final byte[] bloomfilter1ColumnFamily = "1".getBytes();
-	public static final byte[] bloomfilter2ColumnFamily = "2".getBytes();
+;
 
 	/*
 	 * (non-Javadoc)
@@ -94,23 +94,15 @@ public class HBaseKVMapper extends
 		}
 		// Bloomfilter
 		if (!(elem1 == null)) {
-			int hash = elem1.hashCode();
-			if (hash < 0) {
-				hash = hash * (-1);
-			}
-			Integer position = hash % VECTORSIZE;
-			KeyValue kv2 = new KeyValue(ibKey.get(), bloomfilter1ColumnFamily,
+			Integer position = BitvectorManager.hash(elem1.getBytes());
+			KeyValue kv2 = new KeyValue(ibKey.get(), BitvectorManager.bloomfilter1ColumnFamily,
 					IntegerToByteArray(4, position), "".getBytes());
 			context.write(ibKey, kv2);
 		}
 
 		if (!(elem2 == null)) {
-			int hash = elem2.hashCode();
-			if (hash < 0) {
-				hash = hash * (-1);
-			}
-			Integer position = hash % VECTORSIZE;
-			KeyValue kv2 = new KeyValue(ibKey.get(), bloomfilter2ColumnFamily,
+			Integer position = BitvectorManager.hash(elem2.getBytes());
+			KeyValue kv2 = new KeyValue(ibKey.get(), BitvectorManager.bloomfilter2ColumnFamily,
 					IntegerToByteArray(4, position), "".getBytes());
 			context.write(ibKey, kv2);
 		}

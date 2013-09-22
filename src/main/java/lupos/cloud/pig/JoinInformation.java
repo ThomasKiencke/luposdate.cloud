@@ -363,4 +363,28 @@ public class JoinInformation {
 		}
 	}
 
+	public void mergeBitVecor(String var, HashSet<CloudBitvector> bitVectors) {
+		if (bitVectors == null) {
+			return;
+		}
+		
+		HashSet<CloudBitvector> list = this.bitVectors.get(var);
+		if (list == null) {
+			list = new HashSet<CloudBitvector>();
+			for (CloudBitvector v : bitVectors) {
+				v.setInc();
+				list.add(v);
+			}
+			this.bitVectors.put(var, list);
+
+		} else {
+			for (CloudBitvector v : bitVectors) {
+				v.setInc();
+				list.add(v);
+			}
+			this.bitVectors.put(var, list);
+		}
+		
+	}
+
 }

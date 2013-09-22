@@ -70,14 +70,23 @@ public class QueryExecuter {
 
 		// Tests ausführen:
 		try {
-			System.out.println("Tests werden ausgefuehrt:");
-
+				System.out.println("Tests werden ausgefuehrt (mit bloomfilter):");
+			
 			for (int i = 0; i < args.length - 1; i++) {
 				testQuery(i, args[i + 1]);
 				FileLocalizer.deleteTempFiles(); // loescht temp files auf HDFS
 			}
-
 			printCSV();
+			
+			cloudEvaluator.getCloudManagement().bitvectorTime = 0.0;
+			cloudEvaluator.getCloudManagement().bloomfilter_active = false;
+			System.out.println("Tests werden ausgefuehrt (ohne bloomfilter):");
+			for (int i = 0; i < args.length - 1; i++) {
+				testQuery(i, args[i + 1]);
+				FileLocalizer.deleteTempFiles(); // loescht temp files auf HDFS
+			}
+			printCSV();
+			
 			cloudEvaluator.shutdown(); // gibt temporäre dateien frei
 		} catch (Exception e) {
 			e.printStackTrace();

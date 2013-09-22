@@ -73,7 +73,7 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
+	//	System.out.println("expected:" + expected);
 		System.out.println("actual:  " + actual);
 		assertEquals(expected, actual);
 	}
@@ -122,7 +122,9 @@ public class CloudEvaluatorTest extends Sp2bTest {
 	}
 
 	@Test
+	@Ignore
 	public void testQ4() throws Exception {
+		fail("Diese Anfrage wird nich unterstuetzt");
 
 		String selectQuery = readFile(q4_query_filename);
 
@@ -218,7 +220,7 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
+	//	System.out.println("expected:" + expected);
 		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);

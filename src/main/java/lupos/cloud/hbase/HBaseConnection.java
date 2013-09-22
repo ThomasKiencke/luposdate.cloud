@@ -9,6 +9,7 @@ import java.util.HashMap;
 
 import lupos.cloud.hbase.bulkLoad.BulkLoad;
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
+import lupos.cloud.testing.BitvectorManager;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -148,8 +149,8 @@ public class HBaseConnection {
 			HTableDescriptor descriptor = new HTableDescriptor(
 					Bytes.toBytes(tablename));
 			HColumnDescriptor family = new HColumnDescriptor(familyname);
-			HColumnDescriptor familyb1 = new HColumnDescriptor(HBaseKVMapper.bloomfilter1ColumnFamily);
-			HColumnDescriptor familyb2 = new HColumnDescriptor(HBaseKVMapper.bloomfilter2ColumnFamily);
+			HColumnDescriptor familyb1 = new HColumnDescriptor(BitvectorManager.bloomfilter1ColumnFamily);
+			HColumnDescriptor familyb2 = new HColumnDescriptor(BitvectorManager.bloomfilter2ColumnFamily);
 			family.setCompressionType(Algorithm.LZO);
 			familyb1.setCompressionType(Algorithm.LZO);
 			familyb2.setCompressionType(Algorithm.LZO);
@@ -393,22 +394,14 @@ public class HBaseConnection {
 			}
 			// Bloomfilter
 			if (!(elem1 == null)) {
-				int hash = elem1.hashCode();
-				if (hash < 0) {
-					hash = hash * (-1);
-				}
-				Integer position = hash % HBaseKVMapper.VECTORSIZE;
-				row.add(HBaseKVMapper.bloomfilter1ColumnFamily, integerToByteArray(4, position),
+				Integer position = BitvectorManager.hash(elem1.getBytes());
+				row.add(BitvectorManager.bloomfilter1ColumnFamily, integerToByteArray(4, position),
 						Bytes.toBytes(""));
 			}
 			
 			if (!(elem2 == null)) {
-				int hash = elem2.hashCode();
-				if (hash < 0) {
-					hash = hash * (-1);
-				}
-				Integer position = hash % HBaseKVMapper.VECTORSIZE;
-				row.add(HBaseKVMapper.bloomfilter2ColumnFamily, integerToByteArray(4, position),
+				Integer position = BitvectorManager.hash(elem2.getBytes());
+				row.add(BitvectorManager.bloomfilter2ColumnFamily, integerToByteArray(4, position),
 						Bytes.toBytes(""));
 			}
 			

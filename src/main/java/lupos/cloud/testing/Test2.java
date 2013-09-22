@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
 import org.apache.hadoop.util.bloom.DynamicBloomFilter;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler;
+import org.apache.pig.backend.hadoop.hbase.HBaseStorage;
 import org.apache.pig.builtin.Bloom;
 import org.apache.pig.builtin.BuildBloom;
 import org.apache.pig.builtin.JsonMetadata;
@@ -38,6 +39,7 @@ public class Test2 {
 		 org.apache.hadoop.hbase.HColumnDescriptor af;
 //		org.apache.hadoop.hbase.filter.FuzzyRowFilter
 		 DynamicBloomFilter asdg;
+		
 
 	}
 

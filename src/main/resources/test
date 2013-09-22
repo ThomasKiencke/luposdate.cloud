@@ -1,19 +1,39 @@
--- TriplePattern: ?journal <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Journal> .
-PATTERN_0 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>,<http://localhost/vocabulary/bench/Journal>', '/tmp/cloudBloomfilter_journal')as (columncontent_0:map[]);
-INTERMEDIATE_BAG_0 = foreach PATTERN_0 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output0:chararray);
+-- TriplePattern: ?person <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+PATTERN_0 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>,<http://xmlns.com/foaf/0.1/Person>', '/tmp/cloudBloomfilter_person') as (columncontent_0:bytearray);
+INTERMEDIATE_BAG_0 = foreach PATTERN_0 generate flatten(lupos.cloud.pig.udfs.ListToBagUDF($0 )) as (output0:chararray);
 
--- TriplePattern: ?journal <http://purl.org/dc/elements/1.1/title> "Journal 1 (1940)"^^<http://www.w3.org/2001/XMLSchema#string> .
-PATTERN_1 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://purl.org/dc/elements/1.1/title>,"Journal 1 (1940)"^^<http://www.w3.org/2001/XMLSchema#string>', '/tmp/cloudBloomfilter_journal')as (columncontent_1:map[]);
-INTERMEDIATE_BAG_1 = foreach PATTERN_1 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1:chararray);
+-- TriplePattern: ?person ?predicate ?object .
+S_PO_DATA = load 'hbase://S_PO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '-loadKey true', '',  '/tmp/cloudBloomfilter_person', '/tmp/cloudBloomfilter_predicate') as (rowkey:chararray, columncontent_1:bytearray);
+INTERMEDIATE_BAG_1 = foreach S_PO_DATA generate $0, flatten(lupos.cloud.pig.udfs.ListToBagUDF($1));
 
--- TriplePattern: ?journal <http://purl.org/dc/terms/issued> ?yr .
-PATTERN_2 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '','<http://purl.org/dc/terms/issued>', '/tmp/cloudBloomfilter_journal', '/tmp/cloudBloomfilter_yr')  as (columncontent_2:map[]);
-INTERMEDIATE_BAG_2 = foreach PATTERN_2 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0)) as (output1_2:chararray, output2_2:chararray); 
+-- Projection: ?predicate, ?person
+INTERMEDIATE_BAG_2 = FOREACH INTERMEDIATE_BAG_1 GENERATE $1, $0;
 
--- Join over ?journal
-INTERMEDIATE_BAG_3 = JOIN INTERMEDIATE_BAG_0 BY $0, INTERMEDIATE_BAG_1 BY $0, INTERMEDIATE_BAG_2 BY $0 PARALLEL 5;
+-- Join over ?person
+INTERMEDIATE_BAG_3 = JOIN INTERMEDIATE_BAG_0 BY $0, INTERMEDIATE_BAG_2 BY $1 PARALLEL 5;
+INTERMEDIATE_BAG_3 = FOREACH INTERMEDIATE_BAG_3 GENERATE $0, $1;
 
--- Projection: ?yr
--- X = FOREACH INTERMEDIATE_BAG_3 GENERATE $3;
+-- TriplePattern: ?person <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+PATTERN_4 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>,<http://xmlns.com/foaf/0.1/Person>', '/tmp/cloudBloomfilter_person') as (columncontent_0:bytearray);
+INTERMEDIATE_BAG_4 = foreach PATTERN_4 generate flatten(lupos.cloud.pig.udfs.ListToBagUDF($0 )) as (output0:chararray);
 
-X = INTERMEDIATE_BAG_2;
+-- TriplePattern: ?subject ?predicate ?person .
+S_PO_DATA = load 'hbase://S_PO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '-loadKey true', '',  '/tmp/cloudBloomfilter_subject', '/tmp/cloudBloomfilter_predicate') as (rowkey:chararray, columncontent_1:bytearray);
+INTERMEDIATE_BAG_5 = foreach S_PO_DATA generate $0, flatten(lupos.cloud.pig.udfs.ListToBagUDF($1));
+
+-- Projection: ?predicate, ?person
+INTERMEDIATE_BAG_6 = FOREACH INTERMEDIATE_BAG_5 GENERATE $1, $2;
+
+-- Join over ?person
+INTERMEDIATE_BAG_7 = JOIN INTERMEDIATE_BAG_4 BY $0, INTERMEDIATE_BAG_6 BY $1 PARALLEL 5;
+INTERMEDIATE_BAG_7 = FOREACH INTERMEDIATE_BAG_7 GENERATE $0, $1;
+
+-- UNION:
+INTERMEDIATE_BAG_8 = UNION INTERMEDIATE_BAG_3, INTERMEDIATE_BAG_7;
+
+-- Projection: ?predicate
+INTERMEDIATE_BAG_9 = FOREACH INTERMEDIATE_BAG_8 GENERATE $1;
+
+-- Distinct: 
+-- X = DISTINCT INTERMEDIATE_BAG_9 PARALLEL 5;
+X = INTERMEDIATE_BAG_1;

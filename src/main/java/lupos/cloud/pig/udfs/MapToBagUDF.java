@@ -1,16 +1,25 @@
 package lupos.cloud.pig.udfs;
 
 import java.io.IOException;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Map.Entry;
 
+import lupos.cloud.pig.udfs.HBaseLoadUDF.ColumnInfo;
+import lupos.cloud.testing.BitvectorManager;
+
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.OrderedLoadFunc;
 import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
+import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 
@@ -22,9 +31,10 @@ public class MapToBagUDF extends EvalFunc<DataBag> implements OrderedLoadFunc {
 
 	/** The Constant bagFactory. */
 	private static final BagFactory bagFactory = BagFactory.getInstance();
-
-	/** The Constant tupleFactory. */
 	private static final TupleFactory tupleFactory = TupleFactory.getInstance();
+
+	private BitSet bitvector1 = null;
+	private BitSet bitvector2 = null;
 
 	/*
 	 * (non-Javadoc)
@@ -34,54 +44,72 @@ public class MapToBagUDF extends EvalFunc<DataBag> implements OrderedLoadFunc {
 	@Override
 	@SuppressWarnings("unchecked")
 	public DataBag exec(Tuple input) throws IOException {
+		DataBag result = bagFactory.newDefaultBag();
 		try {
-			int mapSize = input.size();
+			Map<String, DataByteArray> cfMap = (HashMap<String, DataByteArray>) input
+					.get(0);
 
-			DataBag result = bagFactory.newDefaultBag();
-			Tuple tuple = tupleFactory.newTuple(mapSize);
-
-			if (mapSize == 1) {
-				List<String> map1 = (List<String>) input.get(0);
-				for (String entry : map1) {
-					tuple.set(0, entry);
-					result.add(tuple);
-				}
-			} else if (mapSize == 2) {
-				List<String> map1 = (List<String>) input.get(0);
-				List<String> map2 = (List<String>) input.get(1);
-				if (map1.size() != map2.size()) {
-					throw new RuntimeException(
-							"MapToBag error: size not equals");
-				}
-				int i = 0;
-				for (String entry : map1) {
-					tuple.set(0, entry);
-					tuple.set(1, map2.get(i));
-					i++;
-					result.add(tuple);
-				}
-			} else if (mapSize == 3) {
-				List<String> map1 = (List<String>) input.get(0);
-				List<String> map2 = (List<String>) input.get(1);
-				List<String> map3 = (List<String>) input.get(2);
-				if (map1.size() != map2.size()) {
-					throw new RuntimeException(
-							"MapToBag error: size not equals");
-				}
-				int i = 0;
-				for (String entry : map1) {
-					tuple.set(0, entry);
-					tuple.set(1, map2.get(i));
-					tuple.set(2, map3.get(i));
-					i++;
-					result.add(tuple);
+			if (input.size() == 2) {
+				Object b1 = input.get(1);
+				if (b1 != null) {
+					bitvector1 = (BitSet) b1;
 				}
 			}
-			return result;
+
+			if (input.size() == 3) {
+				Object b1 = input.get(1);
+				if (b1 != null) {
+					bitvector1 = (BitSet) b1;
+				}
+				Object b2 = input.get(2);
+				if (b2 != null) {
+					bitvector2 = (BitSet) b2;
+				}
+			}
+
+			if (cfMap != null) {
+				for (String quantifier : cfMap.keySet()) {
+					String[] columnname = quantifier.split(",");
+
+					if (columnname.length > 1) {
+						if (bitvector1 != null
+								&& !isElementPartOfBitvector(
+										columnname[0].getBytes(), bitvector1)) {
+							continue;
+						}
+
+						// 2
+						if (bitvector2 != null
+								&& !isElementPartOfBitvector(
+										columnname[1].getBytes(), bitvector2)) {
+							continue;
+						}
+
+					} else {
+						if (bitvector1 != null
+								&& !isElementPartOfBitvector(
+										columnname[0].getBytes(), bitvector1)) {
+							continue;
+						}
+					}
+
+					if (columnname.length > 1) {
+						Tuple toAdd = tupleFactory.newTuple(2);
+						toAdd.set(0, columnname[0]);
+						toAdd.set(1, columnname[1]);
+						result.add(toAdd);
+					} else {
+						Tuple toAdd = tupleFactory.newTuple(1);
+						toAdd.set(0, columnname[0]);
+						result.add(toAdd);
+					}
+				}
+			}
 
 		} catch (Exception e) {
 			throw new RuntimeException("MapToBag error", e);
 		}
+		return result;
 	}
 
 	@Override
@@ -89,5 +117,14 @@ public class MapToBagUDF extends EvalFunc<DataBag> implements OrderedLoadFunc {
 			throws IOException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	private boolean isElementPartOfBitvector(byte[] element, BitSet bitvector) {
+		Integer position = BitvectorManager.hash(element);
+		if (bitvector.get(position)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }

@@ -95,8 +95,8 @@ public class Sp2bTest {
 	}
 
 	protected static void loadIntoCloud(String file) throws Exception {
-		String[] args = { Sp2b.class.getClassLoader().getResource(file).toString().replace("file:", "") , "1" , "1", "2100000"};
-		HBaseLoader.main(args);
+//		String[] args = { Sp2b.class.getClassLoader().getResource(file).toString().replace("file:", "") , "1" , "1", "2100000"};
+//		HBaseLoader.main(args);
 	}
 
 	protected static CloudEvaluator initCloudEvaluator() throws Exception {

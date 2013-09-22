@@ -22,6 +22,7 @@ package lupos.cloud.pig.udfs;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -43,6 +44,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
+import lupos.cloud.testing.BitvectorManager;
 
 import org.joda.time.DateTime;
 import org.apache.commons.cli.CommandLine;
@@ -184,6 +186,8 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 	private Path bitvectorPath2 = null;
 	private boolean bitVectorIsLoaded = false;
 
+	private static final TupleFactory tupleFactory = TupleFactory.getInstance();
+
 	private static void populateValidOptions() {
 		validOptions_.addOption("loadKey", false, "Load Key");
 		validOptions_.addOption("gt", true,
@@ -242,9 +246,9 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 	 *             when unable to parse arguments
 	 * @throws IOException
 	 */
-	public HBaseLoadUDF(String columnList, String rowKey)
+	public HBaseLoadUDF(String columnList, String optList)
 			throws ParseException, IOException {
-		this(columnList, "", rowKey);
+		this(columnList, optList, null);
 	}
 
 	public HBaseLoadUDF(String columnList, String optString, String rowKey,
@@ -258,7 +262,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 	public HBaseLoadUDF(String columnList, String optString, String rowKey,
 			String bitvectorPath1, String bitvectorPath2)
 			throws ParseException, IOException {
-		this(columnList, optString, rowKey);
+		this(columnList, optString, (rowKey.length() == 0) ? null : rowKey);
 
 		this.bitvectorPath1 = new Path(bitvectorPath1);
 		this.bitvectorPath2 = new Path(bitvectorPath2);
@@ -275,14 +279,10 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 			bitvector = fromByteArray(ByteStreams.toByteArray(input));
 			// bitvector = longToBitSet(input.readLong());
 			input.close();
+		} catch (FileNotFoundException e) {
+			bitvector = null;
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-
-		// Wenn 95% der Bits im Vector gesetzt sind fuehre den Bitvector nicht
-		// aus, da der Overhead zu gross ist
-		if (((double) bitvector.cardinality()) >= ((double) HBaseKVMapper.VECTORSIZE * (double) 0.95)) {
-			bitvector = null;
 		}
 		this.bitVectorIsLoaded = true;
 		return bitvector;
@@ -697,90 +697,56 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 
 				int tupleSize = columnInfo_.size();
 
-				// use a map of families -> qualifiers with the most recent
-				// version of the cell. Fetching multiple vesions could be a
-				// useful feature.
 				NavigableMap<byte[], NavigableMap<byte[], byte[]>> resultsMap = result
 						.getNoVersionMap();
 
 				if (loadRowKey_) {
 					tupleSize++;
 				}
-				boolean twoElements;
-				if (new String(rowKey.get()).contains(",")) {
-					twoElements = false;
-				} else {
-					twoElements = true;
+
+				if (bitvectorPath1 != null && bitvectorPath2 != null) {
+					tupleSize++;
+					tupleSize++;
+				} else if (bitvectorPath1 != null) {
 					tupleSize++;
 				}
 
-				Tuple tuple = TupleFactory.getInstance().newTuple(tupleSize);
+				Tuple tuple = tupleFactory.newTuple(tupleSize);
 
-				int startIndex = 0;
+				int tupleIndex = 0;
 				if (loadRowKey_) {
 					tuple.set(0, new DataByteArray(rowKey.get()));
-					startIndex++;
+					tupleIndex++;
 				}
 
 				for (int i = 0; i < columnInfo_.size(); ++i) {
-					int currentIndex = startIndex + i;
-
 					ColumnInfo columnInfo = columnInfo_.get(i);
 					if (columnInfo.isColumnMap()) {
 						NavigableMap<byte[], byte[]> cfResults = resultsMap
 								.get(columnInfo.getColumnFamily());
 
-						// MultiMap<String, DataByteArray> cfMap1 = new
-						// LinkedMultiMap<String, DataByteArray>();
-						// MultiMap<String, DataByteArray> cfMap2 = new
-						// LinkedMultiMap<String, DataByteArray>();
-						LinkedList<String> list1 = new LinkedList<String>();
-						LinkedList<String> list2 = new LinkedList<String>();
+//						LinkedList<Tuple> list = new LinkedList<Tuple>();
+                        Map<String, DataByteArray> cfMap =
+                                new HashMap<String, DataByteArray>();
 
 						if (cfResults != null) {
 							for (byte[] quantifier : cfResults.keySet()) {
-								// bitfilter
-								// if (bitvector1 != null && bitvector2 != null)
-								// {
-								String[] columnname = Bytes
-										.toString(quantifier).split(",");
-								if (twoElements) {
-									if (bitvector1 != null
-											&& !isElementPartOfBitvector(
-													columnname[0], bitvector1)) {
-										continue;
-									}
-
-									// 2
-									if (bitvector2 != null
-											&& !isElementPartOfBitvector(
-													columnname[1], bitvector2)) {
-										continue;
-									}
-
-									// add
-									list1.push(columnname[0]);
-									list2.push(columnname[1]);
-
-								} else {
-									if (bitvector1 != null
-											&& !isElementPartOfBitvector(
-													columnname[0], bitvector1)) {
-										continue;
-									}
-									list1.add(columnname[0]);
-								}
+								cfMap.put(Bytes.toString(quantifier), null);
 							}
-
-							if (twoElements) {
-								tuple.set(currentIndex, list1);
-								currentIndex++;
-								tuple.set(currentIndex, list2);
-							} else {
-								tuple.set(currentIndex, list1);
-							}
+							tuple.set(tupleIndex, cfMap);
 						}
 					}
+					tupleIndex++;
+				}
+				
+				if (bitvectorPath1 != null) {
+					tuple.set(tupleIndex, bitvector1);
+					tupleIndex++;
+				}
+				
+				if (bitvectorPath2 != null) {
+					tuple.set(tupleIndex, bitvector2);
+					tupleIndex++;
 				}
 
 				return tuple;
@@ -790,20 +756,6 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		}
 		return null;
 	}
-
-	private boolean isElementPartOfBitvector(String element, BitSet bitvector) {
-		int hash = element.hashCode();
-		if (hash < 0) {
-			hash = hash * (-1);
-		}
-		Integer position = hash % HBaseKVMapper.VECTORSIZE;
-		if (bitvector.get(position)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-
 	@Override
 	public InputFormat getInputFormat() {
 		TableInputFormat inputFormat = new HBaseTableIFBuilder()

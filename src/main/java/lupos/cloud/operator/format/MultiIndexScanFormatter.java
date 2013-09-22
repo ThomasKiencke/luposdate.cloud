@@ -96,10 +96,12 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 			}
 
 			newJoin = new JoinInformation();
+			boolean isJoin = false;
 			if (container.getMappingTree().get(id) instanceof Union) {
 				pigQuery.buildAndAppendQuery(new PigUnionOperator(newJoin,
 						multiInputist));
 			} else if (container.getMappingTree().get(id) instanceof Join) {
+				isJoin = true;
 				pigQuery.buildAndAppendQuery(new PigJoinOperator(newJoin,
 						multiInputist, (Join) container.getMappingTree()
 								.get(id)));
@@ -114,13 +116,22 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 			}
 
 			// HashSet<String> variables = new HashSet<String>();
+			int i = 0;
 			for (JoinInformation toRemove : multiInputist) {
 				// variables.addAll(toRemove.getJoinElements());
 				newJoin.addAppliedFilters(toRemove.getAppliedFilters());
 				pigQuery.removeIntermediateBags(toRemove);
-				for (String var : toRemove.getJoinElements()) {
-					newJoin.addBitvector(var, toRemove.getBitVector(var));
+				// Bei Optional nur die linke Seite des bitvecors hinzufügen
+				if (isJoin || i == 0) {
+					for (String var : toRemove.getJoinElements()) {
+						newJoin.addBitvector(var, toRemove.getBitVector(var));
+					}
+				} else {
+					for (String var : toRemove.getJoinElements()) {
+						newJoin.mergeBitVecor(var, toRemove.getBitVector(var));
+					}
 				}
+				i++;
 			}
 
 			// newJoin.setJoinElements(new ArrayList<String>(variables));
