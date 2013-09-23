@@ -106,10 +106,10 @@ public class BitvectorManager {
 			
 //			System.out.print("bitvectorsize for " + var + ": ");
 			if (bitVectorIgnored) {
-				System.out.println(" vector ignored, because appears only once");
+				System.out.println(var + " vector ignored, because appears only once");
 				HBaseConnection.getHdfs_fileSystem().deleteOnExit(remote);
 			} else if (((double) bitVector.cardinality()) >= ((double) BitvectorManager.VECTORSIZE * (double) 0.95)) {
-				System.out.println(" vector ignored, because to many true bits (>95%)");
+				System.out.println(var + " vector ignored, because to many true bits (>95%)");
 				HBaseConnection.getHdfs_fileSystem().deleteOnExit(remote);
 			} else {
 //				System.out.println(bitVector.cardinality());

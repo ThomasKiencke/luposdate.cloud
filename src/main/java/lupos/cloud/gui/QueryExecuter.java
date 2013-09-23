@@ -128,7 +128,7 @@ public class QueryExecuter {
 	}
 
 	public static void testQuery(int number, String filename) throws Exception {
-		System.out.println("Test " + number + " Input: " + filename);
+		System.out.println("\nTest " + number + " Input: " + filename);
 		long start = System.currentTimeMillis();
 		String selectQuery = readFile(filename);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
