@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 
+import org.apache.commons.codec.digest.DigestUtils;
+
 import lupos.cloud.hbase.HBaseDistributionStrategy;
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.pig.JoinInformation;
@@ -50,9 +52,9 @@ public class PigIndexScanOperator implements IPigOperator {
 			 * geladen und alle Informationen zuürck gegeben.
 			 */
 			if (curPattern.allElementsAreVariables()) {
-				// TODO: set bitvector full with 1's
-				result.append(curPattern.getTablename()
-						+ "_DATA = "
+				result.append("PATTERN_"
+						+ curPattern.getPatternId()
+						+ " = "
 						+ "load 'hbase://"
 						+ curPattern.getTablename()
 						+ "' "
@@ -61,12 +63,16 @@ public class PigIndexScanOperator implements IPigOperator {
 								.getColumnFamilyName() + "', '-loadKey true'");
 				if (CloudManagement.bloomfilter_active) {
 					result.append(", '', "
-							+ " '/tmp/cloudBloomfilter_"
-							+ curPattern.getJoinElements().get(0)
-									.replace("?", "")
-							+ "', '/tmp/cloudBloomfilter_"
-							+ curPattern.getJoinElements().get(1)
-									.replace("?", "") + "'");
+							+ " '"
+							+ DigestUtils.sha512Hex(
+									curPattern.getJoinElements().get(1)
+											+ curPattern.getPatternId())
+									.toString()
+							+ "', '"
+							+ DigestUtils.sha512Hex(
+									curPattern.getJoinElements().get(2)
+											+ curPattern.getPatternId())
+									.toString() + "'");
 				}
 
 				result.append(") as (rowkey:chararray, columncontent_"
@@ -77,8 +83,9 @@ public class PigIndexScanOperator implements IPigOperator {
 				result.append(");\n");
 				result.append(curPattern.getName()
 						+ " = foreach "
-						+ curPattern.getTablename()
-						+ "_DATA generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1");
+						+ "PATTERN_"
+						+ curPattern.getPatternId()
+						+ " generate $0, flatten(lupos.cloud.pig.udfs.MapToBagUDF($1");
 				if (CloudManagement.bloomfilter_active) {
 					result.append(", $2, $3");
 				}
@@ -104,16 +111,20 @@ public class PigIndexScanOperator implements IPigOperator {
 								.getColumnFamilyName() + "', '', '"
 						+ curPattern.getLiterals() + "'");
 				if (CloudManagement.bloomfilter_active) {
-					result.append(((curPattern.getJoinElements().size() == 1) ? ", '/tmp/cloudBloomfilter_"
-							+ curPattern.getJoinElements().get(0)
-									.replace("?", "")
-							: ", '/tmp/cloudBloomfilter_"
-									+ curPattern.getJoinElements().get(0)
-											.replace("?", "")
-									+ "', '/tmp/cloudBloomfilter_"
-									+ curPattern.getJoinElements().get(1)
-											.replace("?", ""))
-							+ "'");
+					result.append(((curPattern.getJoinElements().size() == 1) ? ", '"
+							+ DigestUtils.sha512Hex(
+									curPattern.getJoinElements().get(0)
+											+ curPattern.getPatternId())
+									.toString() + "'" : ", '"
+							+ DigestUtils.sha512Hex(
+									curPattern.getJoinElements().get(0)
+											+ curPattern.getPatternId())
+									.toString()
+							+ "', '"
+							+ DigestUtils.sha512Hex(
+									curPattern.getJoinElements().get(1)
+											+ curPattern.getPatternId())
+									.toString() + "'"));
 				}
 
 				result.append(") as (columncontent_" + tripleCounter + ":map[]");
@@ -147,28 +158,35 @@ public class PigIndexScanOperator implements IPigOperator {
 				curPattern.addBitvector(curPattern.getJoinElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
-								BitvectorManager.bloomfilter1ColumnFamily));
+								BitvectorManager.bloomfilter1ColumnFamily,
+								curPattern.getPatternId()));
 			} else if ((curPattern.getJoinElements().size() == 2)) {
 				curPattern.addBitvector(curPattern.getJoinElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
-								BitvectorManager.bloomfilter1ColumnFamily));
+								BitvectorManager.bloomfilter1ColumnFamily,
+								curPattern.getPatternId()));
 				curPattern.addBitvector(curPattern.getJoinElements().get(1),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
-								BitvectorManager.bloomfilter2ColumnFamily));
+								BitvectorManager.bloomfilter2ColumnFamily,
+								curPattern.getPatternId()));
 			} else if ((curPattern.getJoinElements().size() == 3)) {
-				curPattern.addBitvector(curPattern.getJoinElements().get(0),
+				curPattern.addBitvector(
+						curPattern.getJoinElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
-								curPattern.getLiterals(), null));
-				curPattern.addBitvector(curPattern.getJoinElements().get(1),
+								curPattern.getLiterals(), null, curPattern
+										.getPatternId()));
+				curPattern.addBitvector(
+						curPattern.getJoinElements().get(1),
 						new CloudBitvector(curPattern.getTablename(),
-								curPattern.getLiterals(),
-								BitvectorManager.bloomfilter1ColumnFamily));
-				curPattern.addBitvector(curPattern.getJoinElements().get(2),
+								curPattern.getLiterals(), null, curPattern
+										.getPatternId()));
+				curPattern.addBitvector(
+						curPattern.getJoinElements().get(2),
 						new CloudBitvector(curPattern.getTablename(),
-								curPattern.getLiterals(),
-								BitvectorManager.bloomfilter2ColumnFamily));
+								curPattern.getLiterals(), null, curPattern
+										.getPatternId()));
 			}
 
 			if (debug) {

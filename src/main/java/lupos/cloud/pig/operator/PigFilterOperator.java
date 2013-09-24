@@ -3,6 +3,8 @@ package lupos.cloud.pig.operator;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.openrdf.query.parser.serql.ast.ASTBound;
+
 import lupos.cloud.pig.JoinInformation;
 import lupos.cloud.pig.SinglePigQuery;
 import lupos.engine.operators.singleinput.filter.Filter;
@@ -16,7 +18,7 @@ public class PigFilterOperator implements IPigOperator {
 			ASTLessThanNode.class, ASTNotNode.class, ASTRDFLiteral.class,
 			ASTStringLiteral.class, ASTGreaterThanNode.class,
 			ASTLessThanEqualsNode.class, ASTGreaterThanEqualsNode.class,
-			ASTEqualsNode.class, ASTNotEqualsNode.class };
+			ASTEqualsNode.class, ASTNotEqualsNode.class, ASTBoundFuncNode.class };
 	ArrayList<String> filterListe = new ArrayList<String>();
 	private boolean debug;
 	private ArrayList<String> variables = new ArrayList<String>();
@@ -61,6 +63,11 @@ public class PigFilterOperator implements IPigOperator {
 				if (node instanceof ASTNotNode) {
 					// ASTNotNode notNode = (ASTNotNode) node;
 					result.append(" NOT(");
+					closeBracket = true;
+				} else if (node instanceof ASTBoundFuncNode) {
+//					ASTBoundFuncNode bound = (ASTBoundFuncNode) node;
+					// ASTNotNode notNode = (ASTNotNode) node;
+					result.append(" lupos.cloud.pig.udfs.BoundFilterUDF(");
 					closeBracket = true;
 				} else if (node instanceof ASTRDFLiteral) {
 					// ignore, weil StringLiteral verarbeitet wird

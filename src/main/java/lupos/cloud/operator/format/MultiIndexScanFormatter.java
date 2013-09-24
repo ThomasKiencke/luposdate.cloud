@@ -121,7 +121,7 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 				// variables.addAll(toRemove.getJoinElements());
 				newJoin.addAppliedFilters(toRemove.getAppliedFilters());
 				pigQuery.removeIntermediateBags(toRemove);
-				// Bei Optional nur die linke Seite des bitvecors hinzufügen
+
 				if (isJoin || i == 0) {
 					for (String var : toRemove.getJoinElements()) {
 						newJoin.addBitvector(var, toRemove.getBitVector(var));

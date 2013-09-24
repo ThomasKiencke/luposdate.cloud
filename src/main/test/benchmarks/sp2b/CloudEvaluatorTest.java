@@ -60,8 +60,8 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -87,8 +87,8 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -101,8 +101,8 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -115,8 +115,8 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -124,15 +124,15 @@ public class CloudEvaluatorTest extends Sp2bTest {
 	@Test
 	@Ignore
 	public void testQ4() throws Exception {
-		fail("Diese Anfrage wird nich unterstuetzt");
+//		fail("Diese Anfrage wird nich unterstuetzt");
 
 		String selectQuery = readFile(q4_query_filename);
 
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -145,8 +145,8 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -159,8 +159,8 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -174,8 +174,8 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -188,8 +188,8 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -205,8 +205,8 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -221,7 +221,7 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
 	//	System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -234,8 +234,8 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
@@ -248,62 +248,62 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
 
 		assertEquals(expected, actual);
 	}
 
-	@Ignore
-	@Test
-	public void testQ12a() throws Exception {
-		
-		fail("Diese Anfrage wird nich unterstuetzt");
+//	@Ignore
+//	@Test
+//	public void testQ12a() throws Exception {
+//		
+//		fail("Diese Anfrage wird nich unterstuetzt");
+//
+//		String selectQuery = readFile(q12a_query_filename);
+//
+//		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
+//		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
+//
+////		System.out.println("expected:" + expected);
+////		System.out.println("actual:  " + actual);
+//
+//		assertEquals(expected, actual);
+//	}
 
-		String selectQuery = readFile(q12a_query_filename);
+//	@Ignore
+//	@Test
+//	public void testQ12b() throws Exception {
+//		
+//		fail("Diese Anfrage wird nich unterstuetzt");
+//
+//		String selectQuery = readFile(q12b_query_filename);
+//
+//		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
+//		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
+//
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
+//
+//		assertEquals(expected, actual);
+//	}
 
-		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
-		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
-
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
-
-		assertEquals(expected, actual);
-	}
-
-	@Ignore
-	@Test
-	public void testQ12b() throws Exception {
-		
-		fail("Diese Anfrage wird nich unterstuetzt");
-
-		String selectQuery = readFile(q12b_query_filename);
-
-		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
-		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
-
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
-
-		assertEquals(expected, actual);
-	}
-
-	@Ignore
-	@Test
-	public void testQ12c() throws Exception {
-
-		fail("Diese Anfrage wird nich unterstuetzt");
-		
-		String selectQuery = readFile(q12c_query_filename);
-
-		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
-		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
-
-		System.out.println("expected:" + expected);
-		System.out.println("actual:  " + actual);
-
-		assertEquals(expected, actual);
-	}
+//	@Ignore
+//	@Test
+//	public void testQ12c() throws Exception {
+//
+//		fail("Diese Anfrage wird nich unterstuetzt");
+//		
+//		String selectQuery = readFile(q12c_query_filename);
+//
+//		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
+//		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
+//
+//		System.out.println("expected:" + expected);
+//		System.out.println("actual:  " + actual);
+//
+//		assertEquals(expected, actual);
+//	}
 
 	private static MemoryIndexQueryEvaluator initMemoryEvaluator() {
 		try {

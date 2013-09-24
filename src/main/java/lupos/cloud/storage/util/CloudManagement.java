@@ -65,13 +65,13 @@ public class CloudManagement {
 
 	boolean PRINT_PIGLATIN_PROGRAMM = true;
 
-	boolean TESTING_MODE = true;
+	boolean TESTING_MODE = false;
 
 	public static int PARALLEL_REDUCE_OPERATIONS = 5;
 
 	public double bitvectorTime = 0;
 
-	public static boolean bloomfilter_active = true;
+	public static boolean bloomfilter_active = false;
 
 	/**
 	 * Instantiates a new cloud management.
@@ -156,7 +156,7 @@ public class CloudManagement {
 		try {
 			if (bloomfilter_active) {
 				long start2 = System.currentTimeMillis();
-				BitvectorManager.generateBitvector(query.getBitvectors());
+				BitvectorManager.generateBitvector(query.getBitvectors(), query);
 				long stop2 = System.currentTimeMillis();
 				System.out.println("Bitvector generated in "
 						+ new DecimalFormat("#.##")

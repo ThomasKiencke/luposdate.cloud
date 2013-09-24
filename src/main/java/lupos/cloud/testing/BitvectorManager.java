@@ -17,7 +17,9 @@ import java.util.NavigableMap;
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.pig.PigQuery;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.Get;
@@ -39,15 +41,19 @@ public class BitvectorManager {
 	public static final byte[] bloomfilter2ColumnFamily = "2".getBytes();
 	private static HashFunction hash = new HashFunction(VECTORSIZE, 1,
 			Hash.JENKINS_HASH);
+	public static final String WORKING_DIR = "/tmp/CloudBitvectors";
+	public static final String BLOOMFILTER_NAME = "cloudBloomfilter_";
 
 	public static int hash(byte[] toHash) {
 		return hash.hash(new Key(toHash))[0];
 	}
 
 	public static void generateBitvector(
-			HashMap<String, HashSet<CloudBitvector>> bitvectors)
-			throws IOException {
+			HashMap<String, HashSet<CloudBitvector>> bitvectors,
+			PigQuery pigQuery) throws IOException {
 		System.out.println("# bitvectors: " + bitvectors.size());
+
+		init();
 		for (String var : bitvectors.keySet()) {
 			MultiMap<Integer, BitSet> bitSetList = new MultiMap<Integer, BitSet>();
 			if (bitvectors.get(var).size() > 1) {
@@ -59,14 +65,17 @@ public class BitvectorManager {
 				}
 			}
 
-			boolean bitVectorIgnored = false;
-			BitSet bitVector = null;
-
 			// Wenn nur ein bitvector vorahnden ist ignroriere diesen
 			if (bitSetList.size() == 0) {
-				bitVector = new BitSet(VECTORSIZE);
-				bitVector.set(0, VECTORSIZE);
-				bitVectorIgnored = true;
+				System.out.println(var
+						+ " vector ignored, because appears only once");
+				for (CloudBitvector bv : bitvectors.get(var)) {
+					pigQuery.replaceBloomfilterName(
+							DigestUtils.sha512Hex(var + bv.getPatternId())
+									.toString(), WORKING_DIR + "/"
+									+ BLOOMFILTER_NAME + var.replace("?", "")
+									+ "_IGNORE");
+				}
 			} else {
 				// AND verknüpfen
 				ArrayList<BitSet> groupBitSetList = new ArrayList<BitSet>();
@@ -74,51 +83,54 @@ public class BitvectorManager {
 					groupBitSetList
 							.add(mergeBitSet(var, bitSetList.get(setId)));
 				}
-				if (groupBitSetList.size() > 1) {
-					System.out.print("\n---> " + var + " is merged (or) from ");
-					int j = 0;
-					for (BitSet bs : groupBitSetList) {
-						if (j > 0) {
-							System.out.print(", ");
+				Integer groupCounter = 0;
+				for (BitSet bitVector : groupBitSetList) {
+					Path local = new Path("cloudBloomfilter_"
+							+ var.replace("?", "") + "_" + groupCounter);
+					Path remote = new Path(WORKING_DIR + "/" + BLOOMFILTER_NAME
+							+ var.replace("?", "") + "_" + groupCounter);
+
+					if (((double) bitVector.cardinality()) >= ((double) BitvectorManager.VECTORSIZE * (double) 0.95)) {
+						System.out
+								.println(var
+										+ " vector ignored, because to many true bits (>95%)");
+						for (CloudBitvector bv : bitvectors.get(var)) {
+							pigQuery.replaceBloomfilterName(
+									DigestUtils.sha512Hex(var + bv.getPatternId())
+											.toString(), WORKING_DIR + "/"
+											+ BLOOMFILTER_NAME + var.replace("?", "")
+											+ "_IGNORE");
 						}
-						int card = bs.cardinality();
-						System.out.print(card);
-						j++;
-					}
-					// OR verknüpfen
-					bitVector = new BitSet(VECTORSIZE);
-					for (int i = 0; i < VECTORSIZE; i++) {
-						for (BitSet set : groupBitSetList) {
-							if (set.get(i)) {
-								bitVector.set(i);
+					} else {
+						writeByteToDisk(toByteArray(bitVector), local);
+						HBaseConnection.getHdfs_fileSystem().copyFromLocalFile(
+								true, true, local, remote);
+						new File(local.getName()).delete();
+
+						// Replace in Pig Programm
+						for (CloudBitvector bv : bitvectors.get(var)) {
+							if (bv.getSetId() == groupCounter) {
+								pigQuery.replaceBloomfilterName(DigestUtils
+										.sha512Hex(var + bv.getPatternId())
+										.toString(),
+										WORKING_DIR + "/" + BLOOMFILTER_NAME
+												+ var.replace("?", "") + "_"
+												+ groupCounter);
 							}
 						}
 					}
-					System.out.println(" to " + bitVector.cardinality() + " <---");
-				} else {
-					bitVector = groupBitSetList.get(0);
+					groupCounter++;
+
 				}
 			}
-
-			Path local = new Path("cloudBloomfilter_" + var.replace("?", ""));
-			Path remote = new Path("/tmp/cloudBloomfilter_"
-					+ var.replace("?", ""));
-			
-//			System.out.print("bitvectorsize for " + var + ": ");
-			if (bitVectorIgnored) {
-				System.out.println(var + " vector ignored, because appears only once");
-				HBaseConnection.getHdfs_fileSystem().deleteOnExit(remote);
-			} else if (((double) bitVector.cardinality()) >= ((double) BitvectorManager.VECTORSIZE * (double) 0.95)) {
-				System.out.println(var + " vector ignored, because to many true bits (>95%)");
-				HBaseConnection.getHdfs_fileSystem().deleteOnExit(remote);
-			} else {
-//				System.out.println(bitVector.cardinality());
-				writeByteToDisk(toByteArray(bitVector), local);
-				HBaseConnection.getHdfs_fileSystem().copyFromLocalFile(true, true,
-						local, remote);
-				new File(local.getName()).delete();
-			}
 		}
+
+	}
+
+	private static void init() throws IOException {
+		HBaseConnection.getHdfs_fileSystem()
+				.delete(new Path(WORKING_DIR), true);
+		HBaseConnection.getHdfs_fileSystem().mkdirs(new Path(WORKING_DIR));
 
 	}
 
@@ -201,9 +213,7 @@ public class BitvectorManager {
 			System.out.print(card);
 			j++;
 		}
-		
 
-		
 		for (int i = 0; i < bitvector.size(); i++) {
 			boolean setBit = true;
 			for (BitSet bits : bitSetList) {

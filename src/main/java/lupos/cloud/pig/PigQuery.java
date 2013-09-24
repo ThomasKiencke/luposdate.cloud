@@ -174,4 +174,10 @@ public class PigQuery {
 	public HashMap<String, HashSet<CloudBitvector>> getBitvectors() {
 		return this.intermediateBags.get(0).getBitVectors();
 	}
+
+	public void replaceBloomfilterName(String oldName, String newName) {
+		String original = this.pigLatin.toString();
+		this.pigLatin = new StringBuilder();
+		this.pigLatin.append(original.replace(oldName, newName));
+	}
 }
