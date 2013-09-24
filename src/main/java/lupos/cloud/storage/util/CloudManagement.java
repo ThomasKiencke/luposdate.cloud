@@ -71,7 +71,7 @@ public class CloudManagement {
 
 	public double bitvectorTime = 0;
 
-	public static boolean bloomfilter_active = false;
+	public static boolean bloomfilter_active = true;
 
 	/**
 	 * Instantiates a new cloud management.

@@ -122,7 +122,7 @@ public class AddMergeContainerRule extends Rule {
 					} else {
 						Integer position = OperatorGraphHelper
 								.getLastEdgeNumber();
-						while (position >= list.size() && position > 0) {
+						while (position > list.size() && position > 0) {
 							position--;
 						}
 						list.add(position, op);
