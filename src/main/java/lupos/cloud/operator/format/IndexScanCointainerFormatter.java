@@ -43,6 +43,7 @@ import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.engine.operators.singleinput.modifiers.Limit;
+import lupos.engine.operators.singleinput.modifiers.SortLimit;
 import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 import lupos.engine.operators.singleinput.sort.Sort;
 import lupos.engine.operators.tripleoperator.TriplePattern;
@@ -76,19 +77,30 @@ public class IndexScanCointainerFormatter implements IOperatorFormatter {
 						((Projection) op).getProjectedVariables()));
 			} else if (op instanceof Distinct) {
 				singlePigQuery.setDistinctOperator(new PigDistinctOperator());
-			} else if (op instanceof Limit) {
-				singlePigQuery.setLimitOperator(new PigLimitOperator(
-						((Limit) op).getLimit()));
+			} else if (op instanceof Limit || op instanceof SortLimit) {
+				if (op instanceof Limit) {
+					singlePigQuery.setLimitOperator(new PigLimitOperator(
+							((Limit) op).getLimit()));
+				} else if (op instanceof SortLimit) {
+					singlePigQuery.setLimitOperator(new PigLimitOperator(
+							// Workaround, es gibt fuer SortLimit kein "getLimit()"
+							Integer.parseInt(((SortLimit) op).toString()
+									.substring(
+											((SortLimit) op).toString()
+													.indexOf("SortLimit ") + "SortLimit ".length()))));
+				}
 			} else if (op instanceof Sort) {
 				singlePigQuery.setOrderbyOperator(new PigOrderByOperator(
 						((Sort) op)));
 			} else if (op instanceof AddBindingFromOtherVar) {
 				// muss an sich nicht behandelt werden, da im
 				// IndexScan/TripelMustern die Variablen bereits durch LUPOSDATE
-				// ersetzew werden, jedoch nicht in der Projektion! 
+				// ersetzew werden, jedoch nicht in der Projektion!
 				AddBindingFromOtherVar addVar = (AddBindingFromOtherVar) op;
-				singlePigQuery.replaceVariableInProjection("?" + addVar.getVar().getName(), "?" + addVar.getOtherVar().getName());
-				
+				singlePigQuery.replaceVariableInProjection("?"
+						+ addVar.getVar().getName(), "?"
+						+ addVar.getOtherVar().getName());
+
 			} else if (op instanceof Result || op instanceof Root
 					|| op instanceof AddBinding) {
 				// ignore

@@ -16,7 +16,6 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.bloom.HashFunction;
 import org.apache.hadoop.util.bloom.Key;
 import org.apache.hadoop.util.hash.Hash;
-import org.python.antlr.PythonParser.return_stmt_return;
 
 import au.com.bytecode.opencsv.CSVParser;
 

@@ -26,6 +26,7 @@ import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.engine.operators.singleinput.modifiers.Limit;
+import lupos.engine.operators.singleinput.modifiers.SortLimit;
 import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 import lupos.engine.operators.singleinput.sort.Sort;
 
@@ -67,7 +68,7 @@ public class OperatorGraphHelper {
 		Class[] supporClasses = { Projection.class, Distinct.class,
 				Limit.class, Sort.class, AddBindingFromOtherVar.class,
 				Result.class, Root.class, AddBinding.class, Union.class,
-				Join.class, Optional.class };
+				Join.class, Optional.class, SortLimit.class };
 		if (op instanceof Filter) {
 			result = PigFilterOperator.checkIfFilterIsSupported(((Filter) op)
 					.getNodePointer().getChildren()[0]);

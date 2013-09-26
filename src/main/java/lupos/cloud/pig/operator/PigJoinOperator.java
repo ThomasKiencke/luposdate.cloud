@@ -40,8 +40,8 @@ public class PigJoinOperator implements IPigOperator {
 					join.getIntersectionVariables());
 
 			if (joinList.size() == 0) {
-				throw new RuntimeException(
-						"Es sind keine Intersection Variablen für die Operation Join vorhanden -> Abbruch!");
+//				throw new RuntimeException(
+//						"Es sind keine Intersection Variablen für die Operation Join vorhanden -> Abbruch!");
 			}
 
 			if (joinList.size() == 1) {

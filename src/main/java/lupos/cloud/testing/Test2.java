@@ -39,6 +39,8 @@ public class Test2 {
 		 org.apache.hadoop.hbase.HColumnDescriptor af;
 //		org.apache.hadoop.hbase.filter.FuzzyRowFilter
 		 DynamicBloomFilter asdg;
+		 lupos.engine.operators.singleinput.filter.expressionevaluation.EvaluationVisitorImplementation asfasf;
+
 		
 
 	}
