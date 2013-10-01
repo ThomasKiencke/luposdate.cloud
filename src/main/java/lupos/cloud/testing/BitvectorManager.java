@@ -55,6 +55,7 @@ public class BitvectorManager {
 
 		init();
 		for (String var : bitvectors.keySet()) {
+
 			MultiMap<Integer, BitSet> bitSetList = new MultiMap<Integer, BitSet>();
 			if (bitvectors.get(var).size() > 1) {
 				for (CloudBitvector bv : bitvectors.get(var)) {
@@ -128,6 +129,7 @@ public class BitvectorManager {
 	}
 
 	private static void init() throws IOException {
+		HBaseConnection.init();
 		HBaseConnection.getHdfs_fileSystem()
 				.delete(new Path(WORKING_DIR), true);
 		HBaseConnection.getHdfs_fileSystem().mkdirs(new Path(WORKING_DIR));

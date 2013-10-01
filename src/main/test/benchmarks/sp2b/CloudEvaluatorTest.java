@@ -122,7 +122,6 @@ public class CloudEvaluatorTest extends Sp2bTest {
 	}
 
 	@Test
-	@Ignore
 	public void testQ4() throws Exception {
 //		fail("Diese Anfrage wird nich unterstuetzt");
 
@@ -165,7 +164,7 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		assertEquals(expected, actual);
 	}
 
-	@Ignore
+
 	@Test
 	public void testQ6() throws Exception {
 
@@ -174,8 +173,16 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		QueryResult expected = executeQuery(memoryEvaluator, selectQuery);
 		QueryResult actual = executeQuery(cloudEvaluator, selectQuery);
 
-//		System.out.println("expected:" + expected);
-//		System.out.println("actual:  " + actual);
+		for ( lupos.datastructures.bindings.Bindings b : expected.getCollection()) {
+			System.out.println(b.toString());
+		}
+		
+		System.out.println("OOOTOHERR: ");
+		for ( lupos.datastructures.bindings.Bindings b : actual.getCollection()) {
+			System.out.println(b.toString());
+		}
+		System.out.println("expected:" + expected.size());
+		System.out.println("actual:  " + actual.size());
 
 		assertEquals(expected, actual);
 	}
@@ -194,11 +201,9 @@ public class CloudEvaluatorTest extends Sp2bTest {
 		assertEquals(expected, actual);
 	}
 
-	@Ignore
 	@Test
 	public void testQ8() throws Exception {
 		
-		fail("Diese Anfrage wird nich unterstuetzt");
 
 		String selectQuery = readFile(q8_query_filename);
 

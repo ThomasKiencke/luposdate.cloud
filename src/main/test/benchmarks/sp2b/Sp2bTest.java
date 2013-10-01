@@ -66,7 +66,6 @@ public class Sp2bTest {
 	protected static final String file_q12c = "benchmarks/sp2b/sp2b_q12c.n3";
 	protected static final String file_test = "benchmarks/sp2b/sp2b_test.n3";
 	
-	protected static final String default_file = file_50000_triples;
 
 	protected static final String q1_query_filename = "benchmarks/sp2b/queries/q1.sparql";
 	protected static final String q2_query_filename = "benchmarks/sp2b/queries/q2.sparql";
@@ -85,6 +84,8 @@ public class Sp2bTest {
 	protected static final String q12a_query_filename = "benchmarks/sp2b/queries/q12a.sparql";
 	protected static final String q12b_query_filename = "benchmarks/sp2b/queries/q12b.sparql";
 	protected static final String q12c_query_filename = "benchmarks/sp2b/queries/q12c.sparql";
+	
+	protected static final String default_file = file_test;
 
 	protected static CloudEvaluator cloudEvaluator;
 
