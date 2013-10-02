@@ -175,6 +175,7 @@ public class OperatorGraphHelper {
 			LinkedList<BasicOperator> containerList) {
 		ArrayList<Variable> intersectionVariables = new ArrayList<Variable>(
 				multiInputOperator.getIntersectionVariables());
+//				multiInputOperator.getUnionVariables());
 		if (intersectionVariables.size() > 0) {
 			Projection proj = new Projection();
 			for (Variable var : intersectionVariables) {

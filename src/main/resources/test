@@ -1,3 +1,4 @@
+-- TriplePattern: ?class <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
 PATTERN_0 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://www.w3.org/2000/01/rdf-schema#subClassOf>,<http://xmlns.com/foaf/0.1/Document>', '/tmp/CloudBitvectors/cloudBloomfilter_class_0') as (columncontent_0:map[], bloomfilter1:bytearray);
 INTERMEDIATE_BAG_0 = foreach PATTERN_0 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0, $1)) as (output0:chararray);
 
@@ -6,7 +7,7 @@ PATTERN_1 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', 
 INTERMEDIATE_BAG_1 = foreach PATTERN_1 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0, $1, $2)) as (output1_1:chararray, output2_1:chararray); 
 
 -- TriplePattern: ?document <http://purl.org/dc/terms/issued> ?yr .
-PATTERN_2 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://purl.org/dc/terms/issued>', '/tmp/CloudBitvectors/cloudBloomfilter_document_0', '/tmp/CloudBitvectors/cloudBloomfilter_yr_0') as (columncontent_2:map[], bloomfilter1:bytearray, bloomfilter2:bytearray);
+PATTERN_2 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://purl.org/dc/terms/issued>', '/tmp/CloudBitvectors/cloudBloomfilter_document_0', '/tmp/CloudBitvectors/cloudBloomfilter_yr_IGNORE') as (columncontent_2:map[], bloomfilter1:bytearray, bloomfilter2:bytearray);
 INTERMEDIATE_BAG_2 = foreach PATTERN_2 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0, $1, $2)) as (output1_2:chararray, output2_2:chararray); 
 
 -- TriplePattern: ?document <http://purl.org/dc/elements/1.1/creator> ?author .
@@ -14,7 +15,7 @@ PATTERN_3 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', 
 INTERMEDIATE_BAG_3 = foreach PATTERN_3 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0, $1, $2)) as (output1_3:chararray, output2_3:chararray); 
 
 -- TriplePattern: ?author <http://xmlns.com/foaf/0.1/name> ?name .
-PATTERN_4 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://xmlns.com/foaf/0.1/name>', '/tmp/CloudBitvectors/cloudBloomfilter_author_0', '/tmp/CloudBitvectors/cloudBloomfilter_name_0') as (columncontent_4:map[], bloomfilter1:bytearray, bloomfilter2:bytearray);
+PATTERN_4 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://xmlns.com/foaf/0.1/name>', '/tmp/CloudBitvectors/cloudBloomfilter_author_0', '/tmp/CloudBitvectors/cloudBloomfilter_name_IGNORE') as (columncontent_4:map[], bloomfilter1:bytearray, bloomfilter2:bytearray);
 INTERMEDIATE_BAG_4 = foreach PATTERN_4 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0, $1, $2)) as (output1_4:chararray, output2_4:chararray); 
 
 -- Join over ?document
@@ -26,14 +27,14 @@ INTERMEDIATE_BAG_6 = FOREACH INTERMEDIATE_BAG_5 GENERATE $5, $3, $1, $0;
 -- Join over ?class
 INTERMEDIATE_BAG_7 = JOIN INTERMEDIATE_BAG_0 BY $0, INTERMEDIATE_BAG_6 BY $1 PARALLEL 5;
 
--- Projection: ?author, ?class, ?yr, ?document
-INTERMEDIATE_BAG_8 = FOREACH INTERMEDIATE_BAG_7 GENERATE $1, $0, $3, $4;
+-- Projection: ?author, ?yr, ?document
+INTERMEDIATE_BAG_8 = FOREACH INTERMEDIATE_BAG_7 GENERATE $1, $3, $4;
 
 -- Join over ?author
 INTERMEDIATE_BAG_9 = JOIN INTERMEDIATE_BAG_4 BY $0, INTERMEDIATE_BAG_8 BY $0 PARALLEL 5;
 
--- Projection: ?author, ?class, ?yr, ?name, ?document
-INTERMEDIATE_BAG_10 = FOREACH INTERMEDIATE_BAG_9 GENERATE $0, $3, $4, $1, $5;
+-- Projection: ?author, ?yr, ?name, ?document
+INTERMEDIATE_BAG_10 = FOREACH INTERMEDIATE_BAG_9 GENERATE $0, $3, $1, $4;
 
 -- TriplePattern: ?class2 <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
 PATTERN_11 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://www.w3.org/2000/01/rdf-schema#subClassOf>,<http://xmlns.com/foaf/0.1/Document>', '/tmp/CloudBitvectors/cloudBloomfilter_class2_1') as (columncontent_0:map[], bloomfilter1:bytearray);
@@ -54,66 +55,19 @@ INTERMEDIATE_BAG_14 = foreach PATTERN_14 generate flatten(lupos.cloud.pig.udfs.M
 -- Join over ?document2
 INTERMEDIATE_BAG_15 = JOIN INTERMEDIATE_BAG_13 BY $0, INTERMEDIATE_BAG_12 BY $0, INTERMEDIATE_BAG_14 BY $0 PARALLEL 5;
 
--- Projection: ?author, ?yr2, ?class2, ?document2
-INTERMEDIATE_BAG_16 = FOREACH INTERMEDIATE_BAG_15 GENERATE $5, $1, $3, $0;
+-- Projection: ?author, ?class2, ?document2
+INTERMEDIATE_BAG_16 = FOREACH INTERMEDIATE_BAG_15 GENERATE $5, $3, $0;
 
 -- Join over ?class2
-INTERMEDIATE_BAG_17 = JOIN INTERMEDIATE_BAG_11 BY $0, INTERMEDIATE_BAG_16 BY $2 PARALLEL 5;
+INTERMEDIATE_BAG_17 = JOIN INTERMEDIATE_BAG_11 BY $0, INTERMEDIATE_BAG_16 BY $1 PARALLEL 5;
 
--- Projection: ?author, ?yr2, ?class2, ?document2
-INTERMEDIATE_BAG_18 = FOREACH INTERMEDIATE_BAG_17 GENERATE $1, $2, $0, $4;
-
--- TriplePattern: ?class <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
-PATTERN_19 = load 'hbase://PO_S' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://www.w3.org/2000/01/rdf-schema#subClassOf>,<http://xmlns.com/foaf/0.1/Document>', '/tmp/CloudBitvectors/cloudBloomfilter_class_1') as (columncontent_0:map[], bloomfilter1:bytearray);
-INTERMEDIATE_BAG_19 = foreach PATTERN_19 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0, $1)) as (output0:chararray);
-
--- TriplePattern: ?document <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?class .
-PATTERN_20 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '/tmp/CloudBitvectors/cloudBloomfilter_document_1', '/tmp/CloudBitvectors/cloudBloomfilter_class_1') as (columncontent_1:map[], bloomfilter1:bytearray, bloomfilter2:bytearray);
-INTERMEDIATE_BAG_20 = foreach PATTERN_20 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0, $1, $2)) as (output1_1:chararray, output2_1:chararray); 
-
--- TriplePattern: ?document <http://purl.org/dc/terms/issued> ?yr .
-PATTERN_21 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://purl.org/dc/terms/issued>', '/tmp/CloudBitvectors/cloudBloomfilter_document_1', '/tmp/CloudBitvectors/cloudBloomfilter_yr_1') as (columncontent_2:map[], bloomfilter1:bytearray, bloomfilter2:bytearray);
-INTERMEDIATE_BAG_21 = foreach PATTERN_21 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0, $1, $2)) as (output1_2:chararray, output2_2:chararray); 
-
--- TriplePattern: ?document <http://purl.org/dc/elements/1.1/creator> ?author .
-PATTERN_22 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://purl.org/dc/elements/1.1/creator>', '/tmp/CloudBitvectors/cloudBloomfilter_document_1', '/tmp/CloudBitvectors/cloudBloomfilter_author_1') as (columncontent_3:map[], bloomfilter1:bytearray, bloomfilter2:bytearray);
-INTERMEDIATE_BAG_22 = foreach PATTERN_22 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0, $1, $2)) as (output1_3:chararray, output2_3:chararray); 
-
--- TriplePattern: ?author <http://xmlns.com/foaf/0.1/name> ?name .
-PATTERN_23 = load 'hbase://P_SO' using lupos.cloud.pig.udfs.HBaseLoadUDF('Hexa', '', '<http://xmlns.com/foaf/0.1/name>', '/tmp/CloudBitvectors/cloudBloomfilter_author_1', '/tmp/CloudBitvectors/cloudBloomfilter_name_1') as (columncontent_4:map[], bloomfilter1:bytearray, bloomfilter2:bytearray);
-INTERMEDIATE_BAG_23 = foreach PATTERN_23 generate flatten(lupos.cloud.pig.udfs.MapToBagUDF($0, $1, $2)) as (output1_4:chararray, output2_4:chararray); 
-
--- Join over ?document
-INTERMEDIATE_BAG_24 = JOIN INTERMEDIATE_BAG_21 BY $0, INTERMEDIATE_BAG_20 BY $0, INTERMEDIATE_BAG_22 BY $0 PARALLEL 5;
-
--- Projection: ?author, ?class, ?yr, ?document
-INTERMEDIATE_BAG_25 = FOREACH INTERMEDIATE_BAG_24 GENERATE $5, $3, $1, $0;
-
--- Join over ?class
-INTERMEDIATE_BAG_26 = JOIN INTERMEDIATE_BAG_19 BY $0, INTERMEDIATE_BAG_25 BY $1 PARALLEL 5;
-
--- Projection: ?author, ?class, ?yr, ?document
-INTERMEDIATE_BAG_27 = FOREACH INTERMEDIATE_BAG_26 GENERATE $1, $0, $3, $4;
-
--- Join over ?author
-INTERMEDIATE_BAG_28 = JOIN INTERMEDIATE_BAG_23 BY $0, INTERMEDIATE_BAG_27 BY $0 PARALLEL 5;
-
--- Projection: ?author, ?class, ?yr, ?name, ?document
-INTERMEDIATE_BAG_29 = FOREACH INTERMEDIATE_BAG_28 GENERATE $0, $3, $4, $1, $5;
-
- -- JOIN:
-INTERMEDIATE_BAG_30 = JOIN INTERMEDIATE_BAG_18 BY $0, INTERMEDIATE_BAG_29 BY $0;
-
--- Filter: yr2 < yr
-INTERMEDIATE_BAG_31 = FILTER INTERMEDIATE_BAG_30 BY $1 < $6;
+-- Projection: ?author, ?document2
+INTERMEDIATE_BAG_18 = FOREACH INTERMEDIATE_BAG_17 GENERATE $1, $3;
 
 -- Optional Join over ?author 
-INTERMEDIATE_BAG_32 = JOIN INTERMEDIATE_BAG_10 BY $0 LEFT OUTER, INTERMEDIATE_BAG_31 BY $0;
+INTERMEDIATE_BAG_19 = JOIN INTERMEDIATE_BAG_10 BY $0 LEFT OUTER, INTERMEDIATE_BAG_18 BY $0;
 
--- Filter:  NOT( lupos.cloud.pig.udfs.BoundFilterUDF(document2) ) 
-INTERMEDIATE_BAG_33 = FILTER INTERMEDIATE_BAG_32 BY  NOT( lupos.cloud.pig.udfs.BoundFilterUDF($8) ) ;
-
--- Projection: ?yr, ?name, ?document
--- X = FOREACH INTERMEDIATE_BAG_33 GENERATE $2, $3, $4;
+-- Projection: ?yr, ?document2, ?name, ?document
+-- X = FOREACH INTERMEDIATE_BAG_19 GENERATE $1, $5, $2, $3;
 
 X = INTERMEDIATE_BAG_18;
