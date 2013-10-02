@@ -123,11 +123,11 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 				pigQuery.removeIntermediateBags(toRemove);
 
 				if (isJoin || i == 0) {
-					for (String var : toRemove.getJoinElements()) {
+					for (String var : toRemove.getBitVectors().keySet()) {
 						newJoin.addBitvector(var, toRemove.getBitVector(var));
 					}
 				} else {
-					for (String var : toRemove.getJoinElements()) {
+					for (String var : toRemove.getBitVectors().keySet()) {
 						newJoin.mergeBitVecor(var, toRemove.getBitVector(var));
 					}
 				}

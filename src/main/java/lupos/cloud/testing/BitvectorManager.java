@@ -68,8 +68,8 @@ public class BitvectorManager {
 
 			// Wenn nur ein bitvector vorahnden ist ignroriere diesen
 			if (bitSetList.size() == 0) {
-				System.out.println(var
-						+ " vector ignored, because appears only once");
+				System.out.println("\n---> " + var
+						+ " vector ignored, because appears only once <---");
 				for (CloudBitvector bv : bitvectors.get(var)) {
 					pigQuery.replaceBloomfilterName(
 							DigestUtils.sha512Hex(var + bv.getPatternId())
@@ -80,11 +80,17 @@ public class BitvectorManager {
 			} else {
 				// AND verknüpfen
 				ArrayList<BitSet> groupBitSetList = new ArrayList<BitSet>();
+				Integer startId = null;
+				boolean first = true;
 				for (Integer setId : bitSetList.keySet()) {
+					if (first) {
+						startId = setId;
+						first = false;
+					}
 					groupBitSetList
 							.add(mergeBitSet(var, bitSetList.get(setId)));
 				}
-				Integer groupCounter = 0;
+				Integer groupCounter = startId;
 				for (BitSet bitVector : groupBitSetList) {
 					Path local = new Path("cloudBloomfilter_"
 							+ var.replace("?", "") + "_" + groupCounter);
