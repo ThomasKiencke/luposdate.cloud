@@ -132,13 +132,13 @@ public class PigProjectionOperator implements IPigOperator {
 					// Variable wird noch für einen Filter gebraucht?
 					for (PigFilterOperator pigFilter : this.filterOps) {
 						for (String filterVar : pigFilter.getVariables()) {
-							if (dropCandidateVariable.equals(filterVar)) {
+							if (dropCandidateVariable.equals("?" + filterVar)) {
 								// Wenn eine Filtervariable gedropt werden soll
 								// überprüfe ob Filter schon angewendet wurde,
 								// wenn ja kann sie gedroppt weden
 								for (JoinInformation join : intermediateJoins) {
 									if (join.getJoinElements().contains(
-											filterVar)
+											"?" + filterVar)
 											&& !join.getAppliedFilters()
 													.contains(pigFilter)) {
 										dropNotAllowedList

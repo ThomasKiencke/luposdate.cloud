@@ -85,7 +85,7 @@ public class Sp2bTest {
 	protected static final String q12b_query_filename = "benchmarks/sp2b/queries/q12b.sparql";
 	protected static final String q12c_query_filename = "benchmarks/sp2b/queries/q12c.sparql";
 	
-	protected static final String default_file = file_test;
+	protected static final String default_file = file_5000_triples;
 
 	protected static CloudEvaluator cloudEvaluator;
 

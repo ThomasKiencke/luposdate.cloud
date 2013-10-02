@@ -522,37 +522,43 @@ public class PigIndexScanOperator implements IPigOperator {
 		return intermediateJoins.get(0).getName();
 	}
 
+	// hat keinen Vorteil gebracht
+	@Deprecated
 	public String removeDuplicatedAliases(JoinInformation oldJoin) {
-		// return "";
-		StringBuilder result = new StringBuilder();
-		// prüfe ob es doppelte Aliases gibt und entferne diese
-		ArrayList<String> newElements = new ArrayList<String>();
-		boolean foundDuplicate = false;
-
-		for (String elem : oldJoin.getJoinElements()) {
-			if (newElements.contains(elem)) {
-				foundDuplicate = true;
-			} else {
-				newElements.add(elem);
-			}
-		}
-
-		if (foundDuplicate) {
-			result.append(oldJoin.getName() + " = FOREACH " + oldJoin.getName()
-					+ " GENERATE ");
-			boolean first = true;
-			for (String elem : newElements) {
-				if (!first) {
-					result.append(", ");
-				}
-				result.append("$" + oldJoin.getItemPos(elem));
-				first = false;
-			}
-			result.append(";\n");
-			oldJoin.setJoinElements(newElements);
-		}
-
-		return result.toString();
+		 return "";
+//		StringBuilder result = new StringBuilder();
+//		// prüfe ob es doppelte Aliases gibt und entferne diese
+//		ArrayList<String> newElements = new ArrayList<String>();
+//		boolean foundDuplicate = false;
+//
+//		for (String elem : oldJoin.getJoinElements()) {
+//			if (newElements.contains(elem)
+//					// Sonderfall z.B. ?author und ?author2 überpruefen
+//					&& elem.equals(newElements.get(newElements.indexOf(elem)))) {
+//				foundDuplicate = true;
+//			} else {
+//				newElements.add(elem);
+//			}
+//		}
+//
+//		System.out.println("V: " + oldJoin.getJoinElements());
+//		System.out.println("N: " + newElements);
+//		if (foundDuplicate) {
+//			result.append(oldJoin.getName() + " = FOREACH " + oldJoin.getName()
+//					+ " GENERATE ");
+//			boolean first = true;
+//			for (String elem : newElements) {
+//				if (!first) {
+//					result.append(", ");
+//				}
+//				result.append("$" + oldJoin.getItemPos(elem));
+//				first = false;
+//			}
+//			result.append(";\n");
+//			oldJoin.setJoinElements(newElements);
+//		}
+//
+//		return result.toString();
 
 	}
 }

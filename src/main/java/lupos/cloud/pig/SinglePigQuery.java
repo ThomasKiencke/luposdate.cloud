@@ -71,14 +71,14 @@ public class SinglePigQuery {
 			this.buildAndAppendQuery(distinctOperator);
 		}
 
-		if (limitOperator != null) {
-			this.buildAndAppendQuery(limitOperator);
-		}
-		
 		if (pigOrderByOperator != null) {
 			this.buildAndAppendQuery(pigOrderByOperator);
 		}
 		
+		if (limitOperator != null) {
+			this.buildAndAppendQuery(limitOperator);
+		}
+				
 		executeFiltersAndProjections(globalProjection, globalFilterPigOp);
 	}
 
