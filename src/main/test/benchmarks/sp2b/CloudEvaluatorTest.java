@@ -34,6 +34,7 @@ import lupos.datastructures.items.literal.LiteralFactory.MapType;
 import lupos.datastructures.items.literal.URILiteral;
 import lupos.datastructures.queryresult.QueryResult;
 import lupos.engine.evaluators.MemoryIndexQueryEvaluator;
+import lupos.engine.evaluators.RDF3XQueryEvaluator;
 
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -41,7 +42,7 @@ import org.junit.Test;
 
 public class CloudEvaluatorTest extends Sp2bTest {
 
-	static MemoryIndexQueryEvaluator memoryEvaluator;
+	static RDF3XQueryEvaluator memoryEvaluator;
 
 	@BeforeClass
 	public static void initDatastores() throws Exception {
@@ -310,9 +311,9 @@ public class CloudEvaluatorTest extends Sp2bTest {
 //		assertEquals(expected, actual);
 //	}
 
-	private static MemoryIndexQueryEvaluator initMemoryEvaluator() {
+	private static RDF3XQueryEvaluator initMemoryEvaluator() {
 		try {
-			memoryEvaluator = new MemoryIndexQueryEvaluator();
+			memoryEvaluator = new RDF3XQueryEvaluator();
 			Collection<URILiteral> defaultGraphs = new LinkedList<URILiteral>();
 			defaultGraphs.add(LiteralFactory
 					.createURILiteralWithoutLazyLiteral("<inlinedata:>"));
