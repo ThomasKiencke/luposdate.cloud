@@ -45,6 +45,11 @@
 			<artifactId>luposdate.core</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
+				<dependency>
+			<groupId>de.uniluebeck.ifis</groupId>
+			<artifactId>luposdate.integrationNxParser</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
 		<dependency>
 			<groupId>de.uniluebeck.ifis</groupId>
 			<artifactId>luposdate.distributed</artifactId>
