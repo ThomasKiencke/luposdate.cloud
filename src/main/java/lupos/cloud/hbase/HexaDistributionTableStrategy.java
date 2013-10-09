@@ -27,7 +27,7 @@ public class HexaDistributionTableStrategy extends HBaseDistributionStrategy {
 	 * @see lupos.cloud.hbase.HBaseDistributionStrategy#getTableNames()
 	 */
 	public String[] getTableNames() {
-		String[] result = { "S_PO", "P_SO", "O_SP", "PS_O", "SO_P", "PO_S" };
+		String[] result = { "S_PO", "P_SO", "O_SP", "SP_O", "SO_P", "PO_S" };
 		return result;
 	}
 
