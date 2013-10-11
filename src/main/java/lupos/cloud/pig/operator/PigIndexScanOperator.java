@@ -227,7 +227,7 @@ public class PigIndexScanOperator implements IPigOperator {
 					"INTERMEDIATE_BAG_");
 			break;
 		case 100:
-			result = new JoinInformation(triplePattern, "PS_O",
+			result = new JoinInformation(triplePattern, "SP_O",
 					"INTERMEDIATE_BAG_");
 			break;
 		case 10:
