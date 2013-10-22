@@ -56,6 +56,8 @@ public class QueryExecuter {
 
 		CloudManagement.PARALLEL_REDUCE_OPERATIONS = Integer.parseInt(args[0]);
 
+		String testOnly = args[1];
+
 		cloudEvaluator = new CloudEvaluator();
 
 		Bindings.instanceClass = BindingsMap.class;
@@ -64,29 +66,38 @@ public class QueryExecuter {
 
 		QueryResult.type = QueryResult.TYPE.ADAPTIVE;
 
-		result_time = new double[args.length - 1];
-		result_queryresult = new double[args.length - 1];
-		result_bitvectorTime = new double[args.length - 1];
+		result_time = new double[args.length - 2];
+		result_queryresult = new double[args.length - 2];
+		result_bitvectorTime = new double[args.length - 2];
 
 		// Tests ausführen:
 		try {
-				System.out.println("Tests werden ausgefuehrt (mit bloomfilter):");
-			
-			for (int i = 0; i < args.length - 1; i++) {
-				testQuery(i, args[i + 1]);
-				FileLocalizer.deleteTempFiles(); // loescht temp files auf HDFS
+			if (testOnly.equals("both") || testOnly.equals("first")) {
+				System.out
+						.println("Tests werden ausgefuehrt (mit bloomfilter):");
+
+				for (int i = 0; i < args.length - 2; i++) {
+					testQuery(i, args[i + 2]);
+					FileLocalizer.deleteTempFiles(); // loescht temp files auf
+														// HDFS
+				}
+				printCSV();
 			}
-			printCSV();
-			
-			cloudEvaluator.getCloudManagement().bitvectorTime = 0.0;
-			cloudEvaluator.getCloudManagement().bloomfilter_active = false;
-			System.out.println("Tests werden ausgefuehrt (ohne bloomfilter):");
-			for (int i = 0; i < args.length - 1; i++) {
-				testQuery(i, args[i + 1]);
-				FileLocalizer.deleteTempFiles(); // loescht temp files auf HDFS
+
+			if (testOnly.equals("both") || testOnly.equals("second")) {
+
+				cloudEvaluator.getCloudManagement().bitvectorTime = 0.0;
+				cloudEvaluator.getCloudManagement().bloomfilter_active = false;
+				System.out
+						.println("Tests werden ausgefuehrt (ohne bloomfilter):");
+				for (int i = 0; i < args.length - 2; i++) {
+					testQuery(i, args[i + 2]);
+					FileLocalizer.deleteTempFiles(); // loescht temp files auf
+														// HDFS
+				}
+				printCSV();
 			}
-			printCSV();
-			
+
 			cloudEvaluator.shutdown(); // gibt temporäre dateien frei
 		} catch (Exception e) {
 			e.printStackTrace();
