@@ -36,7 +36,7 @@ import org.apache.pig.impl.util.MultiMap;
 public class BitvectorManager {
 
 	JoinInformation currentSet = null;
-	public static final int VECTORSIZE = 100000;
+	public static final int VECTORSIZE = 100000000;
 	public static final byte[] bloomfilter1ColumnFamily = "1".getBytes();
 	public static final byte[] bloomfilter2ColumnFamily = "2".getBytes();
 	private static HashFunction hash = new HashFunction(VECTORSIZE, 1,
@@ -59,10 +59,21 @@ public class BitvectorManager {
 			MultiMap<Integer, BitSet> bitSetList = new MultiMap<Integer, BitSet>();
 			if (bitvectors.get(var).size() > 1) {
 				for (CloudBitvector bv : bitvectors.get(var)) {
-					bitSetList.put(
-							bv.getSetId(),
-							getBitSetFromeHbaseTable(bv.getTablename(),
-									bv.getRow(), bv.getColumnFamily()));
+					BitSet toAdd = null;
+
+					// lade Byte-Bitvektor, wenn keiner existiert ist toAdd null
+					toAdd = getDirectBitSetFromeHbaseTable(bv.getTablename(),
+							bv.getRow(), bv.getColumnFamily());
+
+					// generiere Bitvektor aus Indizes
+					if (toAdd == null) {
+						toAdd = getBitSetFromeHbaseTable(bv.getTablename(),
+								bv.getRow(), bv.getColumnFamily());
+					} else {
+//						System.out.println("BYTE BITVEKTOR GEFUNDEN!");
+					}
+
+					bitSetList.put(bv.getSetId(), toAdd);
 				}
 			}
 
@@ -102,11 +113,11 @@ public class BitvectorManager {
 								.println(var
 										+ " vector ignored, because to many true bits (>95%)");
 						for (CloudBitvector bv : bitvectors.get(var)) {
-							pigQuery.replaceBloomfilterName(
-									DigestUtils.sha512Hex(var + bv.getPatternId())
-											.toString(), WORKING_DIR + "/"
-											+ BLOOMFILTER_NAME + var.replace("?", "")
-											+ "_IGNORE");
+							pigQuery.replaceBloomfilterName(DigestUtils
+									.sha512Hex(var + bv.getPatternId())
+									.toString(), WORKING_DIR + "/"
+									+ BLOOMFILTER_NAME + var.replace("?", "")
+									+ "_IGNORE");
 						}
 					} else {
 						writeByteToDisk(toByteArray(bitVector), local);
@@ -172,6 +183,39 @@ public class BitvectorManager {
 		hTable.close();
 
 		return bitvector;
+	}
+
+	private static BitSet getDirectBitSetFromeHbaseTable(String tablename,
+			String row, byte[] cf) throws IOException {
+		BitSet result = null;
+		
+		// Spezialfall, wird in anderer Methode verarbeitet
+		if (cf == null) {
+			return null;
+		}
+		
+		HTable hTable = new HTable(HBaseConnection.getConfiguration(),
+				tablename);
+		Get g = new Get(row.getBytes());
+		g.addColumn(cf, "bloomfilter".getBytes());
+		Result r = hTable.get(g);
+
+		if (!r.isEmpty()) {
+			result = fromByteArray(r.getValue(cf, "bloomfilter".getBytes()));
+			hTable.close();
+		}
+		
+		return result;
+	}
+
+	public static BitSet fromByteArray(byte[] bytes) {
+		BitSet bits = new BitSet();
+		for (int i = 0; i < bytes.length * 8; i++) {
+			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
+				bits.set(i);
+			}
+		}
+		return bits;
 	}
 
 	public static Result getBitvectorHbaseResult(String tablename,

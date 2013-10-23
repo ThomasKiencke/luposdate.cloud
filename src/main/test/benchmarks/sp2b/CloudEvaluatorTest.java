@@ -123,6 +123,7 @@ public class CloudEvaluatorTest extends Sp2bTest {
 	}
 
 	@Test
+	@Ignore
 	public void testQ4() throws Exception {
 //		fail("Diese Anfrage wird nich unterstuetzt");
 

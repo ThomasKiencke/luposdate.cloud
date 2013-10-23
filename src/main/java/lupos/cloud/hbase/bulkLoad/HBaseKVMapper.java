@@ -31,8 +31,7 @@ public class HBaseKVMapper extends
 	CSVParser csvParser = new CSVParser('\t');
 
 	/** The table name. */
-	String tableName = "";
-;
+	String tableName = "";;
 
 	/*
 	 * (non-Javadoc)
@@ -81,6 +80,8 @@ public class HBaseKVMapper extends
 
 		context.write(ibKey, kv1);
 
+		// Bitvektor-Index fuer ALLE ausser P_SO berechnen
+		// if (!tableName.equals("P_SO")) {
 		String toSplit = fields[2];
 		String elem1 = null;
 		String elem2 = null;
@@ -94,18 +95,20 @@ public class HBaseKVMapper extends
 		// Bloomfilter
 		if (!(elem1 == null)) {
 			Integer position = BitvectorManager.hash(elem1.getBytes());
-			KeyValue kv2 = new KeyValue(ibKey.get(), BitvectorManager.bloomfilter1ColumnFamily,
+			KeyValue kv2 = new KeyValue(ibKey.get(),
+					BitvectorManager.bloomfilter1ColumnFamily,
 					IntegerToByteArray(4, position), "".getBytes());
 			context.write(ibKey, kv2);
 		}
 
 		if (!(elem2 == null)) {
 			Integer position = BitvectorManager.hash(elem2.getBytes());
-			KeyValue kv2 = new KeyValue(ibKey.get(), BitvectorManager.bloomfilter2ColumnFamily,
+			KeyValue kv2 = new KeyValue(ibKey.get(),
+					BitvectorManager.bloomfilter2ColumnFamily,
 					IntegerToByteArray(4, position), "".getBytes());
 			context.write(ibKey, kv2);
 		}
-
+		// }
 		context.getCounter("HBaseKVMapper", "TRIPLE_IMPORTED").increment(1);
 
 	}

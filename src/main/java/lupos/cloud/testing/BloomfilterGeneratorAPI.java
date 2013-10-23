@@ -20,8 +20,8 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
-public class BloomfilterGenerator {
-	private static Integer MIN_CARD = 1000;
+public class BloomfilterGeneratorAPI {
+	private static Integer MIN_CARD = 25000;
 
 	/**
 	 * @param args
@@ -53,11 +53,10 @@ public class BloomfilterGenerator {
 			s.setBatch(batchSize);
 			s.setCaching(cachingSize);
 			s.setCacheBlocks(true);
-			// s.addFamily(HexaDistributionTableStrategy.getTableInstance()
-			// .getColumnFamilyName().getBytes());
-			s.addFamily(BitvectorManager.bloomfilter1ColumnFamily);
-			s.addFamily(BitvectorManager.bloomfilter2ColumnFamily);
-
+			s.addFamily(HexaDistributionTableStrategy.getTableInstance()
+					.getColumnFamilyName().getBytes());
+			// s.addFamily(BitvectorManager.bloomfilter1ColumnFamily);
+			// s.addFamily(BitvectorManager.bloomfilter2ColumnFamily);
 			ResultScanner scanner = hTable.getScanner(s);
 
 			byte[] lastRowkey = null;
@@ -67,7 +66,7 @@ public class BloomfilterGenerator {
 
 			for (Result res = scanner.next(); res != null; res = scanner.next()) {
 				// Ausgabe der momentanen Position
-				if (checkedNumber % 100000 == 0) {
+				if (checkedNumber % 10000 == 0) {
 					System.out.println(checkedNumber + " Rows checked");
 				}
 				checkedNumber++;
@@ -75,9 +74,9 @@ public class BloomfilterGenerator {
 				// Wenn nur sehr wenige Elemente in der Reihe vorhanden sind,
 				// ueberspringe diese
 				int curColSize = res.getFamilyMap(
-						BitvectorManager.bloomfilter1ColumnFamily).size();
-				if (curColSize < batchSize - 1
-						&& !Arrays.equals(lastRowkey, res.getRow())) {
+						HexaDistributionTableStrategy.getTableInstance()
+								.getColumnFamilyName().getBytes()).size();
+				if (curColSize < batchSize - 1 && !Arrays.equals(lastRowkey, res.getRow())) {
 					lastRowkey = res.getRow();
 					continue;
 				}
@@ -135,74 +134,74 @@ public class BloomfilterGenerator {
 		System.out.println("Blaa: " + blaC);
 	}
 
-	// private static void addResultToBitSet(boolean twoBitvectors,
-	// BitSet bitvector1, BitSet bitvector2, Result res)
-	// throws UnsupportedEncodingException {
-	// NavigableMap<byte[], byte[]> cfResults = res
-	// .getFamilyMap(HexaDistributionTableStrategy.getTableInstance()
-	// .getColumnFamilyName().getBytes());
-	// if (cfResults != null) {
-	// for (byte[] entry : cfResults.keySet()) {
-	// String toSplit = Bytes.toString(entry);
-	// String elem1 = null;
-	// String elem2 = null;
-	// if (toSplit.contains(",")) {
-	// elem1 = toSplit.substring(0, toSplit.indexOf(","));
-	// elem2 = toSplit.substring(toSplit.indexOf(",") + 1,
-	// toSplit.length());
-	// } else {
-	// elem1 = toSplit.substring(0, toSplit.length());
-	// }
-	//
-	// // Bloomfilter
-	// if (!(elem1 == null)) {
-	// Integer position = BitvectorManager.hash(elem1.getBytes());
-	// bitvector1.set(position);
-	// }
-	// if (twoBitvectors) {
-	// if (!(elem2 == null)) {
-	// Integer position = BitvectorManager.hash(elem2
-	// .getBytes());
-	// bitvector2.set(position);
-	// }
-	// }
-	// }
-	// }
-	// }
-
-	private static void addResultToBitSet(Boolean twoBitvectors,
+	private static void addResultToBitSet(boolean twoBitvectors,
 			BitSet bitvector1, BitSet bitvector2, Result res)
 			throws UnsupportedEncodingException {
-		byte[] bloomfilterColumn = "bloomfilter".getBytes();
-
-		// Bitvektor 1
 		NavigableMap<byte[], byte[]> cfResults = res
-				.getFamilyMap(BitvectorManager.bloomfilter1ColumnFamily);
+				.getFamilyMap(HexaDistributionTableStrategy.getTableInstance()
+						.getColumnFamilyName().getBytes());
 		if (cfResults != null) {
 			for (byte[] entry : cfResults.keySet()) {
+				String toSplit = Bytes.toString(entry);
+				String elem1 = null;
+				String elem2 = null;
+				if (toSplit.contains(",")) {
+					elem1 = toSplit.substring(0, toSplit.indexOf(","));
+					elem2 = toSplit.substring(toSplit.indexOf(",") + 1,
+							toSplit.length());
+				} else {
+					elem1 = toSplit.substring(0, toSplit.length());
+				}
+
 				// Bloomfilter
-				if (!Arrays.equals(entry, bloomfilterColumn)) {
-					Integer position = byteArrayToInteger(entry);
+				if (!(elem1 == null)) {
+					Integer position = BitvectorManager.hash(elem1.getBytes());
 					bitvector1.set(position);
 				}
-			}
-		}
-
-		// Bitvektor 2
-		if (twoBitvectors) {
-			cfResults = res
-					.getFamilyMap(BitvectorManager.bloomfilter2ColumnFamily);
-			if (cfResults != null) {
-				for (byte[] entry : cfResults.keySet()) {
-					// Bloomfilter
-					if (!Arrays.equals(entry, bloomfilterColumn)) {
-						Integer position = byteArrayToInteger(entry);
+				if (twoBitvectors) {
+					if (!(elem2 == null)) {
+						Integer position = BitvectorManager.hash(elem2
+								.getBytes());
 						bitvector2.set(position);
 					}
 				}
 			}
 		}
 	}
+
+	// private static void addResultToBitSet(Boolean twoBitvectors,
+	// BitSet bitvector1, BitSet bitvector2, Result res)
+	// throws UnsupportedEncodingException {
+	// byte[] bloomfilterColumn = "bloomfilter".getBytes();
+	//
+	// // Bitvektor 1
+	// NavigableMap<byte[], byte[]> cfResults = res
+	// .getFamilyMap(BitvectorManager.bloomfilter1ColumnFamily);
+	// if (cfResults != null) {
+	// for (byte[] entry : cfResults.keySet()) {
+	// // Bloomfilter
+	// if (!Arrays.equals(entry, bloomfilterColumn)) {
+	// Integer position = byteArrayToInteger(entry);
+	// bitvector1.set(position);
+	// }
+	// }
+	// }
+	//
+	// // Bitvektor 2
+	// if (twoBitvectors) {
+	// cfResults = res
+	// .getFamilyMap(BitvectorManager.bloomfilter2ColumnFamily);
+	// if (cfResults != null) {
+	// for (byte[] entry : cfResults.keySet()) {
+	// // Bloomfilter
+	// if (!Arrays.equals(entry, bloomfilterColumn)) {
+	// Integer position = byteArrayToInteger(entry);
+	// bitvector2.set(position);
+	// }
+	// }
+	// }
+	// }
+	// }
 
 	private static Integer byteArrayToInteger(byte[] arr) {
 		return ByteBuffer.wrap(arr).getInt();

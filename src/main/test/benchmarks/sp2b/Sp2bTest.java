@@ -85,7 +85,7 @@ public class Sp2bTest {
 	protected static final String q12b_query_filename = "benchmarks/sp2b/queries/q12b.sparql";
 	protected static final String q12c_query_filename = "benchmarks/sp2b/queries/q12c.sparql";
 	
-	protected static final String default_file = file_5000_triples;
+	protected static final String default_file = file_10000_triples;
 
 	protected static CloudEvaluator cloudEvaluator;
 
@@ -96,8 +96,8 @@ public class Sp2bTest {
 	}
 
 	protected static void loadIntoCloud(String file) throws Exception {
-		String[] args = { Sp2b.class.getClassLoader().getResource(file).toString().replace("file:", "") , "1" , "1", "2100000"};
-		HBaseLoader.main(args);
+//		String[] args = { Sp2b.class.getClassLoader().getResource(file).toString().replace("file:", "") , "1" , "1", "2100000"};
+//		HBaseLoader.main(args);
 	}
 
 	protected static CloudEvaluator initCloudEvaluator() throws Exception {
