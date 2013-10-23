@@ -40,7 +40,6 @@ public class BloomfilterGenerator {
 		int bitvectorCount = 1;
 		long startTime = System.currentTimeMillis();
 		long checkedNumber = 0;
-		int blaC = 0;
 
 		for (String tablename : HBaseDistributionStrategy.getTableInstance()
 				.getTableNames()) {
@@ -85,7 +84,6 @@ public class BloomfilterGenerator {
 				// Speichere Bitvektoren
 				if (lastRowkey != null
 						&& !Arrays.equals(lastRowkey, res.getRow())) {
-					blaC++;
 					if (bitvector1.cardinality() >= MIN_CARD) {
 						// store bitvectors
 						storeBitvectorToHBase(tablename, lastRowkey,
@@ -131,8 +129,6 @@ public class BloomfilterGenerator {
 						+ " Dauer: "
 						+ (stopTime - startTime)
 						/ 1000 + "s");
-
-		System.out.println("Blaa: " + blaC);
 	}
 
 	// private static void addResultToBitSet(boolean twoBitvectors,
