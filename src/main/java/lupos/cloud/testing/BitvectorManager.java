@@ -9,8 +9,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NavigableMap;
-import java17Dependencies.BitSet;
 
+import java17Dependencies.BitSet;
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.pig.JoinInformation;
 import lupos.cloud.pig.PigQuery;
@@ -31,6 +31,7 @@ import org.apache.pig.impl.util.MultiMap;
 public class BitvectorManager {
 
 	JoinInformation currentSet = null;
+	public static HashMap<String, HTable> hTables = new HashMap<String, HTable>();
 	public static final int VECTORSIZE = 100000000;
 	public static final byte[] bloomfilter1ColumnFamily = "1".getBytes();
 	public static final byte[] bloomfilter2ColumnFamily = "2".getBytes();
@@ -65,7 +66,7 @@ public class BitvectorManager {
 						toAdd = getBitSetFromeHbaseTable(bv.getTablename(),
 								bv.getRow(), bv.getColumnFamily());
 					} else {
-						// System.out.println("BYTE BITVEKTOR GEFUNDEN!");
+//						System.out.println("BYTE BITVEKTOR GEFUNDEN!");
 					}
 
 					bitSetList.put(bv.getSetId(), toAdd);
@@ -96,6 +97,7 @@ public class BitvectorManager {
 					groupBitSetList
 							.add(mergeBitSet(var, bitSetList.get(setId)));
 				}
+
 				Integer groupCounter = startId;
 				for (BitSet bitVector : groupBitSetList) {
 					Path local = new Path("cloudBloomfilter_"
@@ -105,8 +107,9 @@ public class BitvectorManager {
 
 					if (((double) bitVector.cardinality()) >= ((double) BitvectorManager.VECTORSIZE * (double) 0.95)) {
 						System.out
-								.println(var
-										+ " vector ignored, because to many true bits (>95%)");
+								.println("\n---> "
+										+ var
+										+ " vector ignored, because to many true bits (>95%) <---");
 						for (CloudBitvector bv : bitvectors.get(var)) {
 							pigQuery.replaceBloomfilterName(DigestUtils
 									.sha512Hex(var + bv.getPatternId())
@@ -137,6 +140,13 @@ public class BitvectorManager {
 				}
 			}
 		}
+		
+		// clean up
+		
+		for(HTable tab : hTables.values()) {
+			tab.close();
+		}
+		hTables = new HashMap<String, HTable>(); 
 
 	}
 
@@ -159,8 +169,12 @@ public class BitvectorManager {
 			bitvector.set(0, VECTORSIZE);
 			return bitvector;
 		}
-		HTable hTable = new HTable(HBaseConnection.getConfiguration(),
-				tablename);
+
+		HTable hTable = hTables.get(tablename);
+		if (hTable == null) {
+			hTable = new HTable(HBaseConnection.getConfiguration(), tablename);
+			hTables.put(tablename, hTable);
+		}
 
 		Scan s = new Scan();
 		s.setStartRow(Bytes.toBytes(row));
@@ -189,8 +203,12 @@ public class BitvectorManager {
 			return null;
 		}
 
-		HTable hTable = new HTable(HBaseConnection.getConfiguration(),
-				tablename);
+		HTable hTable = hTables.get(tablename);
+		if (hTable == null) {
+			hTable = new HTable(HBaseConnection.getConfiguration(), tablename);
+			hTables.put(tablename, hTable);
+		}
+		
 		Get g = new Get(row.getBytes());
 		g.addColumn(cf, "bloomfilter".getBytes());
 		Result r = hTable.get(g);

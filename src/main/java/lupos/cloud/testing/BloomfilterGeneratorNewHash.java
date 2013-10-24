@@ -20,7 +20,7 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
-public class BloomfilterGeneratorAPI {
+public class BloomfilterGeneratorNewHash {
 	private static Integer MIN_CARD = 25000;
 
 	/**

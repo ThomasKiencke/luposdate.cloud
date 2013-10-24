@@ -4,7 +4,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
+
+import org.apache.hadoop.hbase.filter.ColumnCountGetFilter;
+
 import java17Dependencies.BitSet;
 
 public class BitSetTest {
@@ -13,36 +18,29 @@ public class BitSetTest {
 	public static void main(String[] args) throws IOException {
 		long start = System.currentTimeMillis();
 		ArrayList<BitSet> bitList = new ArrayList<BitSet>();
-		BitSet b1 = new BitSet(VECTORSIZE);
-		BitSet b2 = new BitSet(VECTORSIZE);
-		BitSet b3 = new BitSet(VECTORSIZE);
-		BitSet b4 = new BitSet(VECTORSIZE);
-		b1.set(1000, 100000);
-		bitList.add(b1);
 		
-		b2.set(10, VECTORSIZE);
-		bitList.add(b2);
-		
-		b3.set(100, 1000000000);
-		bitList.add(b3);
-		
-		b4.set(1000, 1000000000);
-		bitList.add(b4);
+		Random gen = new Random();
+		for (int i = 0; i < 7; i++) {
+			BitSet b = new BitSet(VECTORSIZE);
+			int ran = gen.nextInt(VECTORSIZE);
+			b.set(ran,VECTORSIZE);
+			bitList.add(b);
+			
+		}
 		
 	
 		mergeBitSet("bla", bitList);
-////		for (int i = 0; i < 100; i++) {
-//			System.out.println("b1: " + b1.cardinality());
-//			System.out.println("b2: " + b2.cardinality());
-////		}
-			
-		b1.and(b2);;
-		System.out.println("davor. " + b2.cardinality());
-		byte[] erg = b2.toByteArray();
+
 		
-		BitSet ergBack = BitSet.valueOf(erg);
-		System.out.println("danach. " + ergBack.cardinality());
 		
+//		b1.and(b2);;
+//		System.out.println("davor. " + b2.length());
+//		byte[] erg = b2.toByteArray();
+//		
+//		BitSet ergBack = fromByteArray(erg);
+//		System.out.println("danach. " + ergBack.length());
+//		System.out.println("Iss: " +Arrays.equals(erg, ergBack.toByteArray()));
+//		
 
 		long stop = System.currentTimeMillis();
 		System.out.println("In " + ((stop - start) / (double) 1000)
@@ -90,12 +88,13 @@ public class BitSetTest {
 	}
 	
 	public static BitSet fromByteArray(byte[] bytes) {
-		BitSet bits = new BitSet();
-		for (int i = 0; i < bytes.length * 8; i++) {
-			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
-				bits.set(i);
-			}
-		}
-		return bits;
+		return BitSet.valueOf(bytes);
+//		BitSet bits = new BitSet();
+//		for (int i = 0; i < bytes.length * 8; i++) {
+//			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
+//				bits.set(i);
+//			}
+//		}
+//		return bits;
 	}
 }

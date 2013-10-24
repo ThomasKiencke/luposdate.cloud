@@ -5,14 +5,11 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.NavigableMap;
-import java.util.Scanner;
 import java17Dependencies.BitSet;
 
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
-import lupos.cloud.hbase.HexaDistributionTableStrategy;
 
-import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
@@ -21,7 +18,7 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
 public class BloomfilterGenerator {
-	private static Integer MIN_CARD = 25000;
+	private static Integer MIN_CARD = 100;
 
 	/**
 	 * @param args
@@ -52,8 +49,7 @@ public class BloomfilterGenerator {
 			s.setBatch(batchSize);
 			s.setCaching(cachingSize);
 			s.setCacheBlocks(true);
-			// s.addFamily(HexaDistributionTableStrategy.getTableInstance()
-			// .getColumnFamilyName().getBytes());
+
 			s.addFamily(BitvectorManager.bloomfilter1ColumnFamily);
 			s.addFamily(BitvectorManager.bloomfilter2ColumnFamily);
 
@@ -63,10 +59,10 @@ public class BloomfilterGenerator {
 			BitSet bitvector1 = new BitSet(BitvectorManager.VECTORSIZE);
 			BitSet bitvector2 = new BitSet(BitvectorManager.VECTORSIZE);
 			boolean reset = true;
-
+			byte[] curBitvectorName = null;
 			for (Result res = scanner.next(); res != null; res = scanner.next()) {
 				// Ausgabe der momentanen Position
-				if (checkedNumber % 100000 == 0) {
+				if (checkedNumber % 1000000 == 0) {
 					System.out.println(checkedNumber + " Rows checked");
 				}
 				checkedNumber++;
@@ -75,6 +71,7 @@ public class BloomfilterGenerator {
 				// ueberspringe diese
 				int curColSize = res.getFamilyMap(
 						BitvectorManager.bloomfilter1ColumnFamily).size();
+
 				if (curColSize < batchSize - 1
 						&& !Arrays.equals(lastRowkey, res.getRow())) {
 					lastRowkey = res.getRow();
@@ -86,7 +83,7 @@ public class BloomfilterGenerator {
 						&& !Arrays.equals(lastRowkey, res.getRow())) {
 					if (bitvector1.cardinality() >= MIN_CARD) {
 						// store bitvectors
-						storeBitvectorToHBase(tablename, lastRowkey,
+						storeBitvectorToHBase(tablename, curBitvectorName,
 								bitvector1, bitvector2, hTable);
 						bitvectorCount++;
 					}
@@ -96,6 +93,7 @@ public class BloomfilterGenerator {
 
 				String curKey = Bytes.toString(res.getRow());
 				if (reset) {
+					curBitvectorName = res.getRow();
 					bitvector1.clear();
 					bitvector2.clear();
 					reset = false;
@@ -121,7 +119,7 @@ public class BloomfilterGenerator {
 			// cleanup
 			scanner.close();
 			hTable.close();
-		}
+		} // close
 		long stopTime = System.currentTimeMillis();
 		System.out
 				.println("Bitvektor Generierung beendet. Anzahl der erzeugten Bitvektoren: "
@@ -225,13 +223,13 @@ public class BloomfilterGenerator {
 
 	public static byte[] toByteArray(BitSet bits) {
 		return bits.toByteArray();
-//		byte[] bytes = new byte[bits.length() / 8 + 1];
-//		for (int i = 0; i < bits.length(); i++) {
-//			if (bits.get(i)) {
-//				bytes[bytes.length - i / 8 - 1] |= 1 << (i % 8);
-//			}
-//		}
-//		return bytes;
+		// byte[] bytes = new byte[bits.length() / 8 + 1];
+		// for (int i = 0; i < bits.length(); i++) {
+		// if (bits.get(i)) {
+		// bytes[bytes.length - i / 8 - 1] |= 1 << (i % 8);
+		// }
+		// }
+		// return bytes;
 	}
 
 }
