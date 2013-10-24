@@ -1,18 +1,13 @@
 package lupos.cloud.pig.udfs;
 
 import java.io.IOException;
-import java.util.BitSet;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Map.Entry;
 
-import lupos.cloud.pig.udfs.HBaseLoadUDF.ColumnInfo;
+import java.util.Map;
+import java17Dependencies.BitSet;
+
 import lupos.cloud.testing.BitvectorManager;
 
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.pig.EvalFunc;

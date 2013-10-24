@@ -1,26 +1,21 @@
 package lupos.cloud.testing;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NavigableMap;
+import java17Dependencies.BitSet;
 
 import lupos.cloud.hbase.HBaseConnection;
-import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.pig.JoinInformation;
 import lupos.cloud.pig.PigQuery;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
@@ -70,7 +65,7 @@ public class BitvectorManager {
 						toAdd = getBitSetFromeHbaseTable(bv.getTablename(),
 								bv.getRow(), bv.getColumnFamily());
 					} else {
-//						System.out.println("BYTE BITVEKTOR GEFUNDEN!");
+						// System.out.println("BYTE BITVEKTOR GEFUNDEN!");
 					}
 
 					bitSetList.put(bv.getSetId(), toAdd);
@@ -188,12 +183,12 @@ public class BitvectorManager {
 	private static BitSet getDirectBitSetFromeHbaseTable(String tablename,
 			String row, byte[] cf) throws IOException {
 		BitSet result = null;
-		
+
 		// Spezialfall, wird in anderer Methode verarbeitet
 		if (cf == null) {
 			return null;
 		}
-		
+
 		HTable hTable = new HTable(HBaseConnection.getConfiguration(),
 				tablename);
 		Get g = new Get(row.getBytes());
@@ -204,18 +199,8 @@ public class BitvectorManager {
 			result = fromByteArray(r.getValue(cf, "bloomfilter".getBytes()));
 			hTable.close();
 		}
-		
-		return result;
-	}
 
-	public static BitSet fromByteArray(byte[] bytes) {
-		BitSet bits = new BitSet();
-		for (int i = 0; i < bytes.length * 8; i++) {
-			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
-				bits.set(i);
-			}
-		}
-		return bits;
+		return result;
 	}
 
 	public static Result getBitvectorHbaseResult(String tablename,
@@ -255,7 +240,6 @@ public class BitvectorManager {
 			return bitSetList.get(0);
 		}
 		System.out.print("\n---> " + var + " is merged (and) from ");
-		BitSet bitvector = new BitSet(VECTORSIZE);
 		int j = 0;
 		for (BitSet bs : bitSetList) {
 			if (j > 0) {
@@ -266,36 +250,47 @@ public class BitvectorManager {
 			j++;
 		}
 
-		for (int i = 0; i < bitvector.size(); i++) {
-			boolean setBit = true;
-			for (BitSet bits : bitSetList) {
-				if (!bits.get(i)) {
-					setBit = false;
-				}
-			}
-			if (setBit) {
-				bitvector.set(i);
-			}
+		// schnelle Variante
+		for (int i = 1; i < bitSetList.size(); i++) {
+			bitSetList.get(0).and(bitSetList.get(i));
 		}
-		System.out.println(" to " + bitvector.cardinality() + " <---");
-		return bitvector;
-	}
 
-	public static BitSet getFullSetBitvector() {
-		BitSet bitvector = new BitSet(VECTORSIZE);
-		for (int i = 0; i < VECTORSIZE; i++) {
-			bitvector.set(i);
-		}
-		return bitvector;
+		// NICHT ueber alle Elemente Iterieren, dauert sehr lange!!!
+		// for (int i = 0; i < bitvector.size(); i++) {
+		// boolean setBit = true;
+		// for (BitSet bits : bitSetList) {
+		// if (!bits.get(i)) {
+		// setBit = false;
+		// }
+		// }
+		// if (setBit) {
+		// bitvector.set(i);
+		// }
+		// }
+		System.out.println(" to " + bitSetList.get(0).cardinality() + " <---");
+		return bitSetList.get(0);
 	}
 
 	public static byte[] toByteArray(BitSet bits) {
-		byte[] bytes = new byte[bits.length() / 8 + 1];
-		for (int i = 0; i < bits.length(); i++) {
-			if (bits.get(i)) {
-				bytes[bytes.length - i / 8 - 1] |= 1 << (i % 8);
-			}
-		}
-		return bytes;
+		return bits.toByteArray();
+		// zu langsam
+		// byte[] bytes = new byte[bits.length() / 8 + 1];
+		// for (int i = 0; i < bits.length(); i++) {
+		// if (bits.get(i)) {
+		// bytes[bytes.length - i / 8 - 1] |= 1 << (i % 8);
+		// }
+		// }
+		// return bytes;
+	}
+
+	public static BitSet fromByteArray(byte[] bytes) {
+		return BitSet.valueOf(bytes);
+		// BitSet bits = new BitSet();
+		// for (int i = 0; i < bytes.length * 8; i++) {
+		// if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
+		// bits.set(i);
+		// }
+		// }
+		// return bits;
 	}
 }

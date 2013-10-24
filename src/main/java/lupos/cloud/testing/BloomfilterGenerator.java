@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.NavigableMap;
 import java.util.Scanner;
+import java17Dependencies.BitSet;
 
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
@@ -21,7 +21,7 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
 public class BloomfilterGenerator {
-	private static Integer MIN_CARD = 1000;
+	private static Integer MIN_CARD = 25000;
 
 	/**
 	 * @param args
@@ -224,13 +224,14 @@ public class BloomfilterGenerator {
 	}
 
 	public static byte[] toByteArray(BitSet bits) {
-		byte[] bytes = new byte[bits.length() / 8 + 1];
-		for (int i = 0; i < bits.length(); i++) {
-			if (bits.get(i)) {
-				bytes[bytes.length - i / 8 - 1] |= 1 << (i % 8);
-			}
-		}
-		return bytes;
+		return bits.toByteArray();
+//		byte[] bytes = new byte[bits.length() / 8 + 1];
+//		for (int i = 0; i < bits.length(); i++) {
+//			if (bits.get(i)) {
+//				bytes[bytes.length - i / 8 - 1] |= 1 << (i % 8);
+//			}
+//		}
+//		return bytes;
 	}
 
 }

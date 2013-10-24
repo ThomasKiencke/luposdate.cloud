@@ -31,7 +31,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +41,7 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java17Dependencies.BitSet;
 
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.testing.BitvectorManager;
@@ -289,13 +289,15 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 	}
 
 	public static BitSet fromByteArray(byte[] bytes) {
-		BitSet bits = new BitSet();
-		for (int i = 0; i < bytes.length * 8; i++) {
-			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
-				bits.set(i);
-			}
-		}
-		return bits;
+		return BitSet.valueOf(bytes);
+		// zu langsam
+//		BitSet bits = new BitSet();
+//		for (int i = 0; i < bytes.length * 8; i++) {
+//			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
+//				bits.set(i);
+//			}
+//		}
+//		return bits;
 	}
 
 	/**

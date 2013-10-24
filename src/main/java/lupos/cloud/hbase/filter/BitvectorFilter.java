@@ -11,13 +11,15 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.DataInput;
 import java.util.ArrayList;
-import java.util.BitSet;
+import java17Dependencies.BitSet;
 
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.testing.BitvectorManager;
 
 import com.google.common.base.Preconditions;
 
+// In einer späteren Version vll. direkt in  HBase filtern
+@Deprecated
 public class BitvectorFilter extends FilterBase {
 
 	protected byte[] byteBitVector1 = null;
@@ -42,13 +44,7 @@ public class BitvectorFilter extends FilterBase {
 	}
 
 	public static BitSet fromByteArray(byte[] bytes) {
-		BitSet bits = new BitSet();
-		for (int i = 0; i < bytes.length * 8; i++) {
-			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
-				bits.set(i);
-			}
-		}
-		return bits;
+		return BitSet.valueOf(bytes);
 	}
 
 	@Override
