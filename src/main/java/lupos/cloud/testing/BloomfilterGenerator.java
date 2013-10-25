@@ -18,7 +18,7 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
 public class BloomfilterGenerator {
-	private static Integer MIN_CARD = 100;
+	private static Integer MIN_CARD = 25000;
 
 	/**
 	 * @param args
@@ -34,7 +34,7 @@ public class BloomfilterGenerator {
 		int cachingSize = Integer.parseInt(args[1]);
 
 		HBaseConnection.init();
-		int bitvectorCount = 1;
+		int bitvectorCount = 0;
 		long startTime = System.currentTimeMillis();
 		long checkedNumber = 0;
 

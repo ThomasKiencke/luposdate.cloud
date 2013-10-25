@@ -7,52 +7,75 @@ import java.util.Arrays;
 import java.util.NavigableMap;
 
 import java17Dependencies.BitSet;
-
 import lupos.cloud.testing.BitvectorManager;
 
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 
-public class MyMapper extends TableMapper<Text, Writable> {
+public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 
-	private Text text = new Text();
+	byte[] lastRowkey = null;
+	BitSet bitvector1 = new BitSet(BitvectorManager.VECTORSIZE);
+	BitSet bitvector2 = new BitSet(BitvectorManager.VECTORSIZE);
+	byte[] curBitvectorName = null;
+	boolean reset = true;
 
 	public void map(ImmutableBytesWritable row, Result res, Context context)
 			throws IOException, InterruptedException {
+		// Wenn nur sehr wenige Elemente in der Reihe vorhanden sind,
+		// ueberspringe diese
 		int curColSize = res.getFamilyMap(
 				BitvectorManager.bloomfilter1ColumnFamily).size();
 
-		BitvectorContainer val = null;
-		if (curColSize < BloomfilterGeneratorMR.BATCH - 1) {
-			val = new BitvectorContainer();
-			val.setResult(res);
-			
-		} else {
-
-			BitSet bitvector1 = new BitSet(BitvectorManager.VECTORSIZE);
-			BitSet bitvector2 = null;
-
-			if (Bytes.toString(res.getRow()).contains(",")) {
-				bitvector1 = new BitSet(BitvectorManager.VECTORSIZE);
-				addResultToBitSet(false, bitvector1, null, res);
-				val = new BitvectorContainer(bitvector1, null);
-			} else {
-				bitvector1 = new BitSet(BitvectorManager.VECTORSIZE);
-				bitvector2 = new BitSet(BitvectorManager.VECTORSIZE);
-				addResultToBitSet(true, bitvector1, bitvector2, res);
-				val = new BitvectorContainer(bitvector1, bitvector2);
-
-			}
+		if (curColSize < BloomfilterGeneratorMR.BATCH - 1
+				&& !Arrays.equals(lastRowkey, res.getRow())) {
+			lastRowkey = res.getRow();
+			context.getCounter("MyMapper", "SKIP_ROW").increment(1);
+			return;
 		}
 
-		text.set(Bytes.toString(res.getRow())); // key
+		// Speichere Bitvektoren
+		if (lastRowkey != null && !Arrays.equals(lastRowkey, res.getRow())) {
+			if (bitvector1.cardinality() >= BloomfilterGeneratorMR.MIN_CARD) {
+				// store bitvectors
+				storeBitvectorToHBase(curBitvectorName, bitvector1, bitvector2,
+						res, context);
+			}
+			// reset
+			reset = true;
+		}
 
-		context.getCounter("MyMapper", "ADD_BITVEKTOR").increment(1);
-		context.write(text, val);
+		String curKey = Bytes.toString(res.getRow());
+		if (reset) {
+			curBitvectorName = res.getRow();
+			bitvector1.clear();
+			bitvector2.clear();
+			reset = false;
+		}
+
+		if (curKey.contains(",")) {
+			addResultToBitSet(false, bitvector1, bitvector2, res);
+		} else {
+			addResultToBitSet(true, bitvector1, bitvector2, res);
+		}
+
+		lastRowkey = res.getRow();
+	}
+
+	private void storeBitvectorToHBase(byte[] curBitvectorName2,
+			BitSet bitvector1, BitSet bitvector2, Result res, Context context) throws IOException, InterruptedException {
+		Put row = new Put(res.getRow());
+		row.add(BitvectorManager.bloomfilter1ColumnFamily,
+				Bytes.toBytes("bloomfilter"), toByteArray(bitvector1));
+		if (bitvector2.cardinality() > 0) {
+			row.add(BitvectorManager.bloomfilter2ColumnFamily,
+					Bytes.toBytes("bloomfilter"), toByteArray(bitvector2));
+		}
+		context.getCounter("MyMapper", "ADD_BYTE_BITVEKTOR").increment(1);
+		context.write(null,  row);
 	}
 
 	private static void addResultToBitSet(Boolean twoBitvectors,
@@ -88,7 +111,6 @@ public class MyMapper extends TableMapper<Text, Writable> {
 			}
 		}
 	}
-	
 
 	public static byte[] toByteArray(BitSet bits) {
 		return bits.toByteArray();

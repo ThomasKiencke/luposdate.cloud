@@ -18,8 +18,8 @@ import lupos.cloud.testing.BitvectorManager;
 
 public class BloomfilterGeneratorMR {
 	public static Integer MIN_CARD = 25000;
-	public static Integer BATCH = 25000;
-	public static Integer CACHING = 500;
+	public static Integer BATCH = 10000;
+	public static Integer CACHING = 200;
 
 	/**
 	 * @param args
