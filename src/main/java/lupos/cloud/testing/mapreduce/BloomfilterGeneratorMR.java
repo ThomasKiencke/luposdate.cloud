@@ -1,0 +1,71 @@
+package lupos.cloud.testing.mapreduce;
+
+import java.io.IOException;
+import java.util.ArrayList;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.fs.Path;
+
+import lupos.cloud.hbase.HBaseConnection;
+import lupos.cloud.hbase.HBaseDistributionStrategy;
+import lupos.cloud.testing.BitvectorManager;
+
+public class BloomfilterGeneratorMR {
+	public static Integer MIN_CARD = 25000;
+	public static Integer BATCH = 25000;
+	public static Integer CACHING = 500;
+
+	/**
+	 * @param args
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws InterruptedException
+	 */
+	public static void main(String[] args) throws IOException,
+			InterruptedException, ClassNotFoundException {
+		HBaseConnection.init();
+		ArrayList<BVJobThread> jobList = new ArrayList<BVJobThread>();
+
+		long startTime = System.currentTimeMillis();
+
+		for (String tablename : HBaseDistributionStrategy.getTableInstance()
+				.getTableNames()) {
+			// String tablename = "P_SO";
+			System.out.println("Aktuelle Tabelle: " + tablename);
+			BVJobThread curJob = new BVJobThread(tablename);
+			jobList.add(curJob);
+			curJob.start();
+			
+		}
+
+		System.out.println("Warte bis alle Jobs abgeschlossen sind ...");
+		for (BVJobThread job : jobList) {
+			while (!job.isFinished()) {
+				sleep(2000);
+			}
+			System.out.println(job.getTablename() + " ist fertig");
+		}
+
+		long stopTime = System.currentTimeMillis();
+		System.out.println("Bitvektor Generierung beendet." + " Dauer: "
+				+ (stopTime - startTime) / 1000 + "s");
+	}
+
+	private static void sleep(int time) {
+		try {
+			Thread.sleep(time);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+
+
+}
