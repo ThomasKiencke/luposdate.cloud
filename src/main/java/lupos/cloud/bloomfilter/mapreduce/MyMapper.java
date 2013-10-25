@@ -75,7 +75,8 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 					Bytes.toBytes("bloomfilter"), toByteArray(bitvector2));
 		}
 		context.getCounter("MyMapper", "ADD_BYTE_BITVEKTOR").increment(1);
-		context.write(null,  row);
+		ImmutableBytesWritable key = new ImmutableBytesWritable(res.getRow());
+		context.write(key,  row);
 	}
 
 	private static void addResultToBitSet(Boolean twoBitvectors,

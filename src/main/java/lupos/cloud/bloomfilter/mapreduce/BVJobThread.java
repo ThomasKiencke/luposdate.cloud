@@ -9,6 +9,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
+import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 
@@ -24,7 +26,7 @@ public class BVJobThread extends Thread {
 
 	private void createJob() throws IOException {
 		Configuration config = HBaseConnection.getConfiguration();
-		 job = new Job(config, "MR_BV_ " + tablename);
+		job = new Job(config, "MR_BV_ " + tablename);
 
 		Scan scan = new Scan();
 		scan.setCaching(BloomfilterGeneratorMR.CACHING);
@@ -39,7 +41,10 @@ public class BVJobThread extends Thread {
 				null, // mapper output key
 				null, // mapper output value
 				job);
-		job.setOutputFormatClass(NullOutputFormat.class);
+
+		TableMapReduceUtil.initTableReducerJob(tablename, // output table
+				null, // reducer class
+				job);
 		job.setNumReduceTasks(0); // at least one, adjust as required
 	}
 
@@ -71,7 +76,7 @@ public class BVJobThread extends Thread {
 	public boolean isFinished() {
 		return finished;
 	}
-	
+
 	public String getTablename() {
 		return tablename;
 	}
