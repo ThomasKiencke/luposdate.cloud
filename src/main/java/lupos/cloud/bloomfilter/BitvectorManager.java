@@ -189,7 +189,7 @@ public class BitvectorManager {
 		}
 
 		// cleanup
-		hTable.close();
+		//hTable.close();
 
 		return bitvector;
 	}
