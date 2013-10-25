@@ -1,4 +1,4 @@
-package lupos.cloud.testing;
+package lupos.cloud.bloomfilter;
 
 public class CloudBitvector {
 	String row;

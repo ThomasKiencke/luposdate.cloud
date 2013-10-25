@@ -33,11 +33,11 @@ import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
 import org.apache.pig.data.Tuple;
 
+import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
 import lupos.cloud.hbase.HBaseTriple;
 import lupos.cloud.pig.PigQuery;
-import lupos.cloud.testing.BitvectorManager;
 import lupos.datastructures.bindings.Bindings;
 import lupos.datastructures.items.Variable;
 import lupos.datastructures.items.literal.LiteralFactory;

@@ -1,4 +1,4 @@
-package lupos.cloud.testing;
+package lupos.cloud.bloomfilter;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -66,7 +66,7 @@ public class BitvectorManager {
 						toAdd = getBitSetFromeHbaseTable(bv.getTablename(),
 								bv.getRow(), bv.getColumnFamily());
 					} else {
-//						System.out.println("BYTE BITVEKTOR GEFUNDEN!");
+						System.out.println("BYTE BITVEKTOR GEFUNDEN!");
 					}
 
 					bitSetList.put(bv.getSetId(), toAdd);

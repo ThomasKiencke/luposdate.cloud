@@ -1,26 +1,16 @@
-package lupos.cloud.testing.mapreduce.copy;
+package lupos.cloud.bloomfilter.mapreduce;
 
 import java.io.IOException;
 
+import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.hbase.HBaseConnection;
-import lupos.cloud.testing.BitvectorManager;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.TableNotFoundException;
-import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
-import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
-import org.apache.hadoop.hbase.mapreduce.hadoopbackport.TotalOrderPartitioner;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 
 public class BVJobThread extends Thread {
 	private String tablename;
@@ -46,17 +36,11 @@ public class BVJobThread extends Thread {
 		TableMapReduceUtil.initTableMapperJob(tablename, // input table
 				scan, // Scan instance to control CF and attribute selection
 				MyMapper.class, // mapper class
-				Text.class, // mapper output key
-				BitvectorContainer.class, // mapper output value
+				null, // mapper output key
+				null, // mapper output value
 				job);
-		job.setReducerClass(MyReducer.class); // reducer class
-		job.setNumReduceTasks(1); // at least one, adjust as required
-
-		String working_file = "/tmp/bitvectorGen_" + tablename;
-		HBaseConnection.getHdfs_fileSystem().delete(new Path(working_file),
-				true);
-		FileOutputFormat.setOutputPath(job, new Path(working_file));
-
+		job.setOutputFormatClass(NullOutputFormat.class);
+		job.setNumReduceTasks(0); // at least one, adjust as required
 	}
 
 	/**

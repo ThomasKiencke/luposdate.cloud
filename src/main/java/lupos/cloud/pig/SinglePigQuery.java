@@ -2,6 +2,8 @@ package lupos.cloud.pig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.pig.operator.PigDistinctOperator;
 import lupos.cloud.pig.operator.PigFilterExectuer;
 import lupos.cloud.pig.operator.PigFilterOperator;
@@ -10,7 +12,6 @@ import lupos.cloud.pig.operator.IPigOperator;
 import lupos.cloud.pig.operator.PigLimitOperator;
 import lupos.cloud.pig.operator.PigOrderByOperator;
 import lupos.cloud.pig.operator.PigProjectionOperator;
-import lupos.cloud.testing.BitvectorManager;
 
 /**
  * In dieser Klassen werden Informationen über das PigQuery abgespeichert z.B.

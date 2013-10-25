@@ -11,10 +11,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.DataInput;
 import java.util.ArrayList;
-import java17Dependencies.BitSet;
 
+import java17Dependencies.BitSet;
+import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
-import lupos.cloud.testing.BitvectorManager;
 
 import com.google.common.base.Preconditions;
 

@@ -39,11 +39,11 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java17Dependencies.BitSet;
 
+import java17Dependencies.BitSet;
+import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.hbase.filter.BitvectorFilter;
-import lupos.cloud.testing.BitvectorManager;
 
 import org.joda.time.DateTime;
 import org.apache.commons.cli.CommandLine;

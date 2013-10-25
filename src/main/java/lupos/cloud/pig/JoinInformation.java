@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import lupos.cloud.bloomfilter.CloudBitvector;
 import lupos.cloud.pig.operator.PigFilterOperator;
-import lupos.cloud.testing.CloudBitvector;
 import lupos.datastructures.items.Item;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 

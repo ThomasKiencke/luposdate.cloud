@@ -1,12 +1,12 @@
-package lupos.cloud.testing;
+package lupos.cloud.bloomfilter;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.NavigableMap;
-import java17Dependencies.BitSet;
 
+import java17Dependencies.BitSet;
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
 

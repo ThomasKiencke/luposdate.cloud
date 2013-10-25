@@ -1,4 +1,4 @@
-package lupos.cloud.testing.mapreduce.copy;
+package lupos.cloud.bloomfilter.mapreduce;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,14 +12,14 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.fs.Path;
 
+import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
-import lupos.cloud.testing.BitvectorManager;
 
 public class BloomfilterGeneratorMR {
-	public static Integer MIN_CARD = 25000;
-	public static Integer BATCH = 25000;
-	public static Integer CACHING = 500;
+	public static Integer MIN_CARD = 1000;
+	public static Integer BATCH = 500;
+	public static Integer CACHING = 200;
 
 	/**
 	 * @param args

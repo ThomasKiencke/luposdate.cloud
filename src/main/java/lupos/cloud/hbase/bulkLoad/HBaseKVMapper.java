@@ -3,7 +3,7 @@ package lupos.cloud.hbase.bulkLoad;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import lupos.cloud.testing.BitvectorManager;
+import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.misc.BitVector;
 
 import org.apache.hadoop.conf.Configuration;

@@ -2,11 +2,10 @@ package lupos.cloud.pig.udfs;
 
 import java.io.IOException;
 import java.util.HashMap;
-
 import java.util.Map;
-import java17Dependencies.BitSet;
 
-import lupos.cloud.testing.BitvectorManager;
+import java17Dependencies.BitSet;
+import lupos.cloud.bloomfilter.BitvectorManager;
 
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.InputSplit;

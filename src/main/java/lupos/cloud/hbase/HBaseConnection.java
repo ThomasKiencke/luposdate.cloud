@@ -7,9 +7,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.hbase.bulkLoad.BulkLoad;
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
-import lupos.cloud.testing.BitvectorManager;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;

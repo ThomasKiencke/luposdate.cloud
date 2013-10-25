@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import lupos.cloud.bloomfilter.CloudBitvector;
 import lupos.cloud.pig.operator.IPigOperator;
 import lupos.cloud.pig.operator.PigDistinctOperator;
 import lupos.cloud.pig.operator.PigFilterExectuer;
@@ -12,7 +13,6 @@ import lupos.cloud.pig.operator.PigJoinOperator;
 import lupos.cloud.pig.operator.PigLimitOperator;
 import lupos.cloud.pig.operator.PigOrderByOperator;
 import lupos.cloud.pig.operator.PigProjectionOperator;
-import lupos.cloud.testing.CloudBitvector;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.index.Root;
 import lupos.engine.operators.singleinput.AddBinding;

@@ -6,13 +6,13 @@ import java.util.HashSet;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
+import lupos.cloud.bloomfilter.BitvectorManager;
+import lupos.cloud.bloomfilter.CloudBitvector;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.pig.JoinInformation;
 import lupos.cloud.pig.SinglePigQuery;
 import lupos.cloud.storage.util.CloudManagement;
-import lupos.cloud.testing.BitvectorManager;
-import lupos.cloud.testing.CloudBitvector;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 import lupos.misc.BitVector;
