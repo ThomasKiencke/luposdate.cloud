@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
 
-import lupos.cloud.gui.HBaseLoader;
-import lupos.cloud.gui.Sp2b;
+import lupos.cloud.applications.HBaseLoader;
+import lupos.cloud.applications.Sp2b;
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.query.CloudEvaluator;
 import lupos.datastructures.items.literal.URILiteral;

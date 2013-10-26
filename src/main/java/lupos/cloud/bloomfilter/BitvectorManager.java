@@ -53,9 +53,11 @@ public class BitvectorManager {
 		for (String var : bitvectors.keySet()) {
 
 			MultiMap<Integer, BitSet> bitSetList = new MultiMap<Integer, BitSet>();
+			MultiMap<Integer, Boolean> bitSetFromBytearrayList = new MultiMap<Integer, Boolean>();
 			if (bitvectors.get(var).size() > 1) {
 				for (CloudBitvector bv : bitvectors.get(var)) {
 					BitSet toAdd = null;
+					Boolean fromBytearray = false;
 
 					// lade Byte-Bitvektor, wenn keiner existiert ist toAdd null
 					toAdd = getDirectBitSetFromeHbaseTable(bv.getTablename(),
@@ -67,9 +69,11 @@ public class BitvectorManager {
 								bv.getRow(), bv.getColumnFamily());
 					} else {
 //						System.out.println("BYTE BITVEKTOR GEFUNDEN!");
+						fromBytearray = true;
 					}
 
 					bitSetList.put(bv.getSetId(), toAdd);
+					bitSetFromBytearrayList.put(bv.getSetId(), fromBytearray);
 				}
 			}
 
@@ -95,7 +99,7 @@ public class BitvectorManager {
 						first = false;
 					}
 					groupBitSetList
-							.add(mergeBitSet(var, bitSetList.get(setId)));
+							.add(mergeBitSet(var, bitSetList.get(setId), bitSetFromBytearrayList.get(setId)));
 				}
 
 				Integer groupCounter = startId;
@@ -252,7 +256,7 @@ public class BitvectorManager {
 		fos.close();
 	}
 
-	public static BitSet mergeBitSet(String var, List<BitSet> bitSetList)
+	public static BitSet mergeBitSet(String var, List<BitSet> bitSetList, List<Boolean> bytearrayBooleanList)
 			throws IOException {
 		if (bitSetList.size() == 1) {
 			return bitSetList.get(0);
@@ -264,7 +268,12 @@ public class BitvectorManager {
 				System.out.print(", ");
 			}
 			int card = bs.cardinality();
-			System.out.print(card);
+			
+			if (bytearrayBooleanList.get(j)) {
+			System.out.print(card + "(b)");
+			} else {
+				System.out.print(card);
+			}
 			j++;
 		}
 

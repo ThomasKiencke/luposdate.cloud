@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 
-import lupos.cloud.gui.QueryExecuter;
+import lupos.cloud.applications.QueryExecuter;
 
 import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;

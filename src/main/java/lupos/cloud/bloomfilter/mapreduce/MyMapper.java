@@ -14,6 +14,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.mapreduce.Mapper.Context;
 
 public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 
@@ -42,7 +43,7 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 			if (bitvector1.cardinality() >= BloomfilterGeneratorMR.MIN_CARD) {
 				// store bitvectors
 				storeBitvectorToHBase(curBitvectorName, bitvector1, bitvector2,
-						res, context);
+						context);
 			}
 			// reset
 			reset = true;
@@ -65,9 +66,23 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 		lastRowkey = res.getRow();
 	}
 
+	/**
+	 * Called once at the end of the task.
+	 */
+	protected void cleanup(Context context) throws IOException,
+			InterruptedException {
+		if (curBitvectorName != null) {
+			context.getCounter("MyMapper", "CLEANUP_MAP").increment(1);
+			// finally
+			storeBitvectorToHBase(curBitvectorName, bitvector1, bitvector2,
+					context);
+		}
+	}
+
 	private void storeBitvectorToHBase(byte[] curBitvectorName2,
-			BitSet bitvector1, BitSet bitvector2, Result res, Context context) throws IOException, InterruptedException {
-		Put row = new Put(res.getRow());
+			BitSet bitvector1, BitSet bitvector2, Context context)
+			throws IOException, InterruptedException {
+		Put row = new Put(curBitvectorName2);
 		row.add(BitvectorManager.bloomfilter1ColumnFamily,
 				Bytes.toBytes("bloomfilter"), toByteArray(bitvector1));
 		if (bitvector2.cardinality() > 0) {
@@ -75,8 +90,9 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 					Bytes.toBytes("bloomfilter"), toByteArray(bitvector2));
 		}
 		context.getCounter("MyMapper", "ADD_BYTE_BITVEKTOR").increment(1);
-		ImmutableBytesWritable key = new ImmutableBytesWritable(res.getRow());
-		context.write(key,  row);
+		ImmutableBytesWritable key = new ImmutableBytesWritable(
+				curBitvectorName2);
+		context.write(key, row);
 	}
 
 	private static void addResultToBitSet(Boolean twoBitvectors,

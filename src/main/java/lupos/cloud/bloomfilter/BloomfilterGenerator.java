@@ -18,7 +18,7 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
 public class BloomfilterGenerator {
-	private static Integer MIN_CARD = 25000;
+	private static Integer MIN_CARD = 100;
 
 	/**
 	 * @param args
@@ -38,9 +38,9 @@ public class BloomfilterGenerator {
 		long startTime = System.currentTimeMillis();
 		long checkedNumber = 0;
 
-		for (String tablename : HBaseDistributionStrategy.getTableInstance()
-				.getTableNames()) {
-			// String tablename = "P_SO";
+//		for (String tablename : HBaseDistributionStrategy.getTableInstance()
+//				.getTableNames()) {
+			 String tablename = "PO_S";
 			System.out.println("Aktuelle Tabelle: " + tablename);
 			HTable hTable = new HTable(HBaseConnection.getConfiguration(),
 					tablename);
@@ -49,6 +49,7 @@ public class BloomfilterGenerator {
 			s.setBatch(batchSize);
 			s.setCaching(cachingSize);
 			s.setCacheBlocks(true);
+			
 
 			s.addFamily(BitvectorManager.bloomfilter1ColumnFamily);
 			s.addFamily(BitvectorManager.bloomfilter2ColumnFamily);
@@ -66,13 +67,13 @@ public class BloomfilterGenerator {
 					System.out.println(checkedNumber + " Rows checked");
 				}
 				checkedNumber++;
-
+				
 				// Wenn nur sehr wenige Elemente in der Reihe vorhanden sind,
 				// ueberspringe diese
 				int curColSize = res.getFamilyMap(
 						BitvectorManager.bloomfilter1ColumnFamily).size();
 
-				if (curColSize < batchSize - 1
+				if (curColSize < batchSize
 						&& !Arrays.equals(lastRowkey, res.getRow())) {
 					lastRowkey = res.getRow();
 					continue;
@@ -111,7 +112,7 @@ public class BloomfilterGenerator {
 			// letzten Bitvektor speichern
 			if (lastRowkey != null) {
 				if (bitvector1.cardinality() >= MIN_CARD) {
-					storeBitvectorToHBase(tablename, lastRowkey, bitvector1,
+					storeBitvectorToHBase(tablename, curBitvectorName, bitvector1,
 							bitvector2, hTable);
 				}
 			}
@@ -119,7 +120,7 @@ public class BloomfilterGenerator {
 			// cleanup
 			scanner.close();
 			hTable.close();
-		} // close
+//		} // close
 		long stopTime = System.currentTimeMillis();
 		System.out
 				.println("Bitvektor Generierung beendet. Anzahl der erzeugten Bitvektoren: "

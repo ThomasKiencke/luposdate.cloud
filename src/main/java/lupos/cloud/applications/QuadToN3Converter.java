@@ -1,4 +1,4 @@
-package lupos.cloud.gui;
+package lupos.cloud.applications;
 
 import java.io.FileInputStream;
 import java.io.InputStream;

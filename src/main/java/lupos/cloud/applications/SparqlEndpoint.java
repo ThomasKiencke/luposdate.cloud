@@ -1,4 +1,4 @@
-package lupos.cloud.gui;
+package lupos.cloud.applications;
 
 /**
  * Copyright (c) 2012, Institute of Telematics, Institute of Information Systems (Dennis Pfisterer, Sven Groppe, Andreas Haller, Thomas Kiencke, Sebastian Walther, Mario David), University of Luebeck
