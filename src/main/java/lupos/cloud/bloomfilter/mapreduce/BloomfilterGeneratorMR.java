@@ -19,7 +19,7 @@ import lupos.cloud.hbase.HBaseDistributionStrategy;
 public class BloomfilterGeneratorMR {
 	public static Integer MIN_CARD = 25000;
 	public static Integer BATCH = 5000;
-	public static Integer CACHING = 100;
+	public static Integer CACHING = 10;
 
 	/**
 	 * @param args
