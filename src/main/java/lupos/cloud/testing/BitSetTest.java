@@ -3,8 +3,10 @@ package lupos.cloud.testing;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -20,6 +22,8 @@ public class BitSetTest {
 		long start = System.currentTimeMillis();
 		ArrayList<BitSet> bitList = new ArrayList<BitSet>();
 
+		SimpleDateFormat formatter = new SimpleDateFormat ("yyyy.MM.dd HH:mm:ss': 1433124 asfas' ");
+		System.out.println(formatter.format(new Date()));
 		Random gen = new Random();
 		// for (int i = 0; i < 1; i++) {
 		// BitSet b = new BitSet(VECTORSIZE);

@@ -29,6 +29,7 @@ public class BloomfilterGeneratorMR {
 	 */
 	public static void main(String[] args) throws IOException,
 			InterruptedException, ClassNotFoundException {
+		System.out.println("Starts with b: " + BATCH + " c: " + CACHING);
 		HBaseConnection.init();
 		ArrayList<BVJobThread> jobList = new ArrayList<BVJobThread>();
 

@@ -32,7 +32,7 @@ public class BitvectorManager {
 
 	JoinInformation currentSet = null;
 	public static HashMap<String, HTable> hTables = new HashMap<String, HTable>();
-	public static final int VECTORSIZE = 100000000;
+	public static final int VECTORSIZE = 1000000000;
 	public static final byte[] bloomfilter1ColumnFamily = "1".getBytes();
 	public static final byte[] bloomfilter2ColumnFamily = "2".getBytes();
 	private static HashFunction hash = new HashFunction(VECTORSIZE, 1,

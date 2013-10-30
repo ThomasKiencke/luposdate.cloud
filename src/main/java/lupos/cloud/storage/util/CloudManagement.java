@@ -25,8 +25,10 @@ package lupos.cloud.storage.util;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.pig.ExecType;
@@ -46,13 +48,13 @@ import lupos.misc.BitVector;
 import lupos.misc.util.ImmutableIterator;
 
 /**
- * Diese Klasse ist für die Kommunikation mit der Cloud zuständig (sowohl HBase
- * als auch MapReduce/Pig).
+ * Diese Klasse ist für die Kommunikation mit der Cloud zuständig (sowohl
+ * HBase als auch MapReduce/Pig).
  */
 public class CloudManagement {
 
 	/** The count triple. */
-	public static int countTriple = 0;
+	public static long countTriple = 0;
 
 	/** The pig server. */
 	static PigServer pigServer = null;
@@ -72,6 +74,9 @@ public class CloudManagement {
 	public double bitvectorTime = 0;
 
 	public static boolean bloomfilter_active = true;
+
+	static SimpleDateFormat formatter = new SimpleDateFormat(
+			"yyyy.MM.dd  HH:mm:ss ");
 
 	/**
 	 * Instantiates a new cloud management.
@@ -106,10 +111,10 @@ public class CloudManagement {
 	 */
 	public void submitHBaseTripleToDatabase(final Collection<HBaseTriple> triple) {
 		for (HBaseTriple item : triple) {
-			if (countTriple % 10000 == 0) {
+			if (countTriple % 1000000 == 0) {
 				if (countTriple != 0) {
-					System.out
-							.println(countTriple + " HBaseTripel importiert!");
+					System.out.println(formatter.format(new Date()).toString() + ": "
+							+ countTriple + " HBaseTripel importiert!");
 				}
 			}
 			try {
@@ -156,7 +161,8 @@ public class CloudManagement {
 		try {
 			if (bloomfilter_active) {
 				long start2 = System.currentTimeMillis();
-				BitvectorManager.generateBitvector(query.getBitvectors(), query);
+				BitvectorManager
+						.generateBitvector(query.getBitvectors(), query);
 				long stop2 = System.currentTimeMillis();
 				System.out.println("Bitvector generated in "
 						+ new DecimalFormat("#.##")

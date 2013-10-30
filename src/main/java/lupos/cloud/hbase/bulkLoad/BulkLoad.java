@@ -44,7 +44,7 @@ public class BulkLoad extends Thread {
 		job.setPartitionerClass(TotalOrderPartitioner.class);
 		job.setInputFormatClass(TextInputFormat.class);
 
-		TableMapReduceUtil.addDependencyJars(job);
+//		TableMapReduceUtil.addDependencyJars(job);
 		
 	}
 	/**
