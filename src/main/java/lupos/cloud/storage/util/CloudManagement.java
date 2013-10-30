@@ -76,7 +76,7 @@ public class CloudManagement {
 	public static boolean bloomfilter_active = true;
 
 	static SimpleDateFormat formatter = new SimpleDateFormat(
-			"yyyy.MM.dd  HH:mm:ss ");
+			"yyyy.MM.dd HH:mm:ss");
 
 	/**
 	 * Instantiates a new cloud management.
