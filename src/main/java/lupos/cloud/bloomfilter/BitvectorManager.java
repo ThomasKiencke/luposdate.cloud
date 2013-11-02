@@ -27,6 +27,7 @@ import org.apache.hadoop.util.bloom.HashFunction;
 import org.apache.hadoop.util.bloom.Key;
 import org.apache.hadoop.util.hash.Hash;
 import org.apache.pig.impl.util.MultiMap;
+import org.xerial.snappy.Snappy;
 
 public class BitvectorManager {
 
@@ -298,26 +299,14 @@ public class BitvectorManager {
 		return bitSetList.get(0);
 	}
 
-	public static byte[] toByteArray(BitSet bits) {
-		return bits.toByteArray();
-		// zu langsam
-		// byte[] bytes = new byte[bits.length() / 8 + 1];
-		// for (int i = 0; i < bits.length(); i++) {
-		// if (bits.get(i)) {
-		// bytes[bytes.length - i / 8 - 1] |= 1 << (i % 8);
-		// }
-		// }
-		// return bytes;
+	public static byte[] toByteArray(BitSet bits) throws IOException {
+		byte[] compressedBytes = Snappy.compress(bits.toByteArray());
+		return compressedBytes;
 	}
 
-	public static BitSet fromByteArray(byte[] bytes) {
+	public static BitSet fromByteArray(byte[] compressedBytes) throws IOException {
+		//uncompress 
+		byte[] bytes = Snappy.uncompress(compressedBytes);
 		return BitSet.valueOf(bytes);
-		// BitSet bits = new BitSet();
-		// for (int i = 0; i < bytes.length * 8; i++) {
-		// if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
-		// bits.set(i);
-		// }
-		// }
-		// return bits;
 	}
 }

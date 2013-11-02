@@ -8,7 +8,11 @@ import lupos.cloud.hbase.HBaseConnection;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.filter.BinaryComparator;
+import org.apache.hadoop.hbase.filter.QualifierFilter;
+import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
@@ -32,8 +36,10 @@ public class BVJobThread extends Thread {
 		scan.setCaching(BloomfilterGeneratorMR.CACHING);
 		scan.setCacheBlocks(false); // don't set to true for MR jobs
 		scan.setBatch(BloomfilterGeneratorMR.BATCH);
+		scan.setFilter(new QualifierFilter(CompareOp.NOT_EQUAL, new BinaryComparator(Bytes.toBytes("bloomfilter"))));
 		scan.addFamily(BitvectorManager.bloomfilter1ColumnFamily);
 		scan.addFamily(BitvectorManager.bloomfilter2ColumnFamily);
+		scan.setMaxVersions(1);
 
 		TableMapReduceUtil.initTableMapperJob(tablename, // input table
 				scan, // Scan instance to control CF and attribute selection

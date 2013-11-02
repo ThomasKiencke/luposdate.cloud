@@ -47,6 +47,7 @@ import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 
 import org.joda.time.DateTime;
+import org.xerial.snappy.Snappy;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -288,16 +289,10 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		return bitvector;
 	}
 
-	public static BitSet fromByteArray(byte[] bytes) {
+	public static BitSet fromByteArray(byte[] compressedBytes) throws IOException {
+		//uncompress 
+		byte[] bytes = Snappy.uncompress(compressedBytes);
 		return BitSet.valueOf(bytes);
-		// zu langsam
-//		BitSet bits = new BitSet();
-//		for (int i = 0; i < bytes.length * 8; i++) {
-//			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
-//				bits.set(i);
-//			}
-//		}
-//		return bits;
 	}
 
 	/**

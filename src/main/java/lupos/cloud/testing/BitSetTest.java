@@ -1,52 +1,59 @@
 package lupos.cloud.testing;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.commons.beanutils.converters.LongArrayConverter;
-import org.apache.hadoop.hbase.filter.ColumnCountGetFilter;
+import org.apache.hadoop.hbase.filter.QualifierFilter;
+import org.xerial.snappy.Snappy;
 
 import java17Dependencies.BitSet;
 
 public class BitSetTest {
-	static int VECTORSIZE = 100;
+	static int VECTORSIZE = 2000000000;
 
 	public static void main(String[] args) throws IOException {
 		long start = System.currentTimeMillis();
 		ArrayList<BitSet> bitList = new ArrayList<BitSet>();
 
-		SimpleDateFormat formatter = new SimpleDateFormat ("yyyy.MM.dd HH:mm:ss': 1433124 asfas' ");
-		System.out.println(formatter.format(new Date()));
+		ArrayList<byte[]> compressedBitSets = new ArrayList<byte[]>();
 		Random gen = new Random();
-		// for (int i = 0; i < 1; i++) {
-		// BitSet b = new BitSet(VECTORSIZE);
-		// int ran = gen.nextInt(VECTORSIZE);
-		// b.set(ran,VECTORSIZE);
-		// bitList.add(b);
-		// System.out.println(b.toString());
-		//
-		// }
-		BitSet b1 = new BitSet(VECTORSIZE);
-		int ran = gen.nextInt(VECTORSIZE);
-		b1.set(ran, VECTORSIZE);
-		BitSet b2 = new BitSet(VECTORSIZE);
-		ran = gen.nextInt(VECTORSIZE);
-		b2.set(ran, VECTORSIZE);
+		for (int i = 0; i < 10; i++) {
+			BitSet b = new BitSet(VECTORSIZE);
+			int ran = gen.nextInt(VECTORSIZE);
+			b.set(ran, VECTORSIZE);
+			System.out.println("before: " + b.toByteArray().length);
+			byte[] compress_bitset = Snappy.compress(b.toByteArray());
+			System.out.println("after: " + compress_bitset.length);
+//			bitList.add(b);
+			compressedBitSets.add(compress_bitset);
+//			System.out.println(b.toString());
 
-		String s1 = String.valueOf(b1.toByteArray());
-		String s2 = b2.toString();
-		String concat = s1 + "x" + s2;
+		}
+		
+		for (byte[] compres_bitset : compressedBitSets) {
+			byte[] uncompressed = Snappy.uncompress(compres_bitset);
+			BitSet curBitSet = fromByteArray(uncompressed);
+			System.out.println("Size: " + curBitSet.cardinality());
+		}
+		
+		
+//		BitSet b1 = new BitSet(VECTORSIZE);
+//		int ran = gen.nextInt(VECTORSIZE);
+//		b1.set(ran, VECTORSIZE);
+//		BitSet b2 = new BitSet(VECTORSIZE);
+//		ran = gen.nextInt(VECTORSIZE);
+//		b2.set(ran, VECTORSIZE);
+		
+		
+//		  EWAHCompressedBitmap new_b1 = new EWAHCompressedBitmap(VECTORSIZE);
+//		  new_b1.
+//		  new
 
-		BitSet b3 = new BitSet(10);
+
 //		b3.set(1);
-		System.out.println("asd:" + b3.length());
+//		System.out.println("asd:" + b3.length());
 //		System.out.println("before: " + b1.cardinality());
 //
 //		BitSet after = BitSet.valueOf(s1.getBytes());

@@ -17,9 +17,9 @@ import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
 
 public class BloomfilterGeneratorMR {
-	public static Integer MIN_CARD = 25000;
-	public static Integer BATCH = 5000;
-	public static Integer CACHING = 10;
+	public static Integer MIN_CARD = 150;
+	public static Integer BATCH = 100;
+	public static Integer CACHING = 2;
 
 	/**
 	 * @param args
@@ -35,8 +35,14 @@ public class BloomfilterGeneratorMR {
 
 		long startTime = System.currentTimeMillis();
 
-		for (String tablename : HBaseDistributionStrategy.getTableInstance()
-				.getTableNames()) {
+		String[] tables =  HBaseDistributionStrategy.getTableInstance()
+				.getTableNames();
+		
+//		String[] tables = { "O_SP", "PO_S"};
+//		String[] tables = { "PO_S"};
+//		String[] tables = { "P_SO"};
+		
+		for (String tablename : tables) {
 			// String tablename = "P_SO";
 			System.out.println("Aktuelle Tabelle: " + tablename);
 			BVJobThread curJob = new BVJobThread(tablename);

@@ -15,6 +15,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.Mapper.Context;
+import org.xerial.snappy.Snappy;
 
 public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 
@@ -41,6 +42,11 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 		// Speichere Bitvektoren
 		if (lastRowkey != null && !Arrays.equals(lastRowkey, res.getRow())) {
 			if (bitvector1.cardinality() >= BloomfilterGeneratorMR.MIN_CARD) {
+				NavigableMap<byte[], byte[]> cfResults = res
+						.getFamilyMap(BitvectorManager.bloomfilter1ColumnFamily);
+//				if (cfResults.remove("bloomfilter".getBytes()) != null) {
+//					context.getCounter("MyMapper", "BITVEKTOR_ALREADY_EXIST").increment(1);
+//				}
 				// store bitvectors
 				storeBitvectorToHBase(curBitvectorName, bitvector1, bitvector2,
 						context);
@@ -58,9 +64,9 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 		}
 
 		if (curKey.contains(",")) {
-			addResultToBitSet(false, bitvector1, bitvector2, res);
+			addResultToBitSet(false, bitvector1, bitvector2, res, context);
 		} else {
-			addResultToBitSet(true, bitvector1, bitvector2, res);
+			addResultToBitSet(true, bitvector1, bitvector2, res, context);
 		}
 
 		lastRowkey = res.getRow();
@@ -72,7 +78,7 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 	protected void cleanup(Context context) throws IOException,
 			InterruptedException {
 		if (curBitvectorName != null) {
-			context.getCounter("MyMapper", "CLEANUP_MAP").increment(1);
+			context.getCounter("MyMapper", "ADD_BYTE_BITVEKTOR").increment(1);
 			// finally
 			storeBitvectorToHBase(curBitvectorName, bitvector1, bitvector2,
 					context);
@@ -83,11 +89,18 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 			BitSet bitvector1, BitSet bitvector2, Context context)
 			throws IOException, InterruptedException {
 		Put row = new Put(curBitvectorName2);
+		
+//		row.setWriteToWAL(false);
+		
+		byte[] compressedBitvector1 = Snappy.compress(toByteArray(bitvector1));
 		row.add(BitvectorManager.bloomfilter1ColumnFamily,
-				Bytes.toBytes("bloomfilter"), toByteArray(bitvector1));
+				Bytes.toBytes("bloomfilter"), compressedBitvector1);
+		
+		
 		if (bitvector2.cardinality() > 0) {
+			byte[] compressedBitvector2 = Snappy.compress(toByteArray(bitvector2));
 			row.add(BitvectorManager.bloomfilter2ColumnFamily,
-					Bytes.toBytes("bloomfilter"), toByteArray(bitvector2));
+					Bytes.toBytes("bloomfilter"), compressedBitvector2);
 		}
 		context.getCounter("MyMapper", "ADD_BYTE_BITVEKTOR").increment(1);
 		ImmutableBytesWritable key = new ImmutableBytesWritable(
@@ -96,7 +109,7 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 	}
 
 	private static void addResultToBitSet(Boolean twoBitvectors,
-			BitSet bitvector1, BitSet bitvector2, Result res)
+			BitSet bitvector1, BitSet bitvector2, Result res, Context context)
 			throws UnsupportedEncodingException {
 		byte[] bloomfilterColumn = "bloomfilter".getBytes();
 
@@ -109,6 +122,8 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 				if (!Arrays.equals(entry, bloomfilterColumn)) {
 					Integer position = byteArrayToInteger(entry);
 					bitvector1.set(position);
+				} else {
+					context.getCounter("MyMapper", "BITVECTOR_EXIST_ALREADY").increment(1);
 				}
 			}
 		}
@@ -123,6 +138,8 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 					if (!Arrays.equals(entry, bloomfilterColumn)) {
 						Integer position = byteArrayToInteger(entry);
 						bitvector2.set(position);
+					} else {
+						context.getCounter("MyMapper", "BITVECTOR_EXIST_ALREADY").increment(1);
 					}
 				}
 			}
