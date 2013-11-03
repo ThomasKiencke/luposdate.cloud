@@ -72,7 +72,7 @@ public class BitvectorManager {
 //						System.out.println("BYTE BITVEKTOR GEFUNDEN!");
 						fromBytearray = true;
 					}
-
+					
 					bitSetList.put(bv.getSetId(), toAdd);
 					bitSetFromBytearrayList.put(bv.getSetId(), fromBytearray);
 				}

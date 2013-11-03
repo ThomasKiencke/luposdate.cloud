@@ -289,8 +289,9 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		return bitvector;
 	}
 
-	public static BitSet fromByteArray(byte[] compressedBytes) throws IOException {
-		//uncompress 
+	public static BitSet fromByteArray(byte[] compressedBytes)
+			throws IOException {
+		// uncompress
 		byte[] bytes = Snappy.uncompress(compressedBytes);
 		return BitSet.valueOf(bytes);
 	}
@@ -472,8 +473,9 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		scan = new Scan();
 		// scan.setRaw(true);
 
-		scan.setBatch(12500);
-		// scan.setCaching(30000);
+		// wichtig!
+		scan.setBatch(2500);
+		// scan.setCaching(50000);
 
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
@@ -722,9 +724,8 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 						NavigableMap<byte[], byte[]> cfResults = resultsMap
 								.get(columnInfo.getColumnFamily());
 
-//						LinkedList<Tuple> list = new LinkedList<Tuple>();
-                        Map<String, DataByteArray> cfMap =
-                                new HashMap<String, DataByteArray>();
+						// LinkedList<Tuple> list = new LinkedList<Tuple>();
+						Map<String, DataByteArray> cfMap = new HashMap<String, DataByteArray>();
 
 						if (cfResults != null) {
 							for (byte[] quantifier : cfResults.keySet()) {
@@ -735,12 +736,12 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 					}
 					tupleIndex++;
 				}
-				
+
 				if (bitvectorPath1 != null) {
 					tuple.set(tupleIndex, bitvector1);
 					tupleIndex++;
 				}
-				
+
 				if (bitvectorPath2 != null) {
 					tuple.set(tupleIndex, bitvector2);
 					tupleIndex++;
@@ -753,6 +754,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		}
 		return null;
 	}
+
 	@Override
 	public InputFormat getInputFormat() {
 		TableInputFormat inputFormat = new HBaseTableIFBuilder()

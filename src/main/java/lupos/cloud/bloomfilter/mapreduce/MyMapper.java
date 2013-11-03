@@ -90,7 +90,7 @@ public class MyMapper extends TableMapper<ImmutableBytesWritable, Put> {
 			throws IOException, InterruptedException {
 		Put row = new Put(curBitvectorName2);
 		
-//		row.setWriteToWAL(false);
+		row.setWriteToWAL(false);
 		
 		byte[] compressedBitvector1 = Snappy.compress(toByteArray(bitvector1));
 		row.add(BitvectorManager.bloomfilter1ColumnFamily,

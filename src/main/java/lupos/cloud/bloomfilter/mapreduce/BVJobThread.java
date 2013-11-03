@@ -33,10 +33,15 @@ public class BVJobThread extends Thread {
 		job = new Job(config, "MR_BV_ " + tablename);
 
 		Scan scan = new Scan();
-		scan.setCaching(BloomfilterGeneratorMR.CACHING);
+		int caching = BloomfilterGeneratorMR.CACHING;
+		if (tablename.equals("P_SO")) {
+			caching = 2;
+		}
+		scan.setCaching(caching);
 		scan.setCacheBlocks(false); // don't set to true for MR jobs
 		scan.setBatch(BloomfilterGeneratorMR.BATCH);
-		scan.setFilter(new QualifierFilter(CompareOp.NOT_EQUAL, new BinaryComparator(Bytes.toBytes("bloomfilter"))));
+		scan.setFilter(new QualifierFilter(CompareOp.NOT_EQUAL,
+				new BinaryComparator(Bytes.toBytes("bloomfilter"))));
 		scan.addFamily(BitvectorManager.bloomfilter1ColumnFamily);
 		scan.addFamily(BitvectorManager.bloomfilter2ColumnFamily);
 		scan.setMaxVersions(1);
