@@ -147,6 +147,9 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 
 	private List<ColumnInfo> columnInfo_ = Lists.newArrayList();
 	private HTable m_table;
+	
+	private static int cachingsize = 15;
+	private static int batchsize = 8000;
 
 	// Use JobConf to store hbase delegation token
 	private JobConf m_conf;
@@ -474,8 +477,10 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		// scan.setRaw(true);
 
 		// wichtig!
-		scan.setBatch(8000);
+		scan.setBatch(batchsize);
+		scan.setCaching(cachingsize);
 		// scan.setCaching(50000);
+		
 
 		if (rowKey != null) {
 			scan.setStartRow(Bytes.toBytes(rowKey));
@@ -793,7 +798,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		if (m_table == null) {
 			m_table = new HTable(m_conf, tablename);
 		}
-		m_table.setScannerCaching(caching_);
+		m_table.setScannerCaching(cachingsize);
 		m_conf.set(TableInputFormat.INPUT_TABLE, tablename);
 
 		String projectedFields = udfProps.getProperty(projectedFieldsName());
