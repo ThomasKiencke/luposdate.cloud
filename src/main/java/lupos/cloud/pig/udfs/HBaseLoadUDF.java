@@ -148,7 +148,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 	private List<ColumnInfo> columnInfo_ = Lists.newArrayList();
 	private HTable m_table;
 	
-	private static int cachingsize = 15;
+	private static int cachingsize = 5;
 	private static int batchsize = 8000;
 
 	// Use JobConf to store hbase delegation token
