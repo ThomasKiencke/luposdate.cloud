@@ -474,7 +474,7 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		// scan.setRaw(true);
 
 		// wichtig!
-		scan.setBatch(2500);
+		scan.setBatch(30000);
 		// scan.setCaching(50000);
 
 		if (rowKey != null) {
