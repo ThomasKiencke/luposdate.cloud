@@ -52,7 +52,7 @@ public class QueryExecuter {
 	private static boolean printResults = true;
 	static SimpleDateFormat formatter = new SimpleDateFormat(
 			"yyyy.MM.dd HH:mm:ss");
-	
+
 	public static void main(String[] args) throws Exception {
 		if (args.length == 0) {
 			System.exit(0);
@@ -61,6 +61,11 @@ public class QueryExecuter {
 		CloudManagement.PARALLEL_REDUCE_OPERATIONS = Integer.parseInt(args[0]);
 
 		String testOnly = args[1];
+		boolean printResults = true;
+		
+		if (args[2].equals("nosize")) {
+			printResults = false;
+		}
 
 		cloudEvaluator = new CloudEvaluator();
 
@@ -70,18 +75,18 @@ public class QueryExecuter {
 
 		QueryResult.type = QueryResult.TYPE.ADAPTIVE;
 
-		result_time = new double[args.length - 2];
-		result_queryresult = new double[args.length - 2];
-		result_bitvectorTime = new double[args.length - 2];
+		result_time = new double[args.length - 3];
+		result_queryresult = new double[args.length - 3];
+		result_bitvectorTime = new double[args.length - 3];
 
 		// Tests ausführen:
 		try {
 			if (testOnly.equals("both") || testOnly.equals("first")) {
-				System.out
-						.println(formatter.format(new Date()).toString() + ": Tests werden ausgefuehrt (mit bloomfilter):");
+				System.out.println(formatter.format(new Date()).toString()
+						+ ": Tests werden ausgefuehrt (mit bloomfilter):");
 
-				for (int i = 0; i < args.length - 2; i++) {
-					testQuery(i, args[i + 2]);
+				for (int i = 0; i < args.length - 3; i++) {
+					testQuery(i, args[i + 3], printResults);
 					FileLocalizer.deleteTempFiles(); // loescht temp files auf
 														// HDFS
 				}
@@ -92,10 +97,10 @@ public class QueryExecuter {
 
 				cloudEvaluator.getCloudManagement().bitvectorTime = 0.0;
 				cloudEvaluator.getCloudManagement().bloomfilter_active = false;
-				System.out
-						.println(formatter.format(new Date()).toString() + ": Tests werden ausgefuehrt (ohne bloomfilter):");
-				for (int i = 0; i < args.length - 2; i++) {
-					testQuery(i, args[i + 2]);
+				System.out.println(formatter.format(new Date()).toString()
+						+ ": Tests werden ausgefuehrt (ohne bloomfilter):");
+				for (int i = 0; i < args.length - 3; i++) {
+					testQuery(i, args[i + 3], printResults);
 					FileLocalizer.deleteTempFiles(); // loescht temp files auf
 														// HDFS
 				}
@@ -142,7 +147,7 @@ public class QueryExecuter {
 		return evaluator.getResult(true);
 	}
 
-	public static void testQuery(int number, String filename) throws Exception {
+	public static void testQuery(int number, String filename, boolean printSize) throws Exception {
 		System.out.println("\nTest " + number + " Input: " + filename);
 		long start = System.currentTimeMillis();
 		String selectQuery = readFile(filename);
@@ -152,7 +157,10 @@ public class QueryExecuter {
 		System.out.print("Time: " + (double) ((stop - start) / (double) 1000)
 				+ " Sekunden");
 		if (printResults) {
-			int resultSize = actual.oneTimeSize();
+			int resultSize = -1;
+			if (printSize) {
+				resultSize = actual.oneTimeSize();
+			}
 			result_queryresult[number] = resultSize;
 			System.out.print("- Results: " + resultSize);
 		}
