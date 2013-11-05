@@ -24,6 +24,8 @@
 package lupos.cloud.applications;
 
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 
 import org.apache.pig.impl.io.FileLocalizer;
@@ -48,7 +50,9 @@ public class QueryExecuter {
 	private static double[] result_queryresult;
 	private static double[] result_bitvectorTime;
 	private static boolean printResults = true;
-
+	static SimpleDateFormat formatter = new SimpleDateFormat(
+			"yyyy.MM.dd HH:mm:ss");
+	
 	public static void main(String[] args) throws Exception {
 		if (args.length == 0) {
 			System.exit(0);
@@ -74,7 +78,7 @@ public class QueryExecuter {
 		try {
 			if (testOnly.equals("both") || testOnly.equals("first")) {
 				System.out
-						.println("Tests werden ausgefuehrt (mit bloomfilter):");
+						.println(formatter.format(new Date()).toString() + ": Tests werden ausgefuehrt (mit bloomfilter):");
 
 				for (int i = 0; i < args.length - 2; i++) {
 					testQuery(i, args[i + 2]);
@@ -89,7 +93,7 @@ public class QueryExecuter {
 				cloudEvaluator.getCloudManagement().bitvectorTime = 0.0;
 				cloudEvaluator.getCloudManagement().bloomfilter_active = false;
 				System.out
-						.println("Tests werden ausgefuehrt (ohne bloomfilter):");
+						.println(formatter.format(new Date()).toString() + ": Tests werden ausgefuehrt (ohne bloomfilter):");
 				for (int i = 0; i < args.length - 2; i++) {
 					testQuery(i, args[i + 2]);
 					FileLocalizer.deleteTempFiles(); // loescht temp files auf
