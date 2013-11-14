@@ -52,7 +52,7 @@ import lupos.optimizations.logical.rules.generated.runtime.Rule;
 
 public class AddSubGraphContainerRule extends Rule {
 
-	public static CloudManagement cloudManagement;
+//	public static CloudManagement cloudManagement;
 
 	public static ICloudSubgraphExecutor subgraphExecutor;
 

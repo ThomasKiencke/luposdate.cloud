@@ -48,7 +48,7 @@ import lupos.engine.operators.singleinput.Result;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 
-public class AddMergeContainerRule extends Rule {
+public class AddMultiISContainerRule extends Rule {
 
 	public static CloudManagement cloudManagement;
 
@@ -240,7 +240,7 @@ public class AddMergeContainerRule extends Rule {
 		finish = false;
 	}
 
-	public AddMergeContainerRule() {
+	public AddMultiISContainerRule() {
 		this.startOpClass = QueryClientRoot.class;
 		this.ruleName = "AddMergeContainer";
 	}

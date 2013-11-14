@@ -27,7 +27,7 @@ import java.util.Date;
 import java.util.List;
 
 import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.optimizations.logical.rules.AddMergeContainerRule;
+import lupos.cloud.optimizations.logical.rules.AddMultiISContainerRule;
 import lupos.cloud.optimizations.logical.rules.CloudRulePackage;
 import lupos.cloud.optimizations.logical.rules.AddSubGraphContainerRule;
 import lupos.distributed.query.operator.histogramsubmission.IHistogramExecutor;
@@ -54,7 +54,7 @@ public class CloudEvaluator extends QueryClient {
 
 	// public final IDistribution<K> distribution;
 	/** The cloud management. */
-	public final CloudManagement cloudManagement;
+//	public final CloudManagement cloudManagement;
 
 	/** The subgraph executor. */
 	public final ICloudSubgraphExecutor subgraphExecutor;
@@ -110,7 +110,7 @@ public class CloudEvaluator extends QueryClient {
 			final CloudManagement cloudManagement,
 			final ICloudSubgraphExecutor subgraphExecutor) throws Exception {
 		super(storage, histogramExecutor);
-		this.cloudManagement = cloudManagement;
+//		this.cloudManagement = cloudManagement;
 		this.subgraphExecutor = subgraphExecutor;
 	}
 
@@ -146,7 +146,7 @@ public class CloudEvaluator extends QueryClient {
 			final ICloudSubgraphExecutor subgraphExecutor, final String[] args)
 			throws Exception {
 		super(storage, histogramExecutor, args);
-		this.cloudManagement = cloudManagement;
+//		this.cloudManagement = cloudManagement;
 		this.subgraphExecutor = subgraphExecutor;
 	}
 
@@ -181,9 +181,9 @@ public class CloudEvaluator extends QueryClient {
 
 		// evaluate rule to identify subgraphs and put them into a
 		// SubgraphContainer operator
-		AddSubGraphContainerRule.cloudManagement = this.cloudManagement;
+//		AddSubGraphContainerRule.cloudManagement = this.cloudManagement;
 		AddSubGraphContainerRule.subgraphExecutor = this.subgraphExecutor;
-		AddMergeContainerRule.reset(); // unschön, bessere lösung finden
+		AddMultiISContainerRule.reset(); // unschön, bessere lösung finden
 		final CloudRulePackage rules = new CloudRulePackage();
 		rules.applyRules(this.rootNode);
 
@@ -202,9 +202,9 @@ public class CloudEvaluator extends QueryClient {
 
 		// evaluate rule to identify subgraphs and put them into a
 		// SubgraphContainer operator
-		AddSubGraphContainerRule.cloudManagement = this.cloudManagement;
+//		AddSubGraphContainerRule.cloudManagement = this.cloudManagement;
 		AddSubGraphContainerRule.subgraphExecutor = this.subgraphExecutor;
-		AddMergeContainerRule.reset(); // unschön, bessere lösung finden
+		AddMultiISContainerRule.reset(); // unschön, bessere lösung finden
 		final CloudRulePackage rules = new CloudRulePackage();
 		final List<DebugContainer<BasicOperatorByteArray>> result2 = rules
 				.applyRulesDebugByteArray(this.rootNode, prefixInstance);
@@ -227,10 +227,13 @@ public class CloudEvaluator extends QueryClient {
 	}
 	
 	public void shutdown() {
-		cloudManagement.shutdown();
+//		cloudManagement.shutdown();
+		Storage_Cloud
+		.getInstance().getCloudManagement().shutdown();
 	}
 	
 	public CloudManagement getCloudManagement() {
-		return cloudManagement;
+		return Storage_Cloud
+				.getInstance().getCloudManagement();
 	}
 }
