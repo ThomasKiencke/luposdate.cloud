@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 
-import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.pig.BagInformation;
 import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.multiinput.join.Join;
@@ -12,18 +12,18 @@ import lupos.engine.operators.multiinput.optional.Optional;
 
 public class PigOptionalOperator implements IPigOperator {
 	private boolean debug;
-	private JoinInformation newBag;
-	private ArrayList<JoinInformation> multiInputist;
+	private BagInformation newBag;
+	private ArrayList<BagInformation> multiInputist;
 	private Optional optionalJoin;
 
-	public PigOptionalOperator(JoinInformation newBag,
-			ArrayList<JoinInformation> multiInputist, Optional optional) {
+	public PigOptionalOperator(BagInformation newBag,
+			ArrayList<BagInformation> multiInputist, Optional optional) {
 		this.newBag = newBag;
 		this.multiInputist = multiInputist;
 		this.optionalJoin = optional;
 	}
 
-	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
+	public String buildQuery(ArrayList<BagInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		this.debug = debug;
 		StringBuilder result = new StringBuilder();
@@ -33,7 +33,7 @@ public class PigOptionalOperator implements IPigOperator {
 						.getJoinElements());
 		
 		for (String var : intersectionVariables) {
-			for (JoinInformation bag : multiInputist) {
+			for (BagInformation bag : multiInputist) {
 				if (bag.isVariableOptional(var)) {
 					throw new RuntimeException(
 							"Join over optional variable is not allowed in pig!");
@@ -67,7 +67,7 @@ public class PigOptionalOperator implements IPigOperator {
 
 		for (String elem : multiInputist.get(1).getJoinElements()) {
 			// if (!multiInputist.get(0).getJoinElements().contains(elem)) {
-			newBag.addJoinElements(elem);
+			newBag.addBagElements(elem);
 			newBag.addOptionalElements(elem);
 			// }
 		}
@@ -89,7 +89,7 @@ public class PigOptionalOperator implements IPigOperator {
 	}
 
 	public String getJoinElements(ArrayList<String> intersectionVars,
-			JoinInformation bag) {
+			BagInformation bag) {
 		StringBuilder result = new StringBuilder();
 		if (intersectionVars.size() == 1) {
 			result.append("$"

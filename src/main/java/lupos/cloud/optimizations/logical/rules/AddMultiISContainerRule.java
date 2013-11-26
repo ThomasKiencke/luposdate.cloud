@@ -27,36 +27,33 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 
 import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
-import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.pig.operator.PigFilterOperator;
-import lupos.cloud.storage.util.CloudManagement;
-import lupos.datastructures.items.Variable;
 import lupos.distributed.query.operator.withouthistogramsubmission.QueryClientRoot;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
-import lupos.engine.operators.index.BasicIndexScan;
 import lupos.engine.operators.multiinput.MultiInputOperator;
-import lupos.engine.operators.multiinput.Union;
-import lupos.engine.operators.multiinput.join.Join;
-import lupos.engine.operators.multiinput.optional.Optional;
-import lupos.engine.operators.singleinput.Projection;
-import lupos.engine.operators.singleinput.Result;
-import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 
+/**
+ * Regel 2: Erzeugt für jeden MultiInput-Operator einen eigenen Container.
+ * 
+ */
 public class AddMultiISContainerRule extends Rule {
 
-	public static CloudManagement cloudManagement;
-
-	public static ICloudSubgraphExecutor subgraphExecutor;
+	/** Liste die aller IndexScanContainer im Operatorgraphen. */
 	ArrayList<BasicOperator> containerList;
 
+	/** The finish. */
 	private static boolean finish = false;
 
+	/**
+	 * Replace index scan operator with sub graph container.
+	 * 
+	 * @param qcRoot
+	 *            the qc root
+	 */
 	private void replaceIndexScanOperatorWithSubGraphContainer(
 			QueryClientRoot qcRoot) {
 		int finalContainerSize = 1;
@@ -90,6 +87,9 @@ public class AddMultiISContainerRule extends Rule {
 		}
 	}
 
+	/**
+	 * Merge container.
+	 */
 	private void mergeContainer() {
 		HashMap<BasicOperator, LinkedList<BasicOperator>> mergeMap = new HashMap<BasicOperator, LinkedList<BasicOperator>>();
 		// Für jeden (Multi-)Index-Container wird die Nachfolge MultiInput
@@ -98,8 +98,7 @@ public class AddMultiISContainerRule extends Rule {
 		// beteiligten (Multi-)IndexScan Operationen
 		for (BasicOperator op : containerList) {
 			if (op instanceof IndexScanContainer) {
-				if (((IndexScanContainer) op)
-						.isOneOperatorWasNotSupported()) {
+				if (((IndexScanContainer) op).isOneOperatorWasNotSupported()) {
 					continue;
 				}
 			}
@@ -219,8 +218,16 @@ public class AddMultiISContainerRule extends Rule {
 
 	}
 
+	/** The index scan. */
 	private QueryClientRoot indexScan = null;
 
+	/**
+	 * _check private0.
+	 * 
+	 * @param _op
+	 *            the _op
+	 * @return true, if successful
+	 */
 	private boolean _checkPrivate0(final BasicOperator _op) {
 
 		// workaround, nicht schön - aber funktioniert :)
@@ -236,20 +243,40 @@ public class AddMultiISContainerRule extends Rule {
 		}
 	}
 
+	/**
+	 * Reset.
+	 */
 	public static void reset() {
 		finish = false;
 	}
 
+	/**
+	 * Instantiates a new adds the multi is container rule.
+	 */
 	public AddMultiISContainerRule() {
 		this.startOpClass = QueryClientRoot.class;
 		this.ruleName = "AddMergeContainer";
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.optimizations.logical.rules.generated.runtime.Rule#check(lupos.
+	 * engine.operators.BasicOperator)
+	 */
 	@Override
 	protected boolean check(final BasicOperator _op) {
 		return this._checkPrivate0(_op);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.optimizations.logical.rules.generated.runtime.Rule#replace(java
+	 * .util.HashMap)
+	 */
 	@Override
 	protected void replace(
 			final HashMap<Class<?>, HashSet<BasicOperator>> _startNodes) {

@@ -3,7 +3,6 @@ package lupos.cloud.pig;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.pig.operator.PigDistinctOperator;
 import lupos.cloud.pig.operator.PigFilterExectuer;
 import lupos.cloud.pig.operator.PigFilterOperator;
@@ -14,40 +13,39 @@ import lupos.cloud.pig.operator.PigOrderByOperator;
 import lupos.cloud.pig.operator.PigProjectionOperator;
 
 /**
- * In dieser Klassen werden Informationen über das PigQuery abgespeichert z.B.
- * das PigLatin Programm selbst sowie die zu erwartende Variablenliste.
+ * Für jedes BGP wird ein SinglePigQuery erzeugt.
+ * 
  */
 public class SinglePigQuery {
 
-	/** The pig latin. */
+	/** PigLatin-Programm. */
 	StringBuilder pigLatin = new StringBuilder();
-	
-	BitvectorManager bitvectorManager = new BitvectorManager();
 
-	/* Projektion die für den Container gültig ist */
+	/** Projektion die für den Container gültig ist */
 	private PigProjectionOperator globalProjection = null;
 
-	/* Filter die für den gesamten SubGraph Container gültig sind */
+	/** Filter die für den gesamten SubGraph Container gültig sind */
 	private ArrayList<PigFilterOperator> globalFilterPigOp = new ArrayList<PigFilterOperator>();
 
-	// private ArrayList<PigIndexScanOperator> indexScanOps = new
-	// ArrayList<PigIndexScanOperator>();
-
+	/** IndexScan-Operation des aktuellen BGP. */
 	PigIndexScanOperator indexScanOp = null;
 
-	/** The intermediate joins. */
-	private ArrayList<JoinInformation> intermediateBags = new ArrayList<JoinInformation>();
+	/** Zwischenergebnisse */
+	private ArrayList<BagInformation> intermediateBags = new ArrayList<BagInformation>();
 
-	// private MultiIndexScanContainer multiIndexScanContainer = null;
-
+	/**  debug. */
 	public boolean debug = true;
 
+	/** Distinct Operator. */
 	private PigDistinctOperator distinctOperator = null;
 
+	/** Limit Operator. */
 	private PigLimitOperator limitOperator;
 
+	/** Sort Operator. */
 	private PigOrderByOperator pigOrderByOperator;
-	
+
+	/** liste der Bindings. */
 	private HashMap<String, String> addBinding = null;
 
 	/**
@@ -59,11 +57,17 @@ public class SinglePigQuery {
 		return pigLatin.toString();
 	}
 
+	/**
+	 * Apply joins.
+	 */
 	public void applyJoins() {
 		this.multiJoin();
 
 	}
 
+	/**
+	 * Finish query.
+	 */
 	public void finishQuery() {
 
 		this.applyJoins();
@@ -75,27 +79,45 @@ public class SinglePigQuery {
 		if (pigOrderByOperator != null) {
 			this.buildAndAppendQuery(pigOrderByOperator);
 		}
-		
+
 		if (limitOperator != null) {
 			this.buildAndAppendQuery(limitOperator);
 		}
-				
+
 		executeFiltersAndProjections(globalProjection, globalFilterPigOp);
 	}
 
-	public ArrayList<JoinInformation> getIntermediateJoins() {
+	/**
+	 * Gets the intermediate joins.
+	 * 
+	 * @return the intermediate joins
+	 */
+	public ArrayList<BagInformation> getIntermediateJoins() {
 		return this.intermediateBags;
 	}
 
+	/**
+	 * Checks if is debug.
+	 * 
+	 * @return true, if is debug
+	 */
 	public boolean isDebug() {
 		return debug;
 	}
 
+	/**
+	 * Execute filters and projections.
+	 * 
+	 * @param projection
+	 *            the projection
+	 * @param filterOps
+	 *            the filter ops
+	 */
 	private void executeFiltersAndProjections(PigProjectionOperator projection,
 			ArrayList<PigFilterOperator> filterOps) {
 		// Filter
 		this.buildAndAppendQuery(new PigFilterExectuer());
-		
+
 		// Projection
 		if (projection != null) {
 			this.buildAndAppendQuery(projection);
@@ -157,39 +179,92 @@ public class SinglePigQuery {
 		return result;
 	}
 
+	/**
+	 * Builds the and append query.
+	 * 
+	 * @param operator
+	 *            the operator
+	 */
 	public void buildAndAppendQuery(IPigOperator operator) {
-		this.pigLatin.append(operator.buildQuery(this.intermediateBags, this.debug, this.globalFilterPigOp));
+		this.pigLatin.append(operator.buildQuery(this.intermediateBags,
+				this.debug, this.globalFilterPigOp));
 	}
 
+	/**
+	 * Sets the index scan operator.
+	 * 
+	 * @param pigIndexScan
+	 *            the new index scan operator
+	 */
 	public void setIndexScanOperator(PigIndexScanOperator pigIndexScan) {
 		this.indexScanOp = pigIndexScan;
 	}
 
+	/**
+	 * Sets the distinct operator.
+	 * 
+	 * @param pigDistinctOperator
+	 *            the new distinct operator
+	 */
 	public void setDistinctOperator(PigDistinctOperator pigDistinctOperator) {
 		this.distinctOperator = pigDistinctOperator;
 	}
 
+	/**
+	 * Sets the limit operator.
+	 * 
+	 * @param pigLimitOperator
+	 *            the new limit operator
+	 */
 	public void setLimitOperator(PigLimitOperator pigLimitOperator) {
 		this.limitOperator = pigLimitOperator;
 	}
 
+	/**
+	 * Gets the filter pig ops.
+	 * 
+	 * @return the filter pig ops
+	 */
 	public ArrayList<PigFilterOperator> getFilterPigOps() {
 		return globalFilterPigOp;
 	}
 
+	/**
+	 * Gets the projection.
+	 * 
+	 * @return the projection
+	 */
 	public PigProjectionOperator getProjection() {
 		return globalProjection;
 	}
 
+	/**
+	 * Sets the container projection.
+	 * 
+	 * @param pigProjectionOperator
+	 *            the new container projection
+	 */
 	public void setContainerProjection(
 			PigProjectionOperator pigProjectionOperator) {
 		this.globalProjection = pigProjectionOperator;
 	}
 
+	/**
+	 * Adds the container filter.
+	 * 
+	 * @param pigFilter
+	 *            the pig filter
+	 */
 	public void addContainerFilter(PigFilterOperator pigFilter) {
 		this.globalFilterPigOp.add(pigFilter);
 	}
 
+	/**
+	 * Adds the projection.
+	 * 
+	 * @param newProjection
+	 *            the new projection
+	 */
 	public void addProjection(PigProjectionOperator newProjection) {
 		if (globalProjection == null) {
 			this.globalProjection = newProjection;
@@ -200,26 +275,41 @@ public class SinglePigQuery {
 		this.globalProjection.replaceVariableInProjection(this.addBinding);
 	}
 
+	/**
+	 * Sets the orderby operator.
+	 * 
+	 * @param pigOrderByOperator
+	 *            the new orderby operator
+	 */
 	public void setOrderbyOperator(PigOrderByOperator pigOrderByOperator) {
 		this.pigOrderByOperator = pigOrderByOperator;
 	}
 
+	/**
+	 * Replace variable in projection.
+	 * 
+	 * @param oldVar
+	 *            the old var
+	 * @param newVar
+	 *            the new var
+	 */
 	public void replaceVariableInProjection(String oldVar, String newVar) {
 		if (this.addBinding == null) {
 			this.addBinding = new HashMap<String, String>();
 		}
 		this.addBinding.put(oldVar, newVar);
-		
+
 		if (this.globalProjection != null) {
 			this.globalProjection.replaceVariableInProjection(this.addBinding);
 		}
 	}
 
-	public  HashMap<String, String> getAddBindings() {
+	/**
+	 * Gets the adds the bindings.
+	 * 
+	 * @return the adds the bindings
+	 */
+	public HashMap<String, String> getAddBindings() {
 		return this.addBinding;
-	}
-	
-	public BitvectorManager getBitvectorManager() {
-		return bitvectorManager;
 	}
 }

@@ -26,12 +26,16 @@ package lupos.cloud.optimizations.logical.rules;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 import lupos.optimizations.logical.rules.generated.runtime.RulePackage;
 
+/**
+ * Liste der Cloud-Rules.
+ */
 public class CloudRulePackage extends RulePackage {
+
+	/**
+	 * Instantiates a new cloud rule package.
+	 */
 	public CloudRulePackage() {
-		this.rules = new Rule[] { 
-				new AddIndexScanContainerRule(),
-				new AddMultiISContainerRule(),
-				new AddSubGraphContainerRule()
-				};
+		this.rules = new Rule[] { new AddIndexScanContainerRule(),
+				new AddMultiISContainerRule(), new AddSubGraphContainerRule() };
 	}
 }

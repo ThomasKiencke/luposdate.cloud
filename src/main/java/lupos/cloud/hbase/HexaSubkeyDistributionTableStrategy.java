@@ -12,15 +12,20 @@ import lupos.datastructures.items.Triple;
  * eingeordnet. Dabei ist der Schlüssel jeweils der rowKey und der Wert wird als
  * Spaltenname gespeichert. Der eigentliceh Zellenwert in der HBase Tabelle
  * bleibt leer.
+ * 
+ * Anmerkung: Diese Klasse wurde nur zu Testzwecken genutzt könnte aber ggf. als
+ * Grundlage für eine spätere zusätzliche Partitionierung der P_SO Tabelle
+ * dienen.
  */
-public class HexaSubkeyDistributionTableStrategy extends HBaseDistributionStrategy {
+public class HexaSubkeyDistributionTableStrategy extends
+		HBaseDistributionStrategy {
 
 	/** The Constant STRAGEGY_ID. */
 	public static final int STRAGEGY_ID = 2;
 
 	/** The Constant COLUMN_FAMILY. */
 	public static final String COLUMN_FAMILY = "HexaSub";
-	
+
 	private static final int k = 3;
 
 	/*
@@ -63,7 +68,7 @@ public class HexaSubkeyDistributionTableStrategy extends HBaseDistributionStrate
 			first = true;
 
 			ArrayList<Integer> hashValues = new ArrayList<Integer>();
-			
+
 			for (Integer key : getInputValue(column_name_string, triple)
 					.keySet()) {
 				if (first) {
@@ -71,14 +76,16 @@ public class HexaSubkeyDistributionTableStrategy extends HBaseDistributionStrate
 				} else {
 					column += ",";
 				}
-				int hashValue = getInputValue(column_name_string, triple).get(key).hashCode() % k;
+				int hashValue = getInputValue(column_name_string, triple).get(
+						key).hashCode()
+						% k;
 				if (hashValue < 0) {
 					hashValue = hashValue * (-1);
 				}
 				hashValues.add(hashValue);
 				column += getInputValue(column_name_string, triple).get(key);
 			}
-			
+
 			for (Integer hashVal : hashValues) {
 				row_key += hashVal;
 			}

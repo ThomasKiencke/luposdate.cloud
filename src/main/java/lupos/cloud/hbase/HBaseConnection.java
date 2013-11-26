@@ -9,7 +9,6 @@ import java.util.HashMap;
 
 import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.hbase.bulkLoad.BulkLoad;
-import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -17,11 +16,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableExistsException;
 import org.apache.hadoop.hbase.TableNotEnabledException;
-import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
@@ -30,71 +27,58 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.filter.ColumnPrefixFilter;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.io.hfile.Compression;
 import org.apache.hadoop.hbase.io.hfile.Compression.Algorithm;
-import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
-import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
-import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
-import org.apache.hadoop.hbase.mapreduce.hadoopbackport.TotalOrderPartitioner;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import au.com.bytecode.opencsv.CSVWriter;
 
-// TODO: Auto-generated Javadoc
 /**
- * Diese Klasse stellt die Verbindung mit HBase her. In erster Linie wird sie
- * genutzt um die Verbindung mit HBase herzustellen, die notwendigen Tabellen zu
- * erzeugen und zum hinzufügen von "rows". Beim laden in HBase gibt es zwei
- * Mögliche Modi die mit der Variable MAP_REDUCE_BULK_LOAD definiert werden. Bei
- * größeren Datenmengen bietet sich der "BulkLoad"-Modus an indem die Tripel
- * erst lokal gecacht, und anschließend per Map Reduce Job auf die verschiedenen
- * Knoten verteilt werden.
+ * In erster Linie wird diese Klasse genutzt um die Verbindung mit HBase
+ * herzustellen, die notwendigen Tabellen zu erzeugen und zum hinzufügen der
+ * Rows. Beim Laden in HBase gibt es zwei Mögliche Modi, die mit der Variable
+ * MAP_REDUCE_BULK_LOAD definiert werden. Bei größeren Datenmengen bietet sich
+ * der "BulkLoad"-Modus an indem die Tripel erst lokal gecacht, und anschließend
+ * per Map Reduce Job auf die verschiedenen Knoten verteilt werden.
  */
 public class HBaseConnection {
 
-	/** The configuration. */
+	/** HBase/Hadoop Konfigurations-Objekt . */
 	static Configuration configuration = null;
 
-	/** The admin. */
+	/** HBase Schnittstelle. */
 	static HBaseAdmin admin = null;
 
-	/** The message. */
+	/** Wenn true, weden INFO-Messages ausgegeben. */
 	static boolean message = true;
 
-	/** The h tables. */
+	/** HTable-Referenzen. */
 	static HashMap<String, HTable> hTables = new HashMap<String, HTable>();
 
-	/** The csvwriter. */
+	/** CSV-Writer Referenze. */
 	static HashMap<String, CSVWriter> csvwriter = new HashMap<String, CSVWriter>();
 
-	/** The row counter. */
+	/** Zähler der gespeicherten HBase-Tripel. */
 	static int rowCounter = 0;
 
-	/** The Constant ROW_BUFFER_SIZE. */
-	public static int ROW_BUFFER_SIZE = 3000;
+	/** Anzahl der Zwischengespeicherten HBase-Tripel. */
+	public static int ROW_BUFFER_SIZE = 21000000;
 
-	/** The Constant WORKING_DIR. */
+	/** Arbeitsverzeichnis. */
 	public static final String WORKING_DIR = "bulkLoadDirectory";
 
-	/** The Constant BUFFER_FILE_NAME. */
+	/** Arbeitsname der Datei. */
 	public static final String BUFFER_FILE_NAME = "rowBufferFile";
 
-	/** The Constant BUFFER_HFILE_NAME. */
+	/** Arbeitsname des HFiles. */
 	public static final String BUFFER_HFILE_NAME = "rowBufferHFile";
 
-	/** The map reduce bulk load. */
-	public static boolean MAP_REDUCE_BULK_LOAD = false;
-
-	/** The hdfs_file system. */
+	/** HDFS-Referenz */
 	static FileSystem hdfs_fileSystem = null;
 
-	/** The delete table on creation. */
+	/** Wenn diese Variable True ist, ist der BulkLoad-Modus aktiv. */
+	public static boolean MAP_REDUCE_BULK_LOAD = false;
+
+	/** Wenn aktiv, werden die HBase-Tabellen beim Start gelöscht. */
 	public static boolean deleteTableOnCreation = false;
 
 	/**
@@ -130,7 +114,8 @@ public class HBaseConnection {
 	}
 
 	/**
-	 * Erzeugen einer Tabelle.
+	 * Erzeugt für jeden Index eine Tabelle und erstellt die Column-Families +
+	 * aktiviert LZO Komprimierung.
 	 * 
 	 * @param tablename
 	 *            the tablename
@@ -149,8 +134,10 @@ public class HBaseConnection {
 			HTableDescriptor descriptor = new HTableDescriptor(
 					Bytes.toBytes(tablename));
 			HColumnDescriptor family = new HColumnDescriptor(familyname);
-			HColumnDescriptor familyb1 = new HColumnDescriptor(BitvectorManager.bloomfilter1ColumnFamily);
-			HColumnDescriptor familyb2 = new HColumnDescriptor(BitvectorManager.bloomfilter2ColumnFamily);
+			HColumnDescriptor familyb1 = new HColumnDescriptor(
+					BitvectorManager.bloomfilter1ColumnFamily);
+			HColumnDescriptor familyb2 = new HColumnDescriptor(
+					BitvectorManager.bloomfilter2ColumnFamily);
 			family.setCompressionType(Algorithm.LZO);
 			familyb1.setCompressionType(Algorithm.LZO);
 			familyb2.setCompressionType(Algorithm.LZO);
@@ -175,6 +162,7 @@ public class HBaseConnection {
 	 * den BulkLoad).
 	 * 
 	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
 	 */
 	public static void flush() throws IOException {
 		if (rowCounter > 0) {
@@ -183,7 +171,7 @@ public class HBaseConnection {
 	}
 
 	/**
-	 * Fügt eine Spalte zu einer Tballe hinzu.
+	 * Fügt eine Spalte zu einer Tabelle hinzu.
 	 * 
 	 * @param tablename
 	 *            the tablename
@@ -317,7 +305,7 @@ public class HBaseConnection {
 	}
 
 	/**
-	 * Prüft obn eine Tabelle verfügbar ist.
+	 * Prüft ob eine Tabelle verfügbar ist.
 	 * 
 	 * @param tablename
 	 *            the tablename
@@ -381,7 +369,7 @@ public class HBaseConnection {
 			Put row = new Put(Bytes.toBytes(row_key));
 			row.add(Bytes.toBytes(columnFamily), Bytes.toBytes(column),
 					Bytes.toBytes(value));
-			
+
 			String toSplit = column;
 			String elem1 = null;
 			String elem2 = null;
@@ -395,44 +383,53 @@ public class HBaseConnection {
 			// Bloomfilter
 			if (!(elem1 == null)) {
 				Integer position = BitvectorManager.hash(elem1.getBytes());
-				row.add(BitvectorManager.bloomfilter1ColumnFamily, integerToByteArray(4, position),
-						Bytes.toBytes(""));
+				row.add(BitvectorManager.bloomfilter1ColumnFamily,
+						integerToByteArray(4, position), Bytes.toBytes(""));
 			}
-			
+
 			if (!(elem2 == null)) {
 				Integer position = BitvectorManager.hash(elem2.getBytes());
-				row.add(BitvectorManager.bloomfilter2ColumnFamily, integerToByteArray(4, position),
-						Bytes.toBytes(""));
+				row.add(BitvectorManager.bloomfilter2ColumnFamily,
+						integerToByteArray(4, position), Bytes.toBytes(""));
 			}
-			
+
 			table.put(row);
 
 		}
 	}
-	
+
+	/**
+	 * Integer to byte array.
+	 * 
+	 * @param allocate
+	 *            the allocate
+	 * @param pos
+	 *            the pos
+	 * @return the byte[]
+	 */
 	public static byte[] integerToByteArray(int allocate, Integer pos) {
 		return ByteBuffer.allocate(allocate).putInt(pos).array();
 	}
 
+	/**
+	 * Start bulk load.
+	 * 
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static void startBulkLoad() throws IOException {
 		rowCounter = 0;
 		ArrayList<BulkLoad> bulkList = new ArrayList<BulkLoad>();
 		for (String key : csvwriter.keySet()) {
+			csvwriter.get(key).close();
 			hdfs_fileSystem.copyFromLocalFile(true, true, new Path(WORKING_DIR
 					+ File.separator + key + "_" + BUFFER_FILE_NAME + ".csv"),
 					new Path("/tmp/" + WORKING_DIR + "/" + key + "_"
 							+ BUFFER_FILE_NAME + ".csv"));
-			csvwriter.get(key).close();
 			BulkLoad b = new BulkLoad(key);
 			b.start();
 			bulkList.add(b);
-			// bulkLoad(key);
 		}
-
-		// Warte bis alle jobs fertig sind
-		// for (BulkLoad b : bulkList) {
-		// b.start();
-		// }
 
 		System.out.println("Wait until jobs are finished ...");
 		boolean allJobsReady = false;
@@ -452,6 +449,12 @@ public class HBaseConnection {
 		hdfs_fileSystem.mkdirs(new Path("/tmp/" + WORKING_DIR));
 	}
 
+	/**
+	 * Wait.
+	 * 
+	 * @param sec
+	 *            the sec
+	 */
 	public static void wait(int sec) {
 		try {
 			Thread.sleep(sec * 1000);
@@ -459,59 +462,6 @@ public class HBaseConnection {
 			e.printStackTrace();
 		}
 	}
-
-	// /**
-	// * Lädt eine Tabelle per Map Reduce Bulkload.
-	// *
-	// * @param tablename
-	// * the tablename
-	// */
-	// private static void bulkLoad(String tablename) {
-	// try {
-	// System.out.println(tablename + " wird uebertragen!");
-	// // init job
-	// configuration.set("hbase.table.name", tablename);
-	//
-	// Job job = new Job(configuration, "HBase Bulk Import for "
-	// + tablename);
-	// job.setJarByClass(HBaseKVMapper.class);
-	//
-	// job.setMapperClass(HBaseKVMapper.class);
-	// job.setMapOutputKeyClass(ImmutableBytesWritable.class);
-	// job.setMapOutputValueClass(KeyValue.class);
-	// job.setOutputFormatClass(HFileOutputFormat.class);
-	// job.setPartitionerClass(TotalOrderPartitioner.class);
-	// job.setInputFormatClass(TextInputFormat.class);
-	//
-	// TableMapReduceUtil.addDependencyJars(job);
-	//
-	// // generiere HFiles auf dem verteilten Dateisystem
-	// HTable hTable = new HTable(configuration, tablename);
-	//
-	// HFileOutputFormat.configureIncrementalLoad(job, hTable);
-	//
-	// FileInputFormat.addInputPath(job, new Path("/tmp/" + WORKING_DIR
-	// + "/" + tablename + "_" + BUFFER_FILE_NAME + ".csv"));
-	// FileOutputFormat.setOutputPath(job, new Path("/tmp/" + WORKING_DIR
-	// + "/" + tablename + "_" + BUFFER_HFILE_NAME));
-	//
-	// job.waitForCompletion(false);
-	// jobList.add(job);
-	//
-	// // Lade generierte HFiles in HBase
-	// LoadIncrementalHFiles loader = new LoadIncrementalHFiles(
-	// configuration);
-	// loader.doBulkLoad(new Path("/tmp/" + WORKING_DIR + "/" + tablename
-	// + "_" + BUFFER_HFILE_NAME), hTable);
-	//
-	// } catch (TableNotFoundException e) {
-	// e.printStackTrace();
-	// } catch (IOException e) {
-	// e.printStackTrace();
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	// }
 
 	/**
 	 * Gibt eine Zeile anhand des rowKeys zurück.
@@ -550,8 +500,6 @@ public class HBaseConnection {
 	 *            the row_key
 	 * @param cf
 	 *            the cf
-	 * @param column
-	 *            the column
 	 * @return the row with column
 	 */
 	public static Result getRowWithColumn(final String tablename,
@@ -565,7 +513,7 @@ public class HBaseConnection {
 			}
 			Get g = new Get(Bytes.toBytes(row_key));
 			g.addFamily(cf.getBytes());
-			//g.setFilter(new ColumnPrefixFilter(column.getBytes()));
+			// g.setFilter(new ColumnPrefixFilter(column.getBytes()));
 			Result result = table.get(g);
 			if (result != null) {
 				return result;
@@ -595,6 +543,7 @@ public class HBaseConnection {
 			}
 		} finally {
 			scanner.close();
+			table.close();
 		}
 	}
 
@@ -606,7 +555,14 @@ public class HBaseConnection {
 	public static Configuration getConfiguration() {
 		return configuration;
 	}
-	
+
+	/**
+	 * Gets the hdfs_file system.
+	 * 
+	 * @return the hdfs_file system
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static FileSystem getHdfs_fileSystem() throws IOException {
 		if (hdfs_fileSystem == null) {
 			hdfs_fileSystem = FileSystem.get(configuration);

@@ -24,40 +24,23 @@
 package lupos.cloud.operator.format;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
 
 import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
 import lupos.cloud.operator.format.IOperatorFormatter;
-import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.pig.BagInformation;
 import lupos.cloud.pig.PigQuery;
-import lupos.cloud.pig.operator.PigDistinctOperator;
-import lupos.cloud.pig.operator.PigFilterExectuer;
-import lupos.cloud.pig.operator.PigFilterOperator;
-import lupos.cloud.pig.operator.PigIndexScanOperator;
 import lupos.cloud.pig.operator.PigJoinOperator;
-import lupos.cloud.pig.operator.PigLimitOperator;
 import lupos.cloud.pig.operator.PigOptionalOperator;
-import lupos.cloud.pig.operator.PigProjectionOperator;
 import lupos.cloud.pig.operator.PigUnionOperator;
 import lupos.engine.operators.BasicOperator;
-import lupos.engine.operators.index.BasicIndexScan;
-import lupos.engine.operators.index.Root;
 import lupos.engine.operators.multiinput.Union;
 import lupos.engine.operators.multiinput.join.Join;
 import lupos.engine.operators.multiinput.optional.Optional;
-import lupos.engine.operators.singleinput.AddBinding;
-import lupos.engine.operators.singleinput.Projection;
-import lupos.engine.operators.singleinput.Result;
-import lupos.engine.operators.singleinput.filter.Filter;
-import lupos.engine.operators.singleinput.modifiers.Limit;
-import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
-import lupos.engine.operators.tripleoperator.TriplePattern;
 
 /**
- * Implements the formatter for the index scan operator
+ * Formatierer für den MultiIndexScan-Container.
  */
 public class MultiIndexScanFormatter implements IOperatorFormatter {
 	/*
@@ -74,28 +57,34 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 		return pigQuery;
 	}
 
-	public JoinInformation joinMultiIndexScans(
+	/**
+	 * Join multi index scans.
+	 * 
+	 * @param container
+	 *            the container
+	 * @param pigQuery
+	 *            the pig query
+	 * @return the join information
+	 */
+	public BagInformation joinMultiIndexScans(
 			MultiIndexScanContainer container, PigQuery pigQuery) {
-		JoinInformation newJoin = null;
-		// ArrayList<BasicOperator> containerOperations = new
-		// ArrayList<BasicOperator>();
+		BagInformation newJoin = null;
 		for (Integer id : container.getContainerList().keySet()) {
 			LinkedList<BasicOperator> curList = container.getContainerList()
 					.get(id);
-			ArrayList<JoinInformation> multiInputist = new ArrayList<JoinInformation>();
+			ArrayList<BagInformation> multiInputist = new ArrayList<BagInformation>();
 			for (BasicOperator op : curList) {
 				if (op instanceof IndexScanContainer) {
 					new IndexScanCointainerFormatter().serialize(op, pigQuery);
 					multiInputist.add(pigQuery.getLastAddedBag());
 				} else if (op instanceof MultiIndexScanContainer) {
 					final MultiIndexScanContainer c = (MultiIndexScanContainer) op;
-					// containerOperations = c.getOperators();
 					multiInputist.add(this.joinMultiIndexScans(c, pigQuery));
 
 				}
 			}
 
-			newJoin = new JoinInformation();
+			newJoin = new BagInformation();
 			boolean isJoin = false;
 			if (container.getMappingTree().get(id) instanceof Union) {
 				pigQuery.buildAndAppendQuery(new PigUnionOperator(newJoin,
@@ -115,10 +104,8 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 								+ container.getMappingTree().get(id).getClass());
 			}
 
-			// HashSet<String> variables = new HashSet<String>();
 			int i = 0;
-			for (JoinInformation toRemove : multiInputist) {
-				// variables.addAll(toRemove.getJoinElements());
+			for (BagInformation toRemove : multiInputist) {
 				newJoin.addAppliedFilters(toRemove.getAppliedFilters());
 				pigQuery.removeIntermediateBags(toRemove);
 
@@ -134,10 +121,7 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 				i++;
 			}
 
-			// newJoin.setJoinElements(new ArrayList<String>(variables));
 			newJoin.mergeOptionalVariables(multiInputist);
-
-			pigQuery.append(removeDuplicatedAliases(newJoin));
 
 			pigQuery.addIntermediateBags(newJoin);
 		}
@@ -146,38 +130,4 @@ public class MultiIndexScanFormatter implements IOperatorFormatter {
 		return pigQuery.getLastAddedBag();
 	}
 
-	@Deprecated
-	public String removeDuplicatedAliases(JoinInformation oldJoin) {
-		return "";
-//		StringBuilder result = new StringBuilder();
-//		// prüfe ob es doppelte Aliases gibt und entferne diese
-//		ArrayList<String> newElements = new ArrayList<String>();
-//		boolean foundDuplicate = false;
-//
-//		for (String elem : oldJoin.getJoinElements()) {
-//			if (newElements.contains(elem)) {
-//				foundDuplicate = true;
-//			} else {
-//				newElements.add(elem);
-//			}
-//		}
-//
-//		if (foundDuplicate) {
-//			result.append(oldJoin.getName() + " = FOREACH " + oldJoin.getName()
-//					+ " GENERATE ");
-//			boolean first = true;
-//			for (String elem : newElements) {
-//				if (!first) {
-//					result.append(", ");
-//				}
-//				result.append("$" + oldJoin.getItemPos(elem));
-//				first = false;
-//			}
-//			result.append(";\n");
-//			oldJoin.setJoinElements(newElements);
-//		}
-//
-//		return result.toString();
-
-	}
 }

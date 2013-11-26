@@ -51,12 +51,8 @@ public class BloomfilterGeneratorMR {
 		String[] tables = HBaseDistributionStrategy.getTableInstance()
 				.getTableNames();
 
-		// String[] tables = { "O_SP", "PO_S"};
-		// String[] tables = { "PO_S"};
-		// String[] tables = { "P_SO"};
 
 		for (String tablename : tables) {
-			// String tablename = "P_SO";
 			System.out.println("Aktuelle Tabelle: " + tablename);
 			BVJobThread curJob = new BVJobThread(tablename);
 			jobList.add(curJob);

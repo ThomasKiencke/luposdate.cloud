@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.pig.BagInformation;
 import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.singleinput.Projection;
 
 public class PigProjectionOperator implements IPigOperator {
 	HashSet<String> projectionVariables;
-	private ArrayList<JoinInformation> intermediateJoins;
+	private ArrayList<BagInformation> intermediateJoins;
 	private boolean debug;
 	ArrayList<PigFilterOperator> filterOps;
 
@@ -33,7 +33,7 @@ public class PigProjectionOperator implements IPigOperator {
 	}
 
 	@Override
-	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
+	public String buildQuery(ArrayList<BagInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		this.intermediateJoins = intermediateBags;
 		this.filterOps = filterOps;
@@ -44,9 +44,9 @@ public class PigProjectionOperator implements IPigOperator {
 	private String checkIfProjectionPossible() {
 		StringBuilder result = new StringBuilder();
 		if (projectionVariables.size() != 0) {
-			HashMap<JoinInformation, HashSet<String>> varJoinMap = getValidProjectionVariables();
+			HashMap<BagInformation, HashSet<String>> varJoinMap = getValidProjectionVariables();
 
-			for (JoinInformation curJoin : varJoinMap.keySet()) {
+			for (BagInformation curJoin : varJoinMap.keySet()) {
 
 				// Projektion ist nicht notwendig
 				if (joinListAndProjectionListAreEquals(
@@ -60,8 +60,8 @@ public class PigProjectionOperator implements IPigOperator {
 								+ "\n");
 					}
 
-					JoinInformation newJoin = new JoinInformation(
-							"INTERMEDIATE_BAG_" + JoinInformation.idCounter);
+					BagInformation newJoin = new BagInformation(
+							"INTERMEDIATE_BAG_" + BagInformation.idCounter);
 
 					result.append(newJoin.getName() + " = FOREACH "
 							+ curJoin.getName() + " GENERATE ");
@@ -83,7 +83,7 @@ public class PigProjectionOperator implements IPigOperator {
 						result.append("\n");
 					}
 
-					newJoin.setPatternId(JoinInformation.idCounter);
+					newJoin.setPatternId(BagInformation.idCounter);
 					newJoin.setJoinElements(new ArrayList<String>(varJoinMap
 							.get(curJoin)));
 
@@ -93,19 +93,19 @@ public class PigProjectionOperator implements IPigOperator {
 
 					intermediateJoins.remove(curJoin);
 					intermediateJoins.add(newJoin);
-					JoinInformation.idCounter++;
+					BagInformation.idCounter++;
 				}
 			}
 		}
 		return result.toString();
 	}
 
-	private HashMap<JoinInformation, HashSet<String>> getValidProjectionVariables() {
-		HashMap<JoinInformation, HashSet<String>> varJoinMap = new HashMap<JoinInformation, HashSet<String>>();
+	private HashMap<BagInformation, HashSet<String>> getValidProjectionVariables() {
+		HashMap<BagInformation, HashSet<String>> varJoinMap = new HashMap<BagInformation, HashSet<String>>();
 		for (String projectionVar : projectionVariables) {
 			int varCounter = 0;
-			JoinInformation projectionJoin = null;
-			for (JoinInformation item : intermediateJoins) {
+			BagInformation projectionJoin = null;
+			for (BagInformation item : intermediateJoins) {
 				if (item.getJoinElements().contains(projectionVar)) {
 					varCounter++;
 					projectionJoin = item;
@@ -119,7 +119,7 @@ public class PigProjectionOperator implements IPigOperator {
 				for (String dropCandidateVariable : projectionJoin
 						.getJoinElements()) {
 					// Variable wird noch für Joins mit anderen Bags gebraucht?
-					for (JoinInformation otherJoin : intermediateJoins) {
+					for (BagInformation otherJoin : intermediateJoins) {
 						if (!otherJoin.equals(projectionJoin)) {
 							if (otherJoin.getJoinElements().contains(
 									dropCandidateVariable)) {
@@ -136,7 +136,7 @@ public class PigProjectionOperator implements IPigOperator {
 								// Wenn eine Filtervariable gedropt werden soll
 								// überprüfe ob Filter schon angewendet wurde,
 								// wenn ja kann sie gedroppt weden
-								for (JoinInformation join : intermediateJoins) {
+								for (BagInformation join : intermediateJoins) {
 									if (join.getJoinElements().contains(
 											"?" + filterVar)
 											&& !join.getAppliedFilters()

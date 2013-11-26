@@ -2,21 +2,21 @@ package lupos.cloud.pig.operator;
 
 import java.util.ArrayList;
 
-import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.pig.BagInformation;
 import lupos.cloud.pig.SinglePigQuery;
 
 public class PigUnionOperator implements IPigOperator {
 	private boolean debug;
-	private JoinInformation newJoin;
-	private ArrayList<JoinInformation> multiInputist;
+	private BagInformation newJoin;
+	private ArrayList<BagInformation> multiInputist;
 
-	public PigUnionOperator(JoinInformation newJoin,
-			ArrayList<JoinInformation> multiInputist) {
+	public PigUnionOperator(BagInformation newJoin,
+			ArrayList<BagInformation> multiInputist) {
 		this.newJoin = newJoin;
 		this.multiInputist = multiInputist;
 	}
 
-	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
+	public String buildQuery(ArrayList<BagInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		this.debug = debug;
 		StringBuilder result = new StringBuilder();
@@ -35,10 +35,10 @@ public class PigUnionOperator implements IPigOperator {
 		result.append(";\n\n");
 		newJoin.setJoinElements(multiInputist.get(0).getJoinElements());
 
-		for (JoinInformation bag : multiInputist) {
+		for (BagInformation bag : multiInputist) {
 			for (String elem : bag.getJoinElements()) {
 				if (!multiInputist.get(0).getJoinElements().contains(elem)) {
-					newJoin.addJoinElements(elem);
+					newJoin.addBagElements(elem);
 					newJoin.addOptionalElements(elem);
 				}
 			}

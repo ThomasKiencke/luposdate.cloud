@@ -3,28 +3,28 @@ package lupos.cloud.pig.operator;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.pig.BagInformation;
 import lupos.cloud.pig.SinglePigQuery;
 
 public class PigFilterExectuer implements IPigOperator {
 	private boolean debug;
-	private ArrayList<JoinInformation> intermediateBags;
-	HashMap<JoinInformation, ArrayList<PigFilterOperator>> bagToFilterList = null;
+	private ArrayList<BagInformation> intermediateBags;
+	HashMap<BagInformation, ArrayList<PigFilterOperator>> bagToFilterList = null;
 
-	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
+	public String buildQuery(ArrayList<BagInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		StringBuilder result = new StringBuilder();
-		this.bagToFilterList = new HashMap<JoinInformation, ArrayList<PigFilterOperator>>();
+		this.bagToFilterList = new HashMap<BagInformation, ArrayList<PigFilterOperator>>();
 		this.debug = debug;
 		this.intermediateBags = intermediateBags;
-		ArrayList<JoinInformation> toRemove = new ArrayList<JoinInformation>();
-		ArrayList<JoinInformation> toAdd = new ArrayList<JoinInformation>();
+		ArrayList<BagInformation> toRemove = new ArrayList<BagInformation>();
+		ArrayList<BagInformation> toAdd = new ArrayList<BagInformation>();
 
 		for (PigFilterOperator filter : filterOps) {
 			this.checkIfFilterPossible(filter);
 		}
 		if (bagToFilterList.size() > 0) {
-			for (JoinInformation curJoin : bagToFilterList.keySet()) {
+			for (BagInformation curJoin : bagToFilterList.keySet()) {
 				if (debug) {
 					int i = 0;
 					result.append("-- Filter: ");
@@ -39,8 +39,8 @@ public class PigFilterExectuer implements IPigOperator {
 					result.append("\n");
 				}
 
-				JoinInformation newJoin = new JoinInformation(
-						"INTERMEDIATE_BAG_" + JoinInformation.idCounter);
+				BagInformation newJoin = new BagInformation(
+						"INTERMEDIATE_BAG_" + BagInformation.idCounter);
 
 				result.append(newJoin.getName() + " = FILTER "
 						+ curJoin.getName() + " BY ");
@@ -72,7 +72,7 @@ public class PigFilterExectuer implements IPigOperator {
 					result.append("\n");
 				}
 
-				newJoin.setPatternId(JoinInformation.idCounter);
+				newJoin.setPatternId(BagInformation.idCounter);
 				newJoin.setJoinElements(curJoin.getJoinElements());
 				newJoin.addAppliedFilters(curJoin.getAppliedFilters());
 				newJoin.addBitVectors(curJoin.getBitVectors());
@@ -82,13 +82,13 @@ public class PigFilterExectuer implements IPigOperator {
 //				toRemove.remove(curJoin);
 				toAdd.add(newJoin);
 
-				JoinInformation.idCounter++;
+				BagInformation.idCounter++;
 
-				for (JoinInformation item : toRemove) {
+				for (BagInformation item : toRemove) {
 					intermediateBags.remove(item);
 				}
 
-				for (JoinInformation item : toAdd) {
+				for (BagInformation item : toAdd) {
 					intermediateBags.add(item);
 				}
 			}
@@ -99,7 +99,7 @@ public class PigFilterExectuer implements IPigOperator {
 	private void checkIfFilterPossible(PigFilterOperator filter) {
 		// Wenn alle Variablen in einer Menge vorkommen, kann der Filter
 		// angewandt weden
-		for (JoinInformation curJoin : intermediateBags) {
+		for (BagInformation curJoin : intermediateBags) {
 
 			// Wenn die Menge nicht schon einmal gefiltert wurde
 			if (!curJoin.filterApplied(filter)) {
@@ -128,7 +128,7 @@ public class PigFilterExectuer implements IPigOperator {
 		return null; // Fall sollte nicht vorkommen
 	}
 
-	private void addFilterToBag(JoinInformation toAdd, PigFilterOperator filter) {
+	private void addFilterToBag(BagInformation toAdd, PigFilterOperator filter) {
 		ArrayList<PigFilterOperator> list = bagToFilterList.get(toAdd);
 		if (list == null) {
 			list = new ArrayList<PigFilterOperator>();

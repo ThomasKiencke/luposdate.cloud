@@ -3,25 +3,25 @@ package lupos.cloud.pig.operator;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.pig.BagInformation;
 import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.multiinput.join.Join;
 
 public class PigJoinOperator implements IPigOperator {
 	private boolean debug;
-	private JoinInformation newJoin;
-	private ArrayList<JoinInformation> multiInputist;
+	private BagInformation newJoin;
+	private ArrayList<BagInformation> multiInputist;
 	private Join join;
 
-	public PigJoinOperator(JoinInformation newJoin,
-			ArrayList<JoinInformation> multiInputist, Join join) {
+	public PigJoinOperator(BagInformation newJoin,
+			ArrayList<BagInformation> multiInputist, Join join) {
 		this.newJoin = newJoin;
 		this.multiInputist = multiInputist;
 		this.join = join;
 	}
 
-	public String buildQuery(ArrayList<JoinInformation> intermediateBags,
+	public String buildQuery(ArrayList<BagInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		this.debug = debug;
 		StringBuilder result = new StringBuilder();
@@ -71,14 +71,14 @@ public class PigJoinOperator implements IPigOperator {
 		}
 
 		boolean firstBag = true;
-		for (JoinInformation bag : multiInputist) {
+		for (BagInformation bag : multiInputist) {
 			if (firstBag) {
 				newJoin.setJoinElements(bag.getJoinElements());
 				firstBag = false;
 			} else {
 				for (String var : bag.getJoinElements()) {
 //					if (!joinElements.contains(var)) {
-						newJoin.addJoinElements(var);
+						newJoin.addBagElements(var);
 //					}
 				}
 			}

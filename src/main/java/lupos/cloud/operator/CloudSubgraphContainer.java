@@ -23,11 +23,8 @@
  */
 package lupos.cloud.operator;
 
-import java.util.List;
-
 import lupos.cloud.operator.format.CloudSubgraphContainerFormatter;
 import lupos.cloud.pig.PigQuery;
-import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.queryresult.QueryResult;
 import lupos.engine.operators.RootChild;
 import lupos.engine.operators.index.Dataset;
@@ -36,20 +33,14 @@ import lupos.engine.operators.messages.BoundVariablesMessage;
 import lupos.engine.operators.messages.Message;
 import lupos.rdf.Prefix;
 
-import org.json.JSONException;
-
 /**
- * This container contains all operators that shall be send to a node for
+ * This container contains all operators that shall be send to a the cloud for
  * execution.
  * 
- * @param <K>
- *            the type of key used to address the node where this operator graph
- *            is sent to.
  */
 public class CloudSubgraphContainer extends RootChild {
-	/**
-	 * 
-	 */
+
+	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -67,10 +58,8 @@ public class CloudSubgraphContainer extends RootChild {
 	 * 
 	 * @param rootNodeOfSubGraph
 	 *            the root node of sub graph
-	 * @param key
-	 *            the key which identifies to which node the operator graph is
-	 *            sent to
-	 * @throws JSONException
+	 * @param subgraphExecutor
+	 *            the subgraph executor
 	 */
 	public CloudSubgraphContainer(final Root rootNodeOfSubGraph,
 			final ICloudSubgraphExecutor subgraphExecutor) {
@@ -99,15 +88,32 @@ public class CloudSubgraphContainer extends RootChild {
 		return result;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see lupos.engine.operators.BasicOperator#toString(lupos.rdf.Prefix)
+	 */
 	@Override
 	public String toString(final Prefix prefixInstance) {
 		return this.toString();
 	}
 
+	/**
+	 * Gets the root of subgraph.
+	 * 
+	 * @return the root of subgraph
+	 */
 	public Root getRootOfSubgraph() {
 		return this.rootNodeOfSubGraph;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.engine.operators.BasicOperator#preProcessMessage(lupos.engine.operators
+	 * .messages.BoundVariablesMessage)
+	 */
 	@Override
 	public Message preProcessMessage(final BoundVariablesMessage msg) {
 		final BoundVariablesMessage newMsg = new BoundVariablesMessage(msg);
@@ -115,30 +121,15 @@ public class CloudSubgraphContainer extends RootChild {
 		return newMsg;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see lupos.engine.operators.BasicOperator#toString()
+	 */
 	@Override
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 		result.append("--- Cloud SubgraphContainer ---\n");
-//		List<OperatorIDTuple> curNode = rootNodeOfSubGraph
-//				.getSucceedingOperators();
-//
-//		while (curNode != null && curNode.size() != 0) {
-//			if (curNode.get(0).getOperator() instanceof IndexScanContainer) {
-//				result.append("\n"
-//						+ ((IndexScanContainer) curNode.get(0).getOperator())
-//								.toString().replace("\n", ""));
-//			} else if (curNode.get(0).getOperator() instanceof MultiIndexScanContainer) {
-//				result.append("\n"
-//						+ ((MultiIndexScanContainer) curNode.get(0)
-//								.getOperator()).toString().replace("\n", ""));
-//			} else {
-//				result.append("\n"
-//						+ curNode.get(0).getOperator().getClass()
-//								.getSimpleName());
-//			}
-//			curNode = curNode.get(0).getOperator().getSucceedingOperators();
-//		}
-
 		return result.toString();
 	}
 }

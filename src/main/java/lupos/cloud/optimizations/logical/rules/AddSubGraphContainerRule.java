@@ -27,39 +27,31 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 import lupos.cloud.operator.CloudSubgraphContainer;
 import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
 import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.pig.operator.PigFilterOperator;
-import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
 import lupos.distributed.storage.distributionstrategy.TriplePatternNotSupportedError;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.index.Root;
-import lupos.engine.operators.singleinput.AddBinding;
-import lupos.engine.operators.singleinput.AddBindingFromOtherVar;
-import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
-import lupos.engine.operators.singleinput.filter.Filter;
-import lupos.engine.operators.singleinput.modifiers.Limit;
-import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 
+/**
+ * Kapselt den IndexScan- oder MultiIndexScanContainer in einen eigenen
+ * Container.
+ */
 public class AddSubGraphContainerRule extends Rule {
 
-//	public static CloudManagement cloudManagement;
-
+	/** The subgraph executor. */
 	public static ICloudSubgraphExecutor subgraphExecutor;
 
-	public HashSet<Variable> additionalProjectionVariables = new HashSet<Variable>();
-
 	/**
-	 * replace index scan operator with SubgraphContainer
+	 * replace index scan operator with SubgraphContainer.
 	 * 
 	 * @param indexScan
 	 *            the index scan operator
@@ -122,8 +114,16 @@ public class AddSubGraphContainerRule extends Rule {
 		}
 	}
 
+	/** The current operator. */
 	private BasicOperator currentOperator = null;
 
+	/**
+	 * _check private0.
+	 * 
+	 * @param _op
+	 *            the _op
+	 * @return true, if successful
+	 */
 	private boolean _checkPrivate0(final BasicOperator _op) {
 		if (!(_op instanceof IndexScanContainer || _op instanceof MultiIndexScanContainer)) {
 			return false;
@@ -134,16 +134,33 @@ public class AddSubGraphContainerRule extends Rule {
 		return true;
 	}
 
+	/**
+	 * Instantiates a new adds the sub graph container rule.
+	 */
 	public AddSubGraphContainerRule() {
 		this.startOpClass = BasicOperator.class;
 		this.ruleName = "AddSubGraphContainer";
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.optimizations.logical.rules.generated.runtime.Rule#check(lupos.
+	 * engine.operators.BasicOperator)
+	 */
 	@Override
 	protected boolean check(final BasicOperator _op) {
 		return this._checkPrivate0(_op);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.optimizations.logical.rules.generated.runtime.Rule#replace(java
+	 * .util.HashMap)
+	 */
 	@Override
 	protected void replace(
 			final HashMap<Class<?>, HashSet<BasicOperator>> _startNodes) {

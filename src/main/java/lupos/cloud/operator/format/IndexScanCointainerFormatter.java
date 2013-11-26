@@ -49,7 +49,7 @@ import lupos.engine.operators.singleinput.sort.Sort;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 /**
- * Implements the formatter for the index scan operator
+ * Implements the formatter for the index scan operator.
  */
 public class IndexScanCointainerFormatter implements IOperatorFormatter {
 	/*

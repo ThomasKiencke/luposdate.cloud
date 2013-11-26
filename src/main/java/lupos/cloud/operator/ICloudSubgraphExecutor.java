@@ -24,7 +24,6 @@
 package lupos.cloud.operator;
 
 import lupos.cloud.pig.PigQuery;
-import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.queryresult.QueryResult;
 
 /**

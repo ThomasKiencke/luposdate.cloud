@@ -2,17 +2,17 @@ package lupos.cloud.pig.operator;
 
 import java.util.ArrayList;
 
-import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.pig.BagInformation;
 import lupos.cloud.pig.SinglePigQuery;
 
 public class PigLimitOperator implements IPigOperator {
-	private ArrayList<JoinInformation> intermediateJoins;
+	private ArrayList<BagInformation> intermediateJoins;
 	private int limit = -1 ;
 	
 	public PigLimitOperator(int limit) {
 		this.limit = limit;
 	}
-	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+	public String buildQuery(ArrayList<BagInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		StringBuilder result = new StringBuilder();
 		this.intermediateJoins = intermediateBags;
 
@@ -20,9 +20,9 @@ public class PigLimitOperator implements IPigOperator {
 			result.append("-- Limit: " + limit + " \n");
 		}
 
-		JoinInformation curJoin = intermediateJoins.get(0);
-		JoinInformation newJoin = new JoinInformation("INTERMEDIATE_BAG_"
-				+ JoinInformation.idCounter);
+		BagInformation curJoin = intermediateJoins.get(0);
+		BagInformation newJoin = new BagInformation("INTERMEDIATE_BAG_"
+				+ BagInformation.idCounter);
 
 		result.append(newJoin.getName() + " = LIMIT " + curJoin.getName()
 				+ " " + this.limit +  ";\n");
@@ -31,7 +31,7 @@ public class PigLimitOperator implements IPigOperator {
 			result.append("\n");
 		}
 
-		newJoin.setPatternId(JoinInformation.idCounter);
+		newJoin.setPatternId(BagInformation.idCounter);
 		newJoin.setJoinElements(curJoin.getJoinElements());
 		newJoin.addAppliedFilters(curJoin.getAppliedFilters());
 		newJoin.mergeOptionalVariables(curJoin);
@@ -39,7 +39,7 @@ public class PigLimitOperator implements IPigOperator {
 
 		intermediateJoins.remove(curJoin);
 		intermediateJoins.add(newJoin);
-		JoinInformation.idCounter++;
+		BagInformation.idCounter++;
 		return result.toString();
 	}
 }

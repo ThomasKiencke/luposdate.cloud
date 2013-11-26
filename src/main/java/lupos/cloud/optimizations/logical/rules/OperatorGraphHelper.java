@@ -5,9 +5,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-
-import org.omg.PortableInterceptor.SUCCESSFUL;
 
 import lupos.cloud.operator.IndexScanContainer;
 import lupos.cloud.operator.MultiIndexScanContainer;
@@ -30,10 +27,20 @@ import lupos.engine.operators.singleinput.modifiers.SortLimit;
 import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 import lupos.engine.operators.singleinput.sort.Sort;
 
+/**
+ * Helferklasse zum Bearbeiten des Operatorgraphs.
+ */
 public class OperatorGraphHelper {
+	
+	/** The edge number. */
 	private static Integer edgeNumber;
 
-	// Operationen werden zurück gegeben und im Graphen GELÖSCHT!
+	/**
+	 * Operationen werden zurück gegeben und im Graphen GELÖSCHT!
+	 *
+	 * @param succeedingOperators the succeeding operators
+	 * @return the and delete operation until next multi input operator
+	 */
 	public static ArrayList<BasicOperator> getAndDeleteOperationUntilNextMultiInputOperator(
 			List<OperatorIDTuple> succeedingOperators) {
 		ArrayList<BasicOperator> result = new ArrayList<BasicOperator>();
@@ -63,6 +70,13 @@ public class OperatorGraphHelper {
 		return result;
 	}
 
+	/**
+	 * Überprüft ob eine Operation unterstützt wird.
+	 *
+	 * @param op the op
+	 * @return true, if is operation supported
+	 */
+	@SuppressWarnings("rawtypes")
 	public static boolean isOperationSupported(BasicOperator op) {
 		boolean result = false;
 		Class[] supporClasses = { Projection.class, Distinct.class,
@@ -91,19 +105,13 @@ public class OperatorGraphHelper {
 		return result;
 	}
 
-	/*
-	 * Bestimmte Operationen werden nicht verschoben sondern bleiben im
-	 * äußersten Container. Anmerkung: Äußere Projektionen (=globale
-	 * Projektionen) sind trotzdem in ALLEN unteren Containern "aktiv"
-	 */
-	// public static boolean moveOperation(BasicOperator op) {
-	// boolean result = true;
-	// if (op instanceof Projection || op instanceof Distinct) {
-	// result = false;
-	// }
-	// return result;
-	// }
 
+	/**
+	 * Ersetzt einen bestehenden Operator durch einen neuen.
+	 *
+	 * @param oldOp the old op
+	 * @param newOp the new op
+	 */
 	public static void replaceOperation(BasicOperator oldOp, BasicOperator newOp) {
 		// Alte Vorgänger/Nachfolger merken
 		final Collection<BasicOperator> preds = oldOp.getPrecedingOperators();
@@ -127,6 +135,13 @@ public class OperatorGraphHelper {
 		}
 	}
 
+	/**
+	 * Gibt den nächsten MultiInpu-Operator zurück.
+	 *
+	 * @param op the op
+	 * @param edgeID the edge id
+	 * @return the next multi input operation
+	 */
 	public static BasicOperator getNextMultiInputOperation(BasicOperator op,
 			int edgeID) {
 		if (op instanceof MultiInputOperator) {
@@ -141,11 +156,22 @@ public class OperatorGraphHelper {
 		return null;
 	}
 
-	// quick workaround, TODO: bessere Lösung finden
+	/**
+	 * Gets the last edge number.
+	 *
+	 * @return the last edge number
+	 */
 	public static Integer getLastEdgeNumber() {
+		// quick workaround, TODO: bessere Lösung finden
 		return edgeNumber;
 	}
 
+	/**
+	 * Gibt die Union-Operatoren mehrerer Operatoren zurück.
+	 *
+	 * @param list the list
+	 * @return the union variables from multiple operations
+	 */
 	public static Collection<Variable> getUnionVariablesFromMultipleOperations(
 			LinkedList<BasicOperator> list) {
 		HashSet<Variable> result = new HashSet<Variable>();
@@ -158,6 +184,12 @@ public class OperatorGraphHelper {
 		return new ArrayList<Variable>(result);
 	}
 
+	/**
+	 * Gibt die Intersection-Variablen mehrerer Operatoren zurück.
+	 *
+	 * @param list the list
+	 * @return the intersection variables from multiple operations
+	 */
 	public static Collection<Variable> getIntersectionVariablesFromMultipleOperations(
 			LinkedList<BasicOperator> list) {
 		HashSet<Variable> result = new HashSet<Variable>();
@@ -170,6 +202,12 @@ public class OperatorGraphHelper {
 		return new ArrayList<Variable>(result);
 	}
 
+	/**
+	 * Adds the projection from multi input operator in container if necessary.
+	 *
+	 * @param multiInputOperator the multi input operator
+	 * @param containerList the container list
+	 */
 	public static void addProjectionFromMultiInputOperatorInContainerIfNecessary(
 			BasicOperator multiInputOperator,
 			LinkedList<BasicOperator> containerList) {
@@ -193,6 +231,12 @@ public class OperatorGraphHelper {
 
 	}
 
+	/**
+	 * Adds the projection if necessary.
+	 *
+	 * @param operation the operation
+	 * @param containerList the container list
+	 */
 	public static void addProjectionIfNecessary(BasicOperator operation,
 			ArrayList<BasicOperator> containerList) {
 		ArrayList<Variable> intersectionVariables = new ArrayList<Variable>(
@@ -223,6 +267,12 @@ public class OperatorGraphHelper {
 
 	}
 
+	/**
+	 * Insert new operator.
+	 *
+	 * @param existingOperation the existing operation
+	 * @param newOperation the new operation
+	 */
 	public static void insertNewOperator(BasicOperator existingOperation,
 			BasicOperator newOperation) {
 		final List<OperatorIDTuple> succs = existingOperation
@@ -239,6 +289,12 @@ public class OperatorGraphHelper {
 		newOperation.addPrecedingOperator(existingOperation);
 	}
 
+	/**
+	 * Merge container list into one new container.
+	 *
+	 * @param newContainer the new container
+	 * @param oldContainer the old container
+	 */
 	public static void mergeContainerListIntoOneNewContainer(
 			BasicOperator newContainer, HashSet<BasicOperator> oldContainer) {
 		// Merke alte Vorgänger und Nachfolger des Containers
@@ -288,6 +344,11 @@ public class OperatorGraphHelper {
 		}
 	}
 
+	/**
+	 * Removes the duplicated edges.
+	 *
+	 * @param op the op
+	 */
 	public static void removeDuplicatedEdges(BasicOperator op) {
 		HashSet<BasicOperator> preds = new HashSet<BasicOperator>(
 				op.getPrecedingOperators());
@@ -299,6 +360,12 @@ public class OperatorGraphHelper {
 
 	}
 
+	/**
+	 * Gets the last operator.
+	 *
+	 * @param operator the operator
+	 * @return the last operator
+	 */
 	public static BasicOperator getLastOperator(BasicOperator operator) {
 		BasicOperator result = null;
 		if (operator.getSucceedingOperators() == null

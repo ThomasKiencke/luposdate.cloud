@@ -9,7 +9,6 @@ import lupos.cloud.pig.operator.IPigOperator;
 import lupos.cloud.pig.operator.PigDistinctOperator;
 import lupos.cloud.pig.operator.PigFilterExectuer;
 import lupos.cloud.pig.operator.PigFilterOperator;
-import lupos.cloud.pig.operator.PigJoinOperator;
 import lupos.cloud.pig.operator.PigLimitOperator;
 import lupos.cloud.pig.operator.PigOrderByOperator;
 import lupos.cloud.pig.operator.PigProjectionOperator;
@@ -23,14 +22,30 @@ import lupos.engine.operators.singleinput.modifiers.Limit;
 import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
 import lupos.engine.operators.singleinput.sort.Sort;
 
+/**
+ * Innerhalb dieser Klasse werden alle Informationen eines PigLatin-Programms
+ * verwaltet.
+ */
 public class PigQuery {
 
+	/** Liste der SinglePigQueries. */
 	ArrayList<SinglePigQuery> singleQueries = new ArrayList<SinglePigQuery>();
-	ArrayList<JoinInformation> intermediateBags = new ArrayList<JoinInformation>();
+
+	/** In dieser Liste werden die Zwischenergebnisse verwaltet. */
+	ArrayList<BagInformation> intermediateBags = new ArrayList<BagInformation>();
+
+	/** Das PigLatin-Programm . */
 	StringBuilder pigLatin = new StringBuilder();
+
+	/** Gibt Debug Infomrationen aus, wenn true. */
 	public static boolean debug = true;
+
+	/** Bindings. */
 	private HashMap<String, String> addBinding = new HashMap<String, String>();
 
+	/**
+	 * Ersetzt für den den letzten Bag-Alias durch X.
+	 */
 	public void finishQuery() {
 		StringBuilder modifiedPigQuery = new StringBuilder();
 		modifiedPigQuery.append(this.pigLatin.toString().replace(
@@ -38,10 +53,20 @@ public class PigQuery {
 		this.pigLatin = modifiedPigQuery;
 	}
 
+	/**
+	 * Gibt das PigLatin-Programm zurück.
+	 * 
+	 * @return the pig latin
+	 */
 	public String getPigLatin() {
 		return pigLatin.toString();
 	}
 
+	/**
+	 * Gibt die Variablenreihenfolge zurück.
+	 * 
+	 * @return the variable list
+	 */
 	public ArrayList<String> getVariableList() {
 		ArrayList<String> result = new ArrayList<String>();
 		for (String elem : intermediateBags.get(0).getJoinElements()) {
@@ -62,6 +87,13 @@ public class PigQuery {
 		return result;
 	}
 
+	/**
+	 * Übersetzt einen IndexScanOperator + Folgeoperationen in ein
+	 * PigLatin-Programm.
+	 * 
+	 * @param singlePigQuery
+	 *            the single pig query
+	 */
 	public void addAndPrceedSinglePigQuery(SinglePigQuery singlePigQuery) {
 		singlePigQuery.finishQuery();
 		this.singleQueries.add(singlePigQuery);
@@ -72,24 +104,52 @@ public class PigQuery {
 		pigLatin.append(singlePigQuery.getPigLatin());
 	}
 
-	public void removeIntermediateBags(JoinInformation toRemove) {
+	/**
+	 * Entfernt Zwischenergebnis.
+	 * 
+	 * @param toRemove
+	 *            the to remove
+	 */
+	public void removeIntermediateBags(BagInformation toRemove) {
 		this.intermediateBags.remove(toRemove);
 	}
 
-	public void addIntermediateBags(JoinInformation newJoin) {
+	/**
+	 * Adds the intermediate bags.
+	 * 
+	 * @param newJoin
+	 *            the new join
+	 */
+	public void addIntermediateBags(BagInformation newJoin) {
 		this.intermediateBags.add(newJoin);
 	}
 
-	public JoinInformation getLastAddedBag() {
-		JoinInformation result = null;
+	/**
+	 * Gibt letztes Bag-Element zurück.
+	 * 
+	 * @return the last added bag
+	 */
+	public BagInformation getLastAddedBag() {
+		BagInformation result = null;
 		result = intermediateBags.get(intermediateBags.size() - 1);
 		return result;
 	}
 
+	/**
+	 * Gets the final alias.
+	 * 
+	 * @return the final alias
+	 */
 	public String getFinalAlias() {
 		return intermediateBags.get(0).getName();
 	}
 
+	/**
+	 * Übersetzt Operationen in PigLatin-Programm.
+	 * 
+	 * @param oplist
+	 *            the oplist
+	 */
 	public void addAndExecuteOperation(ArrayList<BasicOperator> oplist) {
 		ArrayList<PigFilterOperator> filterOps = new ArrayList<PigFilterOperator>();
 		PigProjectionOperator projection = null;
@@ -149,17 +209,39 @@ public class PigQuery {
 
 	}
 
+	/**
+	 * Builds the and append query.
+	 * 
+	 * @param operator
+	 *            the operator
+	 * @param filterOps
+	 *            the filter ops
+	 */
 	public void buildAndAppendQuery(IPigOperator operator,
 			ArrayList<PigFilterOperator> filterOps) {
 		this.pigLatin.append(operator.buildQuery(intermediateBags, debug,
 				filterOps));
 	}
 
+	/**
+	 * Builds the and append query.
+	 * 
+	 * @param operator
+	 *            the operator
+	 */
 	public void buildAndAppendQuery(IPigOperator operator) {
 		this.pigLatin.append(operator.buildQuery(intermediateBags, debug,
 				new ArrayList<PigFilterOperator>()));
 	}
 
+	/**
+	 * Replace variable in projection.
+	 * 
+	 * @param oldVar
+	 *            the old var
+	 * @param newVar
+	 *            the new var
+	 */
 	public void replaceVariableInProjection(String oldVar, String newVar) {
 		if (this.addBinding == null) {
 			this.addBinding = new HashMap<String, String>();
@@ -167,14 +249,33 @@ public class PigQuery {
 		this.addBinding.put(oldVar, newVar);
 	}
 
+	/**
+	 * Append.
+	 * 
+	 * @param toAdd
+	 *            the to add
+	 */
 	public void append(String toAdd) {
 		this.pigLatin.append(toAdd);
 	}
 
+	/**
+	 * Gets the bitvectors.
+	 * 
+	 * @return the bitvectors
+	 */
 	public HashMap<String, HashSet<CloudBitvector>> getBitvectors() {
 		return this.intermediateBags.get(0).getBitVectors();
 	}
 
+	/**
+	 * Replace bloomfilter name.
+	 * 
+	 * @param oldName
+	 *            the old name
+	 * @param newName
+	 *            the new name
+	 */
 	public void replaceBloomfilterName(String oldName, String newName) {
 		String original = this.pigLatin.toString();
 		this.pigLatin = new StringBuilder();

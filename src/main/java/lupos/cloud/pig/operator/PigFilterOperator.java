@@ -5,13 +5,13 @@ import java.util.HashSet;
 
 import org.openrdf.query.parser.serql.ast.ASTBound;
 
-import lupos.cloud.pig.JoinInformation;
+import lupos.cloud.pig.BagInformation;
 import lupos.cloud.pig.SinglePigQuery;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.sparql1_1.*;
 
 public class PigFilterOperator implements IPigOperator {
-	private ArrayList<JoinInformation> intermediateJoins;
+	private ArrayList<BagInformation> intermediateJoins;
 	Filter filter;
 
 	public static Class[] supportedOperations = { ASTVar.class,
@@ -125,7 +125,7 @@ public class PigFilterOperator implements IPigOperator {
 	 * @deprecated  Use PigFilterExecuter!
 	 */
 	@Deprecated
-	public String buildQuery(ArrayList<JoinInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+	public String buildQuery(ArrayList<BagInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		return null;
 	}
 

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import lupos.cloud.bloomfilter.BitvectorManager;
-import lupos.misc.BitVector;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
@@ -13,9 +12,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.util.bloom.HashFunction;
-import org.apache.hadoop.util.bloom.Key;
-import org.apache.hadoop.util.hash.Hash;
 
 import au.com.bytecode.opencsv.CSVParser;
 
@@ -27,10 +23,10 @@ import au.com.bytecode.opencsv.CSVParser;
 public class HBaseKVMapper extends
 		Mapper<LongWritable, Text, ImmutableBytesWritable, KeyValue> {
 
-	/** The csv parser. */
+	/** CSVParser Referenz. */
 	CSVParser csvParser = new CSVParser('\t');
 
-	/** The table name. */
+	/** Tabellenname. */
 	String tableName = "";;
 
 	/*
@@ -80,8 +76,6 @@ public class HBaseKVMapper extends
 
 		context.write(ibKey, kv1);
 
-		// Bitvektor-Index fuer ALLE ausser P_SO berechnen
-		// if (!tableName.equals("P_SO")) {
 		String toSplit = fields[2];
 		String elem1 = null;
 		String elem2 = null;

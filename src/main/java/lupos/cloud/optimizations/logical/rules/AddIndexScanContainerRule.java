@@ -23,35 +23,24 @@
  */
 package lupos.cloud.optimizations.logical.rules;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 import lupos.cloud.operator.IndexScanContainer;
-import lupos.cloud.operator.ICloudSubgraphExecutor;
-import lupos.cloud.pig.operator.PigFilterOperator;
-import lupos.cloud.storage.util.CloudManagement;
-import lupos.datastructures.items.Variable;
 import lupos.engine.operators.BasicOperator;
-import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.index.BasicIndexScan;
-import lupos.engine.operators.multiinput.MultiInputOperator;
-import lupos.engine.operators.singleinput.Result;
-import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.optimizations.logical.rules.generated.runtime.Rule;
 
+/**
+ * Regel 1: Erzeugt für jeden IndexScan-Container und darauf folgenden
+ * Operationen einen IndexScanContainer.
+ */
 public class AddIndexScanContainerRule extends Rule {
-
-	public static CloudManagement cloudManagement;
-
-	public static ICloudSubgraphExecutor subgraphExecutor;
-
-	public HashSet<Variable> additionalProjectionVariables = new HashSet<Variable>();
+	/** The current operator. */
+	private BasicIndexScan currentOperator = null;
 
 	/**
-	 * replace index scan operator with SubgraphContainer
+	 * Ersetzt den IndexScanOp + FolgeOps mit Cotnainer.
 	 * 
 	 * @param indexScan
 	 *            the index scan operator
@@ -67,7 +56,8 @@ public class AddIndexScanContainerRule extends Rule {
 				.setIntersectionVariables(indexScan.getIntersectionVariables());
 
 		// Die zum IndexScanOperator zugehörigen Operationen werden mit in den
-		// Container kopiert (wenn die Operation in der Cloud unterstützt wird)
+		// Container verschoben (wenn die Operation in der Cloud unterstützt
+		// wird)
 		boolean oneOperationsWasNotSupported = false;
 		for (BasicOperator op : OperatorGraphHelper
 				.getAndDeleteOperationUntilNextMultiInputOperator(indexScan
@@ -78,11 +68,12 @@ public class AddIndexScanContainerRule extends Rule {
 			} else {
 				// Ansonsten hänge die Operation hinter den Container.
 				// Alle Folgeoperationen werden dann, obwohl sie
-				// vielleichtsogar unterstützt wreden, auch dahitner
+				// vielleicht sogar unterstützt wreden, auch dahitner
 				// gehängt, weil
 				// sonst die Reihenfolge durcheinander gebracht werden
 				// würde
-				OperatorGraphHelper.insertNewOperator(OperatorGraphHelper.getLastOperator(container), op);
+				OperatorGraphHelper.insertNewOperator(
+						OperatorGraphHelper.getLastOperator(container), op);
 				oneOperationsWasNotSupported = true;
 				container.oneOperatorWasNotSupported(true);
 			}
@@ -94,8 +85,13 @@ public class AddIndexScanContainerRule extends Rule {
 
 	}
 
-	private BasicIndexScan currentOperator = null;
-
+	/**
+	 * _check private0.
+	 * 
+	 * @param _op
+	 *            the _op
+	 * @return true, if successful
+	 */
 	private boolean _checkPrivate0(final BasicOperator _op) {
 		if (!(_op instanceof BasicIndexScan)) {
 			return false;
@@ -106,16 +102,33 @@ public class AddIndexScanContainerRule extends Rule {
 		return true;
 	}
 
+	/**
+	 * Instantiates a new adds the index scan container rule.
+	 */
 	public AddIndexScanContainerRule() {
 		this.startOpClass = lupos.engine.operators.index.BasicIndexScan.class;
 		this.ruleName = "AddIndexScanContainerRule";
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.optimizations.logical.rules.generated.runtime.Rule#check(lupos.
+	 * engine.operators.BasicOperator)
+	 */
 	@Override
 	protected boolean check(final BasicOperator _op) {
 		return this._checkPrivate0(_op);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.optimizations.logical.rules.generated.runtime.Rule#replace(java
+	 * .util.HashMap)
+	 */
 	@Override
 	protected void replace(
 			final HashMap<Class<?>, HashSet<BasicOperator>> _startNodes) {

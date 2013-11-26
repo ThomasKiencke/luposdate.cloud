@@ -10,49 +10,55 @@ import lupos.datastructures.items.Item;
 import lupos.engine.operators.tripleoperator.TriplePattern;
 
 /**
- * In dieser Klasse werden Informationen über die einzelnen Tripel-Muster bzw.
- * der JOIN's mehrere Tripelpattern.
+ * Für jede PigLatin Bag-Datenstruktur wird ein BagInformation-Objekt erzeugt.
+ * 
  */
-public class JoinInformation {
+public class BagInformation {
 
-	/** The id counter. */
+	/**  id counter. */
 	public static Integer idCounter = 0;
 
-	/** The pattern id. */
+	/**  pattern id. */
 	Integer patternId;
 
-	/** The name. */
+	/** Name der Bag. */
 	String name;
 
-	/** The join elements. */
-	ArrayList<String> joinElements = new ArrayList<String>();
+	/** Variablennamen der Elemente die sich in dieser Bag befinden.. */
+	ArrayList<String> bagElements = new ArrayList<String>();
 
+	/** Variablen die sich aus Optionals ergeben haben (ggf. ungebunden). */
 	HashSet<String> optionalJoinElements = new HashSet<String>();
 
-	/** The triple pattern. */
+	/** Tripel-Muster. */
 	TriplePattern triplePattern;
 
+	/** The applied filters. */
 	ArrayList<PigFilterOperator> appliedFilters = new ArrayList<PigFilterOperator>();
 
+	/** Tabellenname. */
 	private String tablename;
 
+	/** The bit vectors. */
 	private HashMap<String, HashSet<CloudBitvector>> bitVectors = new HashMap<String, HashSet<CloudBitvector>>();
 
-	public JoinInformation() {
-		this.name = "INTERMEDIATE_BAG_" + JoinInformation.idCounter;
+	/**
+	 * Instantiates a new bag information.
+	 */
+	public BagInformation() {
+		this.name = "INTERMEDIATE_BAG_" + BagInformation.idCounter;
 		this.setPatternId(idCounter);
 		idCounter++;
 	}
 
 	/**
-	 * Instantiates a new join information.
-	 * 
-	 * @param triplePattern
-	 *            the triple pattern
-	 * @param name
-	 *            the name
+	 * Instantiates a new bag information.
+	 *
+	 * @param triplePattern the triple pattern
+	 * @param tablename the tablename
+	 * @param name the name
 	 */
-	public JoinInformation(TriplePattern triplePattern, String tablename,
+	public BagInformation(TriplePattern triplePattern, String tablename,
 			String name) {
 		super();
 		this.triplePattern = triplePattern;
@@ -62,18 +68,18 @@ public class JoinInformation {
 		this.tablename = tablename;
 		for (Item item : triplePattern.getItems()) {
 			if (item.isVariable()) {
-				joinElements.add(item.toString());
+				bagElements.add(item.toString());
 			}
 		}
 	}
 
 	/**
-	 * Instantiates a new join information.
+	 * Instantiates a new bag information.
 	 * 
 	 * @param name
 	 *            the name
 	 */
-	public JoinInformation(String name) {
+	public BagInformation(String name) {
 		this.name = name;
 	}
 
@@ -121,27 +127,42 @@ public class JoinInformation {
 	 * @return the join elements
 	 */
 	public ArrayList<String> getJoinElements() {
-		return joinElements;
+		return bagElements;
 	}
 
 	/**
-	 * Sets the join elements.
+	 * Sets the bag elements.
 	 * 
 	 * @param joinElements
 	 *            the new join elements
 	 */
 	public void setJoinElements(ArrayList<String> joinElements) {
-		this.joinElements = joinElements;
+		this.bagElements = joinElements;
 	}
 
-	public void addJoinElements(String elem) {
-		this.joinElements.add(elem);
+	/**
+	 * Adds the bag elements.
+	 *
+	 * @param elem the elem
+	 */
+	public void addBagElements(String elem) {
+		this.bagElements.add(elem);
 	}
 
+	/**
+	 * Adds the optional elements.
+	 *
+	 * @param elem the elem
+	 */
 	public void addOptionalElements(String elem) {
 		this.optionalJoinElements.add(elem);
 	}
 
+	/**
+	 * Gets the optional join elements.
+	 *
+	 * @return the optional join elements
+	 */
 	public HashSet<String> getOptionalJoinElements() {
 		return optionalJoinElements;
 	}
@@ -163,32 +184,12 @@ public class JoinInformation {
 		return result.toString();
 	}
 
-//	public String getFirstLiteral() {
-//		boolean first = true;
-//		for (Item item : triplePattern.getItems()) {
-//			if (!item.isVariable()) {
-//				if (first) {
-//					return item.toString();
-//				}
-//				first = false;
-//			}
-//		}
-//		return null;
-//	}
-//
-//	public String getSecondLiteral() {
-//		boolean first = true;
-//		for (Item item : triplePattern.getItems()) {
-//			if (!item.isVariable()) {
-//				if (!first) {
-//					return item.toString();
-//				}
-//				first = false;
-//			}
-//		}
-//		return null;
-//	}
-
+	/**
+	 * Checks if is variable optional.
+	 *
+	 * @param var the var
+	 * @return true, if is variable optional
+	 */
 	public boolean isVariableOptional(String var) {
 		return optionalJoinElements.contains(var);
 	}
@@ -218,7 +219,7 @@ public class JoinInformation {
 	 * @return the item pos
 	 */
 	public Integer getItemPos(String itemID) {
-		return this.joinElements.indexOf(itemID);
+		return this.bagElements.indexOf(itemID);
 	}
 
 	/**
@@ -249,35 +250,67 @@ public class JoinInformation {
 		return true;
 	}
 
+	/**
+	 * Gets the tablename.
+	 *
+	 * @return the tablename
+	 */
 	public String getTablename() {
 		return tablename;
 	}
 
+	/**
+	 * Adds the applied filters.
+	 *
+	 * @param appliedFilter the applied filter
+	 */
 	public void addAppliedFilters(PigFilterOperator appliedFilter) {
 		this.appliedFilters.add(appliedFilter);
 	}
 
+	/**
+	 * Adds the applied filters.
+	 *
+	 * @param appliedFilters the applied filters
+	 */
 	public void addAppliedFilters(ArrayList<PigFilterOperator> appliedFilters) {
 		for (PigFilterOperator filter : appliedFilters) {
 			this.appliedFilters.add(filter);
 		}
 	}
 
+	/**
+	 * Gets the applied filters.
+	 *
+	 * @return the applied filters
+	 */
 	public ArrayList<PigFilterOperator> getAppliedFilters() {
 		return appliedFilters;
 	}
 
+	/**
+	 * Filter applied.
+	 *
+	 * @param appliedFilter the applied filter
+	 * @return true, if successful
+	 */
 	public boolean filterApplied(PigFilterOperator appliedFilter) {
 		return this.appliedFilters.contains(appliedFilter);
 	}
 
+	/**
+	 * Merge applied filters.
+	 *
+	 * @param joins the joins
+	 * @return the array list
+	 */
 	public static ArrayList<PigFilterOperator> mergeAppliedFilters(
-			ArrayList<JoinInformation> joins) {
+			ArrayList<BagInformation> joins) {
 		ArrayList<PigFilterOperator> result = new ArrayList<PigFilterOperator>();
-		for (JoinInformation j1 : joins) {
+		for (BagInformation j1 : joins) {
 			for (PigFilterOperator filter1 : j1.getAppliedFilters()) {
 				boolean filterInEveryJoin = true;
-				for (JoinInformation j2 : joins) {
+				for (BagInformation j2 : joins) {
 					if (!j2.getAppliedFilters().contains(filter1)) {
 						filterInEveryJoin = false;
 					}
@@ -291,18 +324,34 @@ public class JoinInformation {
 		return result;
 	}
 
-	public void mergeOptionalVariables(ArrayList<JoinInformation> inputBags) {
-		for (JoinInformation bag : inputBags) {
+	/**
+	 * Merge optional variables.
+	 *
+	 * @param inputBags the input bags
+	 */
+	public void mergeOptionalVariables(ArrayList<BagInformation> inputBags) {
+		for (BagInformation bag : inputBags) {
 			this.mergeOptionalVariables(bag);
 		}
 	}
 
-	public void mergeOptionalVariables(JoinInformation bag) {
+	/**
+	 * Merge optional variables.
+	 *
+	 * @param bag the bag
+	 */
+	public void mergeOptionalVariables(BagInformation bag) {
 		for (String var : bag.getOptionalJoinElements()) {
 			this.optionalJoinElements.add(var);
 		}
 	}
 
+	/**
+	 * Adds the bitvector.
+	 *
+	 * @param var the var
+	 * @param vector the vector
+	 */
 	public void addBitvector(String var, CloudBitvector vector) {
 		HashSet<CloudBitvector> list = this.bitVectors.get(var);
 		if (list == null) {
@@ -314,14 +363,30 @@ public class JoinInformation {
 		}
 	}
 
+	/**
+	 * Gets the bit vectors.
+	 *
+	 * @return the bit vectors
+	 */
 	public HashMap<String, HashSet<CloudBitvector>> getBitVectors() {
 		return bitVectors;
 	}
 
+	/**
+	 * Gets the bit vector.
+	 *
+	 * @param var the var
+	 * @return the bit vector
+	 */
 	public HashSet<CloudBitvector> getBitVector(String var) {
 		return bitVectors.get(var);
 	}
-	
+
+	/**
+	 * Adds the bit vectors.
+	 *
+	 * @param bitVectors the bit vectors
+	 */
 	public void addBitVectors(
 			HashMap<String, HashSet<CloudBitvector>> bitVectors) {
 		for (String key : bitVectors.keySet()) {
@@ -342,11 +407,17 @@ public class JoinInformation {
 		}
 	}
 
+	/**
+	 * Adds the bitvector.
+	 *
+	 * @param var the var
+	 * @param bitVectors the bit vectors
+	 */
 	public void addBitvector(String var, HashSet<CloudBitvector> bitVectors) {
 		if (bitVectors == null) {
 			return;
 		}
-		
+
 		HashSet<CloudBitvector> list = this.bitVectors.get(var);
 		if (list == null) {
 			list = new HashSet<CloudBitvector>();
@@ -363,11 +434,17 @@ public class JoinInformation {
 		}
 	}
 
+	/**
+	 * Merge bit vecor.
+	 *
+	 * @param var the var
+	 * @param bitVectors the bit vectors
+	 */
 	public void mergeBitVecor(String var, HashSet<CloudBitvector> bitVectors) {
 		if (bitVectors == null) {
 			return;
 		}
-		
+
 		HashSet<CloudBitvector> list = this.bitVectors.get(var);
 		if (list == null) {
 			list = new HashSet<CloudBitvector>();
@@ -384,7 +461,7 @@ public class JoinInformation {
 			}
 			this.bitVectors.put(var, list);
 		}
-		
+
 	}
 
 }

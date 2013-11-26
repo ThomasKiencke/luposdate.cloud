@@ -32,20 +32,23 @@ import lupos.cloud.pig.PigQuery;
 import lupos.engine.operators.BasicOperator;
 import lupos.engine.operators.OperatorIDTuple;
 import lupos.engine.operators.index.Root;
-import lupos.engine.operators.singleinput.Projection;
 import lupos.engine.operators.singleinput.Result;
-import lupos.engine.operators.singleinput.filter.Filter;
-import lupos.engine.operators.singleinput.modifiers.Limit;
-import lupos.engine.operators.singleinput.modifiers.distinct.Distinct;
+
 
 /**
- * The Class https://repository.cloudera.com/artifactory/cloudera-repos.
+ * Formatierer für CloudSubGraphContainer.
  */
 public class CloudSubgraphContainerFormatter implements IOperatorFormatter {
 
+	/**
+	 * Instantiates a new cloud subgraph container formatter.
+	 */
 	public CloudSubgraphContainerFormatter() {
 	}
 
+	/* (non-Javadoc)
+	 * @see lupos.cloud.operator.format.IOperatorFormatter#serialize(lupos.engine.operators.BasicOperator, lupos.cloud.pig.PigQuery)
+	 */
 	@Override
 	public PigQuery serialize(final BasicOperator operator, PigQuery pigLatin) {
 		PigQuery result = this.serializeNode(new OperatorIDTuple(operator, 0),
@@ -54,6 +57,13 @@ public class CloudSubgraphContainerFormatter implements IOperatorFormatter {
 		return result;
 	}
 
+	/**
+	 * Serialize node.
+	 *
+	 * @param node the node
+	 * @param pigLatin the pig latin
+	 * @return the pig query
+	 */
 	private PigQuery serializeNode(final OperatorIDTuple node, PigQuery pigLatin) {
 
 		PigQuery result = null;

@@ -13,21 +13,42 @@ import org.apache.hadoop.hbase.filter.QualifierFilter;
 import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.mapreduce.Counter;
-import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 
+/**
+ * Für jede Tabelle wird ein eigener Thread erzeugt der für die
+ * Byte-Bitvektorgeneierung zuständig ist.
+ */
 public class BVJobThread extends Thread {
+
+	/** Tabellenname. */
 	private String tablename;
+
+	/** MapReduce-Job Referenz. */
 	private Job job;
+
+	/** Status des Jobs. */
 	private boolean finished = false;
 
+	/**
+	 * Instantiates a new bV job thread.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public BVJobThread(String tablename) throws IOException {
 		this.tablename = tablename;
 		createJob();
 	}
 
+	/**
+	 * Creates the job.
+	 * 
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	private void createJob() throws IOException {
 		Configuration config = HBaseConnection.getConfiguration();
 		job = new Job(config, "MR_BV_ " + tablename);
@@ -56,14 +77,12 @@ public class BVJobThread extends Thread {
 		TableMapReduceUtil.initTableReducerJob(tablename, // output table
 				null, // reducer class
 				job);
-		job.setNumReduceTasks(0); // at least one, adjust as required
+		job.setNumReduceTasks(0); // kein Reduce Task notwendig
 	}
 
 	/**
-	 * Lädt eine Tabelle per Map Reduce Bulkload.
+	 * Thread run() Method.
 	 * 
-	 * @param tablename
-	 *            the tablename
 	 */
 
 	public void run() {
@@ -80,14 +99,29 @@ public class BVJobThread extends Thread {
 		}
 	}
 
+	/**
+	 * Gets the job.
+	 * 
+	 * @return the job
+	 */
 	public Job getJob() {
 		return job;
 	}
 
+	/**
+	 * Checks if is finished.
+	 * 
+	 * @return true, if is finished
+	 */
 	public boolean isFinished() {
 		return finished;
 	}
 
+	/**
+	 * Gets the tablename.
+	 * 
+	 * @return the tablename
+	 */
 	public String getTablename() {
 		return tablename;
 	}
