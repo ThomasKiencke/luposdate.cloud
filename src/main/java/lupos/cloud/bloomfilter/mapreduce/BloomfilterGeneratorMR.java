@@ -3,29 +3,42 @@ package lupos.cloud.bloomfilter.mapreduce;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.fs.Path;
-
-import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
 
+/**
+ * * Mit Hilfe dieser Klasse wird die Byte-Bitvektorgeneierung gestartet. Die
+ * Ausführung erfolgt über mehrere MapReduce-Jobs (für jede Tabelle einer).
+ */
 public class BloomfilterGeneratorMR {
+
+	/**
+	 * Fuer jeden Bitvektor mit einer Kardinalität von > MIN_CARD wird der
+	 * Byte-Bitvektor erzeugt.
+	 */
 	public static Integer MIN_CARD = 25000;
+
+	/**
+	 * Beschreibt die maximale Anzahl der Key-Value Paare die pro
+	 * scan.next()-Aufruf übertragen wird. Diese Zahl darf nicht zu groß sein,
+	 * denn HBase lädt das gesamte Ergebnis in den Arbeitsspeicher.
+	 */
 	public static Integer BATCH = 5000;
+
+	/** The caching. */
 	public static Integer CACHING = 100;
 
 	/**
+	 * The main method.
+	 * 
 	 * @param args
+	 *            the arguments
 	 * @throws IOException
-	 * @throws ClassNotFoundException
+	 *             Signals that an I/O exception has occurred.
 	 * @throws InterruptedException
+	 *             the interrupted exception
+	 * @throws ClassNotFoundException
+	 *             the class not found exception
 	 */
 	public static void main(String[] args) throws IOException,
 			InterruptedException, ClassNotFoundException {
@@ -35,20 +48,20 @@ public class BloomfilterGeneratorMR {
 
 		long startTime = System.currentTimeMillis();
 
-		String[] tables =  HBaseDistributionStrategy.getTableInstance()
+		String[] tables = HBaseDistributionStrategy.getTableInstance()
 				.getTableNames();
-		
-//		String[] tables = { "O_SP", "PO_S"};
-//		String[] tables = { "PO_S"};
-//		String[] tables = { "P_SO"};
-		
+
+		// String[] tables = { "O_SP", "PO_S"};
+		// String[] tables = { "PO_S"};
+		// String[] tables = { "P_SO"};
+
 		for (String tablename : tables) {
 			// String tablename = "P_SO";
 			System.out.println("Aktuelle Tabelle: " + tablename);
 			BVJobThread curJob = new BVJobThread(tablename);
 			jobList.add(curJob);
 			curJob.start();
-			
+
 		}
 
 		System.out.println("Warte bis alle Jobs abgeschlossen sind ...");
@@ -64,6 +77,12 @@ public class BloomfilterGeneratorMR {
 				+ (stopTime - startTime) / 1000 + "s");
 	}
 
+	/**
+	 * Sleep.
+	 * 
+	 * @param time
+	 *            the time
+	 */
 	private static void sleep(int time) {
 		try {
 			Thread.sleep(time);
@@ -72,7 +91,5 @@ public class BloomfilterGeneratorMR {
 			e.printStackTrace();
 		}
 	}
-
-
 
 }

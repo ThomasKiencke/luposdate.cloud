@@ -4,8 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.LinkedList;
 
-import org.apache.hadoop.hbase.thrift.generated.Hbase;
-
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.query.CloudEvaluator;
 import lupos.datastructures.items.literal.LiteralFactory;
@@ -15,7 +13,7 @@ import lupos.datastructures.items.literal.URILiteral;
  * Mit dieser Klasse und einen angegebenen Paramater ist es möglich effizient,
  * ohne den Umweg über die GUI, Tripel in HBase zu laden. Man hat die Wahl
  * zwischen zwei Modi wie die Daten in HBase geladen werden. Einmal per HBase
- * API und einmal per MapReduce Job. Die Map Reduce Job Variante bietet sich
+ * API und einmal per MapReduce Job. Die MapReduce Job Variante bietet sich
  * dann an wenn man eine größere Menge an Tripel laden will.
  */
 public class HBaseLoader {

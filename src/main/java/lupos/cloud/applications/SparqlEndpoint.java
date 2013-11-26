@@ -62,23 +62,42 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+/**
+ * Erzeugt einen SPARQL-Endpoint. Diese Klasse wurde aus Luposdate kopiet und
+ * angepasst.
+ */
 @SuppressWarnings("restriction")
 public class SparqlEndpoint {
 
+	/** The evaluator. */
 	public static CloudEvaluator evaluator;
+
+	/** The Constant port. */
 	public final static int port = 8080;
 
 	// enable or disable logging into console
+	/** The log. */
 	public static boolean log = false;
 
+	/** The Constant registeredFormatter. */
 	private final static Map<String, Formatter> registeredFormatter = Collections
 			.synchronizedMap(new HashMap<String, Formatter>());
 
+	/** The Constant registeredhandler. */
 	private final static Map<String, HttpHandler> registeredhandler = Collections
 			.synchronizedMap(new HashMap<String, HttpHandler>());
 
+	/** The html form. */
 	private static HTMLForm htmlForm = new StandardHTMLForm();
 
+	/**
+	 * The main method.
+	 * 
+	 * @param args
+	 *            the arguments
+	 * @throws Exception
+	 *             the exception
+	 */
 	public static void main(String[] args) throws Exception {
 		CloudManagement.PARALLEL_REDUCE_OPERATIONS = 8;
 		CloudEvaluator cloudEvaluator = new CloudEvaluator();
@@ -87,6 +106,12 @@ public class SparqlEndpoint {
 		initAndStartServer(cloudEvaluator);
 	}
 
+	/**
+	 * Register formatter.
+	 * 
+	 * @param formatter
+	 *            the formatter
+	 */
 	public static void registerFormatter(final Formatter formatter) {
 		SparqlEndpoint.registeredFormatter.put(
 				formatter.getKey().toLowerCase(), formatter);
@@ -94,19 +119,43 @@ public class SparqlEndpoint {
 				.toLowerCase(), formatter);
 	}
 
+	/**
+	 * Gets the registered formatters.
+	 * 
+	 * @return the registered formatters
+	 */
 	public static Map<String, Formatter> getRegisteredFormatters() {
 		return SparqlEndpoint.registeredFormatter;
 	}
 
+	/**
+	 * Register handler.
+	 * 
+	 * @param context
+	 *            the context
+	 * @param httpHandler
+	 *            the http handler
+	 */
 	public static void registerHandler(final String context,
 			final HttpHandler httpHandler) {
 		SparqlEndpoint.registeredhandler.put(context, httpHandler);
 	}
 
+	/**
+	 * Gets the hTML form.
+	 * 
+	 * @return the hTML form
+	 */
 	public static HTMLForm getHTMLForm() {
 		return SparqlEndpoint.htmlForm;
 	}
 
+	/**
+	 * Sets the hTML form.
+	 * 
+	 * @param htmlForm
+	 *            the new hTML form
+	 */
 	public static void setHTMLForm(final HTMLForm htmlForm) {
 		SparqlEndpoint.htmlForm = htmlForm;
 	}
@@ -119,6 +168,9 @@ public class SparqlEndpoint {
 	 * +%3Fs+rdf%3Atype+%3Fo.+%7D&format=application%2Fsparql-results%2Bxml for
 	 * query PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT *
 	 * WHERE{?s rdf:type ?o. }
+	 * 
+	 * @param ev
+	 *            the ev
 	 */
 
 	public static void initAndStartServer(CloudEvaluator ev) {
@@ -142,6 +194,9 @@ public class SparqlEndpoint {
 		SparqlEndpoint.registerStandardContexts();
 	}
 
+	/**
+	 * Register standard formatter.
+	 */
 	public static void registerStandardFormatter() {
 		SparqlEndpoint.registerFormatter(new XMLFormatter());
 		SparqlEndpoint.registerFormatter(new PlainFormatter());
@@ -152,12 +207,18 @@ public class SparqlEndpoint {
 		SparqlEndpoint.registerFormatter(new HTMLFormatter(true));
 	}
 
+	/**
+	 * Register standard contexts.
+	 */
 	public static void registerStandardContexts() {
 		SparqlEndpoint.registerHandler("/sparql", new SPARQLHandler(
 				new SPARQLExecutionImplementation()));
 		SparqlEndpoint.registerHandler("/", new HTMLFormHandler());
 	}
 
+	/**
+	 * Start server.
+	 */
 	public static void startServer() {
 		try {
 			HttpServer server = HttpServer.create(new InetSocketAddress(port),
@@ -176,6 +237,15 @@ public class SparqlEndpoint {
 		}
 	}
 
+	/**
+	 * Gets the response.
+	 * 
+	 * @param t
+	 *            the t
+	 * @return the response
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	public static String getResponse(HttpExchange t) throws IOException {
 		final String requestMethod = t.getRequestMethod();
 		String response;
@@ -203,14 +273,42 @@ public class SparqlEndpoint {
 		return response;
 	}
 
+	/**
+	 * The Interface SPARQLExecution.
+	 */
 	public static interface SPARQLExecution {
+
+		/**
+		 * Execute.
+		 * 
+		 * @param queryParameter
+		 *            the query parameter
+		 * @param formatter
+		 *            the formatter
+		 * @param t
+		 *            the t
+		 * @throws IOException
+		 *             Signals that an I/O exception has occurred.
+		 */
 		public void execute(final String queryParameter,
 				final Formatter formatter, final HttpExchange t)
 				throws IOException;
 	}
 
+	/**
+	 * The Class SPARQLExecutionImplementation.
+	 */
 	public static class SPARQLExecutionImplementation implements
 			SPARQLExecution {
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * lupos.cloud.applications.SparqlEndpoint.SPARQLExecution#execute(java
+		 * .lang.String, lupos.endpoint.server.format.Formatter,
+		 * com.sun.net.httpserver.HttpExchange)
+		 */
 		public void execute(final String queryParameter,
 				final Formatter formatter, final HttpExchange t)
 				throws IOException {
@@ -265,6 +363,17 @@ public class SparqlEndpoint {
 		}
 	}
 
+	/**
+	 * Execute query.
+	 * 
+	 * @param evaluator
+	 *            the evaluator
+	 * @param query
+	 *            the query
+	 * @return the query result
+	 * @throws Exception
+	 *             the exception
+	 */
 	protected static QueryResult executeQuery(
 			BasicIndexQueryEvaluator evaluator, String query) throws Exception {
 		evaluator.prepareInputData(new LinkedList<URILiteral>(),
@@ -277,19 +386,39 @@ public class SparqlEndpoint {
 		return evaluator.getResult(true);
 	}
 
+	/**
+	 * The Class SPARQLHandler.
+	 */
 	public static class SPARQLHandler implements HttpHandler {
 
+		/** The sparql execution. */
 		private final SPARQLExecution sparqlExecution;
 
+		/**
+		 * Instantiates a new sPARQL handler.
+		 * 
+		 * @param sparqlExecution
+		 *            the sparql execution
+		 */
 		public SPARQLHandler(final SPARQLExecution sparqlExecution) {
 			super();
 			this.sparqlExecution = sparqlExecution;
 			BitVectorFilterFunction.register();
 		}
 
+		/** The Constant format. */
 		private final static String format = "format=";
+
+		/** The Constant query. */
 		private final static String query = "query=";
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * com.sun.net.httpserver.HttpHandler#handle(com.sun.net.httpserver.
+		 * HttpExchange)
+		 */
 		public void handle(HttpExchange t) throws IOException {
 			System.out.println("\n-> Receiving request from: "
 					+ t.getRequestHeaders().get("Host"));
@@ -326,12 +455,34 @@ public class SparqlEndpoint {
 		}
 	}
 
+	/**
+	 * The Class HTMLFormHandler.
+	 */
 	public static class HTMLFormHandler implements HttpHandler {
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * com.sun.net.httpserver.HttpHandler#handle(com.sun.net.httpserver.
+		 * HttpExchange)
+		 */
 		public void handle(HttpExchange t) throws IOException {
 			SparqlEndpoint.htmlForm.sendHTMLForm(t);
 		}
 	}
 
+	/**
+	 * Gets the parameter.
+	 * 
+	 * @param responseParts
+	 *            the response parts
+	 * @param parameter
+	 *            the parameter
+	 * @return the parameter
+	 * @throws UnsupportedEncodingException
+	 *             the unsupported encoding exception
+	 */
 	protected static String getParameter(String[] responseParts,
 			String parameter) throws UnsupportedEncodingException {
 		for (String item : responseParts) {
@@ -343,6 +494,19 @@ public class SparqlEndpoint {
 		return null;
 	}
 
+	/**
+	 * Gets the parameter.
+	 * 
+	 * @param responseParts
+	 *            the response parts
+	 * @param parameter
+	 *            the parameter
+	 * @param defaultValue
+	 *            the default value
+	 * @return the parameter
+	 * @throws UnsupportedEncodingException
+	 *             the unsupported encoding exception
+	 */
 	protected static String getParameter(String[] responseParts,
 			String parameter, String defaultValue)
 			throws UnsupportedEncodingException {
@@ -355,6 +519,16 @@ public class SparqlEndpoint {
 		}
 	}
 
+	/**
+	 * Send string.
+	 * 
+	 * @param t
+	 *            the t
+	 * @param toSend
+	 *            the to send
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	protected static void sendString(final HttpExchange t, final String toSend)
 			throws IOException {
 		t.sendResponseHeaders(200, toSend.length());
@@ -363,12 +537,28 @@ public class SparqlEndpoint {
 		os.close();
 	}
 
+	/**
+	 * The Interface HTMLForm.
+	 */
 	public static interface HTMLForm {
+
+		/**
+		 * Send html form.
+		 * 
+		 * @param t
+		 *            the t
+		 * @throws IOException
+		 *             Signals that an I/O exception has occurred.
+		 */
 		public void sendHTMLForm(final HttpExchange t) throws IOException;
 	}
 
+	/**
+	 * The Class StandardHTMLForm.
+	 */
 	public static class StandardHTMLForm implements HTMLForm {
 
+		/** The HTM l_ for m_1. */
 		private static String HTML_FORM_1 = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n"
 				+ "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n"
 				+ "<head>\n <title>LUPOSDATE SPARQL Endpoint</title>\n</head>\n"
@@ -376,13 +566,27 @@ public class SparqlEndpoint {
 				+ " <form method=\"get\" action=\"sparql\">\n  <p>Type in your SPARQL query:<br/>\n   "
 				+ "<textarea name=\"query\" cols=\"50\" rows=\"10\">SELECT * WHERE { ?s ?p ?o. } LIMIT 10</textarea>\n  </p>\n"
 				+ "  <p>\n   Result Format:<br/>\n   <select name=\"format\" size=\"1\">\n   ";
+
+		/** The HTM l_ for m_2. */
 		private static String HTML_FORM_2 = "</select>\n  </p>\n  <p>\n   <input type=\"submit\" value=\" Submit Query \"/>\n  </p>\n "
 				+ "</form>\n</body>";
 
+		/** The HTM l_ optio n_1. */
 		private static String HTML_OPTION_1 = " <option value=\"";
+
+		/** The HTM l_ optio n_2. */
 		private static String HTML_OPTION_2 = "\">";
+
+		/** The HTM l_ optio n_3. */
 		private static String HTML_OPTION_3 = "</option>\n   ";
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * lupos.cloud.applications.SparqlEndpoint.HTMLForm#sendHTMLForm(com
+		 * .sun.net.httpserver.HttpExchange)
+		 */
 		public void sendHTMLForm(final HttpExchange t) throws IOException {
 			final StringBuilder toSend = new StringBuilder(
 					StandardHTMLForm.HTML_FORM_1);
@@ -400,14 +604,29 @@ public class SparqlEndpoint {
 		}
 	}
 
+	/**
+	 * The Class OutputStreamLogger.
+	 */
 	public static class OutputStreamLogger extends OutputStream {
 
+		/** The piped. */
 		private final OutputStream piped;
 
+		/**
+		 * Instantiates a new output stream logger.
+		 * 
+		 * @param piped
+		 *            the piped
+		 */
 		public OutputStreamLogger(final OutputStream piped) {
 			this.piped = piped;
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.io.OutputStream#write(int)
+		 */
 		@Override
 		public void write(int b) throws IOException {
 			if (b >= 0) {
@@ -418,6 +637,11 @@ public class SparqlEndpoint {
 			this.piped.write(b);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.io.OutputStream#close()
+		 */
 		@Override
 		public void close() throws IOException {
 			this.piped.close();

@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.util.LinkedList;
 
 import lupos.cloud.applications.HBaseLoader;
-import lupos.cloud.applications.Sp2b;
 import lupos.cloud.hbase.HBaseConnection;
 import lupos.cloud.query.CloudEvaluator;
 import lupos.datastructures.items.literal.URILiteral;

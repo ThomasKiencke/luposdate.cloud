@@ -1,6 +1,5 @@
 package lupos.cloud.applications;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
@@ -12,7 +11,7 @@ import lupos.datastructures.items.Triple;
 import lupos.rdf.parser.NquadsParser;
 
 /**
- * Quad -> Triple
+ * Dieser Converter übersetzt Quad Tripel in N3 Tripel.
  */
 public class QuadToN3Converter {
 

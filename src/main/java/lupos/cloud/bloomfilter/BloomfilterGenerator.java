@@ -8,7 +8,6 @@ import java.util.NavigableMap;
 
 import java17Dependencies.BitSet;
 import lupos.cloud.hbase.HBaseConnection;
-import lupos.cloud.hbase.HBaseDistributionStrategy;
 
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
@@ -17,12 +16,26 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
+/**
+ * Mit Hilfe dieser Klasse wird die Byte-Bitvektorgeneierung gestartet. Dabei
+ * wird die Verbindung direkt über die HBase API hergestellt und jeder Rowkey
+ * durchgegangen.
+ * 
+ * @deprecated Kommunikation per HBase-Api ist zu langsam. Besser BloomfilterGeneratorMR verwenden.
+ */
+@Deprecated
 public class BloomfilterGenerator {
+
+	/** The min card. */
 	private static Integer MIN_CARD = 100;
 
 	/**
+	 * The main method.
+	 * 
 	 * @param args
+	 *            the arguments
 	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
 	 */
 	public static void main(String[] args) throws IOException {
 		if (args.length != 2) {
@@ -38,89 +51,87 @@ public class BloomfilterGenerator {
 		long startTime = System.currentTimeMillis();
 		long checkedNumber = 0;
 
-//		for (String tablename : HBaseDistributionStrategy.getTableInstance()
-//				.getTableNames()) {
-			 String tablename = "PO_S";
-			System.out.println("Aktuelle Tabelle: " + tablename);
-			HTable hTable = new HTable(HBaseConnection.getConfiguration(),
-					tablename);
+		// for (String tablename : HBaseDistributionStrategy.getTableInstance()
+		// .getTableNames()) {
+		String tablename = "PO_S";
+		System.out.println("Aktuelle Tabelle: " + tablename);
+		HTable hTable = new HTable(HBaseConnection.getConfiguration(),
+				tablename);
 
-			Scan s = new Scan();
-			s.setBatch(batchSize);
-			s.setCaching(cachingSize);
-			s.setCacheBlocks(true);
-			
+		Scan s = new Scan();
+		s.setBatch(batchSize);
+		s.setCaching(cachingSize);
+		s.setCacheBlocks(true);
 
-			s.addFamily(BitvectorManager.bloomfilter1ColumnFamily);
-			s.addFamily(BitvectorManager.bloomfilter2ColumnFamily);
+		s.addFamily(BitvectorManager.bloomfilter1ColumnFamily);
+		s.addFamily(BitvectorManager.bloomfilter2ColumnFamily);
 
-			ResultScanner scanner = hTable.getScanner(s);
+		ResultScanner scanner = hTable.getScanner(s);
 
-			byte[] lastRowkey = null;
-			BitSet bitvector1 = new BitSet(BitvectorManager.VECTORSIZE);
-			BitSet bitvector2 = new BitSet(BitvectorManager.VECTORSIZE);
-			boolean reset = true;
-			byte[] curBitvectorName = null;
-			for (Result res = scanner.next(); res != null; res = scanner.next()) {
-				// Ausgabe der momentanen Position
-				if (checkedNumber % 1000000 == 0) {
-					System.out.println(checkedNumber + " Rows checked");
-				}
-				checkedNumber++;
-				
-				// Wenn nur sehr wenige Elemente in der Reihe vorhanden sind,
-				// ueberspringe diese
-				int curColSize = res.getFamilyMap(
-						BitvectorManager.bloomfilter1ColumnFamily).size();
+		byte[] lastRowkey = null;
+		BitSet bitvector1 = new BitSet(BitvectorManager.VECTORSIZE);
+		BitSet bitvector2 = new BitSet(BitvectorManager.VECTORSIZE);
+		boolean reset = true;
+		byte[] curBitvectorName = null;
+		for (Result res = scanner.next(); res != null; res = scanner.next()) {
+			// Ausgabe der momentanen Position
+			if (checkedNumber % 1000000 == 0) {
+				System.out.println(checkedNumber + " Rows checked");
+			}
+			checkedNumber++;
 
-				if (curColSize < batchSize
-						&& !Arrays.equals(lastRowkey, res.getRow())) {
-					lastRowkey = res.getRow();
-					continue;
-				}
+			// Wenn nur sehr wenige Elemente in der Reihe vorhanden sind,
+			// ueberspringe diese
+			int curColSize = res.getFamilyMap(
+					BitvectorManager.bloomfilter1ColumnFamily).size();
 
-				// Speichere Bitvektoren
-				if (lastRowkey != null
-						&& !Arrays.equals(lastRowkey, res.getRow())) {
-					if (bitvector1.cardinality() >= MIN_CARD) {
-						// store bitvectors
-						storeBitvectorToHBase(tablename, curBitvectorName,
-								bitvector1, bitvector2, hTable);
-						bitvectorCount++;
-					}
-					// reset
-					reset = true;
-				}
-
-				String curKey = Bytes.toString(res.getRow());
-				if (reset) {
-					curBitvectorName = res.getRow();
-					bitvector1.clear();
-					bitvector2.clear();
-					reset = false;
-				}
-
-				if (curKey.contains(",")) {
-					addResultToBitSet(false, bitvector1, bitvector2, res);
-				} else {
-					addResultToBitSet(true, bitvector1, bitvector2, res);
-				}
-
+			if (curColSize < batchSize
+					&& !Arrays.equals(lastRowkey, res.getRow())) {
 				lastRowkey = res.getRow();
+				continue;
 			}
 
-			// letzten Bitvektor speichern
-			if (lastRowkey != null) {
+			// Speichere Bitvektoren
+			if (lastRowkey != null && !Arrays.equals(lastRowkey, res.getRow())) {
 				if (bitvector1.cardinality() >= MIN_CARD) {
-					storeBitvectorToHBase(tablename, curBitvectorName, bitvector1,
-							bitvector2, hTable);
+					// store bitvectors
+					storeBitvectorToHBase(tablename, curBitvectorName,
+							bitvector1, bitvector2, hTable);
+					bitvectorCount++;
 				}
+				// reset
+				reset = true;
 			}
 
-			// cleanup
-			scanner.close();
-			hTable.close();
-//		} // close
+			String curKey = Bytes.toString(res.getRow());
+			if (reset) {
+				curBitvectorName = res.getRow();
+				bitvector1.clear();
+				bitvector2.clear();
+				reset = false;
+			}
+
+			if (curKey.contains(",")) {
+				addResultToBitSet(false, bitvector1, bitvector2, res);
+			} else {
+				addResultToBitSet(true, bitvector1, bitvector2, res);
+			}
+
+			lastRowkey = res.getRow();
+		}
+
+		// letzten Bitvektor speichern
+		if (lastRowkey != null) {
+			if (bitvector1.cardinality() >= MIN_CARD) {
+				storeBitvectorToHBase(tablename, curBitvectorName, bitvector1,
+						bitvector2, hTable);
+			}
+		}
+
+		// cleanup
+		scanner.close();
+		hTable.close();
+		// } // close
 		long stopTime = System.currentTimeMillis();
 		System.out
 				.println("Bitvektor Generierung beendet. Anzahl der erzeugten Bitvektoren: "
@@ -130,41 +141,21 @@ public class BloomfilterGenerator {
 						/ 1000 + "s");
 	}
 
-	// private static void addResultToBitSet(boolean twoBitvectors,
-	// BitSet bitvector1, BitSet bitvector2, Result res)
-	// throws UnsupportedEncodingException {
-	// NavigableMap<byte[], byte[]> cfResults = res
-	// .getFamilyMap(HexaDistributionTableStrategy.getTableInstance()
-	// .getColumnFamilyName().getBytes());
-	// if (cfResults != null) {
-	// for (byte[] entry : cfResults.keySet()) {
-	// String toSplit = Bytes.toString(entry);
-	// String elem1 = null;
-	// String elem2 = null;
-	// if (toSplit.contains(",")) {
-	// elem1 = toSplit.substring(0, toSplit.indexOf(","));
-	// elem2 = toSplit.substring(toSplit.indexOf(",") + 1,
-	// toSplit.length());
-	// } else {
-	// elem1 = toSplit.substring(0, toSplit.length());
-	// }
-	//
-	// // Bloomfilter
-	// if (!(elem1 == null)) {
-	// Integer position = BitvectorManager.hash(elem1.getBytes());
-	// bitvector1.set(position);
-	// }
-	// if (twoBitvectors) {
-	// if (!(elem2 == null)) {
-	// Integer position = BitvectorManager.hash(elem2
-	// .getBytes());
-	// bitvector2.set(position);
-	// }
-	// }
-	// }
-	// }
-	// }
 
+	/**
+	 * Adds the result to bit set.
+	 * 
+	 * @param twoBitvectors
+	 *            the two bitvectors
+	 * @param bitvector1
+	 *            the bitvector1
+	 * @param bitvector2
+	 *            the bitvector2
+	 * @param res
+	 *            the res
+	 * @throws UnsupportedEncodingException
+	 *             the unsupported encoding exception
+	 */
 	private static void addResultToBitSet(Boolean twoBitvectors,
 			BitSet bitvector1, BitSet bitvector2, Result res)
 			throws UnsupportedEncodingException {
@@ -199,10 +190,33 @@ public class BloomfilterGenerator {
 		}
 	}
 
+	/**
+	 * Byte array to integer.
+	 * 
+	 * @param arr
+	 *            the arr
+	 * @return the integer
+	 */
 	private static Integer byteArrayToInteger(byte[] arr) {
 		return ByteBuffer.wrap(arr).getInt();
 	}
 
+	/**
+	 * Store bitvector to h base.
+	 * 
+	 * @param tablename
+	 *            the tablename
+	 * @param rowkey
+	 *            the rowkey
+	 * @param bitvector1
+	 *            the bitvector1
+	 * @param bitvector2
+	 *            the bitvector2
+	 * @param table
+	 *            the table
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	private static void storeBitvectorToHBase(String tablename, byte[] rowkey,
 			BitSet bitvector1, BitSet bitvector2, HTable table)
 			throws IOException {
@@ -222,15 +236,15 @@ public class BloomfilterGenerator {
 				+ bitvector1.cardinality());
 	}
 
+	/**
+	 * To byte array.
+	 * 
+	 * @param bits
+	 *            the bits
+	 * @return the byte[]
+	 */
 	public static byte[] toByteArray(BitSet bits) {
 		return bits.toByteArray();
-		// byte[] bytes = new byte[bits.length() / 8 + 1];
-		// for (int i = 0; i < bits.length(); i++) {
-		// if (bits.get(i)) {
-		// bytes[bytes.length - i / 8 - 1] |= 1 << (i % 8);
-		// }
-		// }
-		// return bytes;
 	}
 
 }

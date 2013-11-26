@@ -8,6 +8,8 @@ import java.util.Random;
 import org.apache.hadoop.hbase.filter.QualifierFilter;
 import org.xerial.snappy.Snappy;
 
+import com.googlecode.javaewah.EWAHCompressedBitmap;
+
 import java17Dependencies.BitSet;
 
 public class BitSetTest {
@@ -15,50 +17,58 @@ public class BitSetTest {
 
 	public static void main(String[] args) throws IOException {
 		long start = System.currentTimeMillis();
-		ArrayList<BitSet> bitList = new ArrayList<BitSet>();
-
-		ArrayList<byte[]> compressedBitSets = new ArrayList<byte[]>();
+		 ArrayList<BitSet> bitList = new ArrayList<BitSet>();
+		 ArrayList<byte[]> compressedBitSets = new ArrayList<byte[]>();
 		Random gen = new Random();
-		for (int i = 0; i < 10; i++) {
-			BitSet b = new BitSet(VECTORSIZE);
-			int ran = gen.nextInt(VECTORSIZE);
-			b.set(ran, VECTORSIZE);
-			System.out.println("before: " + b.toByteArray().length);
-			byte[] compress_bitset = Snappy.compress(b.toByteArray());
-			System.out.println("after: " + compress_bitset.length);
+//		for (int i = 0; i < 10; i++) {
+//			BitSet b = new BitSet(VECTORSIZE);
+//			int ran = gen.nextInt(VECTORSIZE);
+//			b.set(ran, VECTORSIZE);
+////			System.out.println("before: " + b.toByteArray().length);
+//			byte[] compress_bitset = Snappy.compress(b.toByteArray());
+////			System.out.println("after: " + compress_bitset.length);
+//			// bitList.add(b);
+//			compressedBitSets.add(compress_bitset);
+//			// System.out.println(b.toString());
 //			bitList.add(b);
-			compressedBitSets.add(compress_bitset);
-//			System.out.println(b.toString());
-
-		}
-		
-		for (byte[] compres_bitset : compressedBitSets) {
-			byte[] uncompressed = Snappy.uncompress(compres_bitset);
-			BitSet curBitSet = fromByteArray(uncompressed);
-			System.out.println("Size: " + curBitSet.cardinality());
-		}
-		
-		
-//		BitSet b1 = new BitSet(VECTORSIZE);
-//		int ran = gen.nextInt(VECTORSIZE);
-//		b1.set(ran, VECTORSIZE);
-//		BitSet b2 = new BitSet(VECTORSIZE);
-//		ran = gen.nextInt(VECTORSIZE);
-//		b2.set(ran, VECTORSIZE);
-		
-		
-//		  EWAHCompressedBitmap new_b1 = new EWAHCompressedBitmap(VECTORSIZE);
-//		  new_b1.
-//		  new
-
-
-//		b3.set(1);
-//		System.out.println("asd:" + b3.length());
-//		System.out.println("before: " + b1.cardinality());
 //
-//		BitSet after = BitSet.valueOf(s1.getBytes());
-//
-//		System.out.println("after: " + after.cardinality());
+//		}
+
+		EWAHCompressedBitmap ewahBitmap1 =  new EWAHCompressedBitmap();
+		// ewahBitmap1.setSizeInBits(VECTORSIZE, true);
+		for (int i = 0; i < VECTORSIZE; i++) {
+//			System.out.println("bla: " + bla);
+			ewahBitmap1.set(i);
+//			System.out.println(ewahBitmap1.get(bla));
+		}
+		EWAHCompressedBitmap ewahBitmap2 = new EWAHCompressedBitmap();
+		System.out.println("bitmap 1: " + ewahBitmap1.cardinality());
+		System.out.println("bitmap 2: " + ewahBitmap2);
+
+		// for (byte[] compres_bitset : compressedBitSets) {
+		// byte[] uncompressed = Snappy.uncompress(compres_bitset);
+		// BitSet curBitSet = fromByteArray(uncompressed);
+		// System.out.println("Size: " + curBitSet.cardinality());
+		// }
+
+		// BitSet b1 = new BitSet(VECTORSIZE);
+		// int ran = gen.nextInt(VECTORSIZE);
+		// b1.set(ran, VECTORSIZE);
+		// BitSet b2 = new BitSet(VECTORSIZE);
+		// ran = gen.nextInt(VECTORSIZE);
+		// b2.set(ran, VECTORSIZE);
+
+		// EWAHCompressedBitmap new_b1 = new EWAHCompressedBitmap(VECTORSIZE);
+		// new_b1.
+		// new
+
+		// b3.set(1);
+		// System.out.println("asd:" + b3.length());
+		// System.out.println("before: " + b1.cardinality());
+		//
+		// BitSet after = BitSet.valueOf(s1.getBytes());
+		//
+		// System.out.println("after: " + after.cardinality());
 
 		// mergeBitSet("bla", bitList);
 
