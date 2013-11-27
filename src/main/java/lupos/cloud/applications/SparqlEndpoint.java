@@ -55,7 +55,6 @@ import lupos.endpoint.server.format.PlainFormatter;
 import lupos.endpoint.server.format.TSVFormatter;
 import lupos.endpoint.server.format.XMLFormatter;
 import lupos.engine.evaluators.BasicIndexQueryEvaluator;
-import lupos.engine.evaluators.CommonCoreQueryEvaluator;
 import lupos.engine.operators.singleinput.federated.BitVectorFilterFunction;
 
 import com.sun.net.httpserver.HttpExchange;
