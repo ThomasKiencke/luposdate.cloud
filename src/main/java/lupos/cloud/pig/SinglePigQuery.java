@@ -173,7 +173,7 @@ public class SinglePigQuery {
 	 */
 	public ArrayList<String> getVariableList() {
 		ArrayList<String> result = new ArrayList<String>();
-		for (String elem : intermediateBags.get(0).getJoinElements()) {
+		for (String elem : intermediateBags.get(0).getBagElements()) {
 			result.add(elem.replace("?", ""));
 		}
 		return result;

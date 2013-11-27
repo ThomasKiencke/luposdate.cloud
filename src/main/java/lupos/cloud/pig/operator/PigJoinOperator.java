@@ -1,34 +1,56 @@
 package lupos.cloud.pig.operator;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import lupos.cloud.pig.BagInformation;
-import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.multiinput.join.Join;
 
+/**
+ * Join Operator
+ */
 public class PigJoinOperator implements IPigOperator {
-	private boolean debug;
-	private BagInformation newJoin;
+
+	/** Zwischenergebnisse. */
+	private BagInformation newBag;
+
+	/** Menge der zu joinenden Bags. */
 	private ArrayList<BagInformation> multiInputist;
+
+	/** Luposdate Join. */
 	private Join join;
 
-	public PigJoinOperator(BagInformation newJoin,
+	/**
+	 * Instantiates a new pig join operator.
+	 * 
+	 * @param newBag
+	 *            the new join
+	 * @param multiInputist
+	 *            the multi inputist
+	 * @param join
+	 *            the join
+	 */
+	public PigJoinOperator(BagInformation newBag,
 			ArrayList<BagInformation> multiInputist, Join join) {
-		this.newJoin = newJoin;
+		this.newBag = newBag;
 		this.multiInputist = multiInputist;
 		this.join = join;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.cloud.pig.operator.IPigOperator#buildQuery(java.util.ArrayList,
+	 * boolean, java.util.ArrayList)
+	 */
 	public String buildQuery(ArrayList<BagInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
-		this.debug = debug;
 		StringBuilder result = new StringBuilder();
 		if (debug) {
 			result.append(" -- JOIN:\n");
 		}
-		result.append(newJoin.getName() + " = JOIN ");
+		result.append(newBag.getName() + " = JOIN ");
 		for (int i = 0; i < multiInputist.size(); i++) {
 			if (i > 0) {
 				result.append(", ");
@@ -46,7 +68,7 @@ public class PigJoinOperator implements IPigOperator {
 
 			if (joinList.size() == 1) {
 				result.append("$"
-						+ multiInputist.get(i).getJoinElements()
+						+ multiInputist.get(i).getBagElements()
 								.indexOf("?" + joinList.get(0).getName()));
 			} else {
 				int j = 0;
@@ -56,7 +78,7 @@ public class PigJoinOperator implements IPigOperator {
 						result.append(",");
 					}
 					result.append("$"
-							+ multiInputist.get(j).getJoinElements()
+							+ multiInputist.get(j).getBagElements()
 									.indexOf("?" + var.getName()));
 					j++;
 				}
@@ -73,13 +95,11 @@ public class PigJoinOperator implements IPigOperator {
 		boolean firstBag = true;
 		for (BagInformation bag : multiInputist) {
 			if (firstBag) {
-				newJoin.setJoinElements(bag.getJoinElements());
+				newBag.setJoinElements(bag.getBagElements());
 				firstBag = false;
 			} else {
-				for (String var : bag.getJoinElements()) {
-//					if (!joinElements.contains(var)) {
-						newJoin.addBagElements(var);
-//					}
+				for (String var : bag.getBagElements()) {
+					newBag.addBagElements(var);
 				}
 			}
 		}

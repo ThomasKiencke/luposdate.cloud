@@ -23,27 +23,19 @@ package lupos.cloud.pig.udfs;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.HashMap;
 import java.util.Properties;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import java17Dependencies.BitSet;
 import lupos.cloud.bloomfilter.BitvectorManager;
-import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
-import lupos.cloud.hbase.filter.BitvectorFilter;
 
 import org.joda.time.DateTime;
 import org.apache.commons.cli.CommandLine;
@@ -64,7 +56,6 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.BinaryComparator;
-import org.apache.hadoop.hbase.filter.ColumnPaginationFilter;
 import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.QualifierFilter;
@@ -99,7 +90,6 @@ import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 import org.apache.pig.StoreFuncInterface;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
 import org.apache.pig.backend.hadoop.hbase.HBaseBinaryConverter;
-import org.apache.pig.backend.hadoop.hbase.HBaseStorage;
 import org.apache.pig.backend.hadoop.hbase.HBaseTableInputFormat.HBaseTableIFBuilder;
 import org.apache.pig.builtin.Utf8StorageConverter;
 import org.apache.pig.data.DataBag;
@@ -121,7 +111,12 @@ import com.google.common.io.ByteStreams;
  * UDF Funktion. Diese wurde zum größten Teil übernommen und an einigen Stellen
  * angepasst. Eine wichtige erweiterung ist die Möglichkeit nur einen bestimmten
  * rowKey zu laden, anstatt den gesamten Datenbestand einer Tabelle.
+ * 
+ * Anmerkung: Wurde zu Testzwecken verwendet. Die Funktion lädt die Daten direkt
+ * in eine Bag Datenstruktur. Jedoch ist die Implementierung sehr unschön
+ * (setBatch = 1)
  */
+@Deprecated
 public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 		LoadPushDown, OrderedLoadFunc {
 
@@ -171,8 +166,6 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 	private ResourceSchema schema_;
 	private RequiredFieldList requiredFieldList;
 
-	private BitSet bitvector1 = null;
-	private BitSet bitvector2 = null;
 	private FileSystem fs = null;
 	private Path bitvectorPath1 = null;
 	private Path bitvectorPath2 = null;
@@ -235,43 +228,19 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 	 *             when unable to parse arguments
 	 * @throws IOException
 	 */
-//	public HBaseLoadBagUDF(String columnList, String rowKey)
-//			throws ParseException, IOException {
-//		this(columnList, "", rowKey, null, null);
-//	}
 
 	public HBaseLoadBagUDF(String columnList, String optString, String rowKey,
 			String bitvectorPath) throws ParseException, IOException {
 		this(columnList, optString, rowKey, new Path(bitvectorPath), null);
-
-		// this.bitvectorPath1 = new Path(bitvectorPath);
 
 	}
 
 	public HBaseLoadBagUDF(String columnList, String optString, String rowKey,
 			String bitvectorPath1, String bitvectorPath2)
 			throws ParseException, IOException {
-		this(columnList, optString, rowKey, new Path(bitvectorPath1), new Path(bitvectorPath2));
+		this(columnList, optString, rowKey, new Path(bitvectorPath1), new Path(
+				bitvectorPath2));
 
-//		this.bitvectorPath1 = new Path(bitvectorPath1);
-//		this.bitvectorPath2 = new Path(bitvectorPath2);
-
-	}
-
-	private BitSet readBloomfilter(Path path) {
-		BitSet bitvector = null;
-		try {
-			if (fs == null) {
-				fs = FileSystem.get(HBaseConfiguration.create());
-			}
-			FSDataInputStream input = fs.open(path);
-			bitvector = fromByteArray(ByteStreams.toByteArray(input));
-			// bitvector = longToBitSet(input.readLong());
-			input.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return bitvector;
 	}
 
 	private byte[] readBloomfilterToByte(Path path) {
@@ -292,13 +261,6 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 
 	public static BitSet fromByteArray(byte[] bytes) {
 		return BitSet.valueOf(bytes);
-//		BitSet bits = new BitSet();
-//		for (int i = 0; i < bytes.length * 8; i++) {
-//			if ((bytes[bytes.length - i / 8 - 1] & (1 << (i % 8))) > 0) {
-//				bits.set(i);
-//			}
-//		}
-//		return bits;
 	}
 
 	/**
@@ -487,11 +449,11 @@ public class HBaseLoadBagUDF extends LoadFunc implements StoreFuncInterface,
 		}
 
 		scan = new Scan();
-		
+
 		if (bitvectorPath2 == null) {
-//			scan.setFilter(new BitvectorFilter(bvector1));
+			// scan.setFilter(new BitvectorFilter(bvector1));
 		} else {
-//			scan.setFilter(new BitvectorFilter(bvector1, bvector2));
+			// scan.setFilter(new BitvectorFilter(bvector1, bvector2));
 		}
 
 		// scan.setRaw(true);

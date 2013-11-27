@@ -22,12 +22,12 @@ package lupos.cloud.pig.udfs;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
 
 import org.apache.hadoop.hbase.mapreduce.TableSplit;
 import org.apache.hadoop.io.WritableComparable;
 
 /**
+ * *** PATCH ***
  * This class allow Pig to order TableSplits. A table split corresponds to a key
  * range (low, high).
  * 

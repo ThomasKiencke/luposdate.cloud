@@ -9,30 +9,48 @@ import org.apache.commons.codec.digest.DigestUtils;
 import lupos.cloud.bloomfilter.BitvectorManager;
 import lupos.cloud.bloomfilter.CloudBitvector;
 import lupos.cloud.hbase.HBaseDistributionStrategy;
-import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
 import lupos.cloud.pig.BagInformation;
-import lupos.cloud.pig.SinglePigQuery;
 import lupos.cloud.storage.util.CloudManagement;
 import lupos.datastructures.items.Variable;
 import lupos.engine.operators.tripleoperator.TriplePattern;
-import lupos.misc.BitVector;
 
+/**
+ * Überführt Luposdate IndexScan-Operator in PigLatin-Programm.
+ */
 public class PigIndexScanOperator implements IPigOperator {
+
+	/** Zwischenergebnisse. */
 	ArrayList<BagInformation> intermediateJoins = null;
+
+	/** Alle Tripel-Muster. */
 	Collection<TriplePattern> triplePatternCollection = null;
+
+	/** Counter. */
 	int tripleCounter = 0;
+
+	/** Debug Ausgabe. */
 	boolean debug = false;
 
+	/**
+	 * Instantiates a new pig index scan operator.
+	 * 
+	 * @param tp
+	 *            the tp
+	 */
 	public PigIndexScanOperator(Collection<TriplePattern> tp) {
 		this.triplePatternCollection = tp;
 	}
 
 	/**
 	 * Mit dieser Methode wird das PigLatin-Programm langsam aufgebaut indem die
-	 * einzelnen Tripel-Muster hinzuzgefügt werden.
+	 * einzelnen Tripel-Muster hinzugefügt werden.
 	 * 
-	 * @param triplePattern
-	 *            the triple pattern
+	 * @param intermediateBags
+	 *            the intermediate bags
+	 * @param debug
+	 *            the debug
+	 * @param filterOps
+	 *            the filter ops
 	 * @return the string
 	 */
 	public String buildQuery(ArrayList<BagInformation> intermediateBags,
@@ -65,12 +83,12 @@ public class PigIndexScanOperator implements IPigOperator {
 					result.append(", '', "
 							+ " '"
 							+ DigestUtils.sha512Hex(
-									curPattern.getJoinElements().get(1)
+									curPattern.getBagElements().get(1)
 											+ curPattern.getPatternId())
 									.toString()
 							+ "', '"
 							+ DigestUtils.sha512Hex(
-									curPattern.getJoinElements().get(2)
+									curPattern.getBagElements().get(2)
 											+ curPattern.getPatternId())
 									.toString() + "'");
 				}
@@ -91,7 +109,7 @@ public class PigIndexScanOperator implements IPigOperator {
 				}
 				result.append("));\n");
 			} else if (curPattern.allElementsAreLiterals()) {
-				// do nothing, maybe add in future
+				// do nothing, todo
 				return "";
 			} else {
 				result.append(
@@ -99,6 +117,14 @@ public class PigIndexScanOperator implements IPigOperator {
 				 * Für alle anderen Triplepattern wird in den jeweiligen
 				 * Tabellen gesucht und nur das Ergebniss (der Spaltenname)
 				 * zurückgegeben.
+				 * 
+				 * Anmerkung bzgl Bitvektoren: Statt den Pfad des jeweiligen
+				 * Bitvektor wird ein Platzhalter (SHA 512 HEX Wert) eingesetzt.
+				 * Dieser Platzhalter wird später bei der Bitvektorberechnung
+				 * durch den tatsächlichen Pfad ersetzt. Der Hash wird
+				 * folgendermaßen berechnet:
+				 * 
+				 * h(x) = 
 				 */
 				"PATTERN_"
 						+ curPattern.getPatternId()
@@ -111,25 +137,25 @@ public class PigIndexScanOperator implements IPigOperator {
 								.getColumnFamilyName() + "', '', '"
 						+ curPattern.getLiterals() + "'");
 				if (CloudManagement.bloomfilter_active) {
-					result.append(((curPattern.getJoinElements().size() == 1) ? ", '"
+					result.append(((curPattern.getBagElements().size() == 1) ? ", '"
 							+ DigestUtils.sha512Hex(
-									curPattern.getJoinElements().get(0)
+									curPattern.getBagElements().get(0)
 											+ curPattern.getPatternId())
 									.toString() + "'" : ", '"
 							+ DigestUtils.sha512Hex(
-									curPattern.getJoinElements().get(0)
+									curPattern.getBagElements().get(0)
 											+ curPattern.getPatternId())
 									.toString()
 							+ "', '"
 							+ DigestUtils.sha512Hex(
-									curPattern.getJoinElements().get(1)
+									curPattern.getBagElements().get(1)
 											+ curPattern.getPatternId())
 									.toString() + "'"));
 				}
 
 				result.append(") as (columncontent_" + tripleCounter + ":map[]");
 				if (CloudManagement.bloomfilter_active) {
-					result.append(((curPattern.getJoinElements().size() == 1) ? ", bloomfilter1:bytearray"
+					result.append(((curPattern.getBagElements().size() == 1) ? ", bloomfilter1:bytearray"
 							: ", bloomfilter1:bytearray, bloomfilter2:bytearray"));
 				}
 				result.append(");\n");
@@ -139,12 +165,12 @@ public class PigIndexScanOperator implements IPigOperator {
 						+ " generate flatten(lupos.cloud.pig.udfs.MapToBagUDF("
 						+ "$0");
 				if (CloudManagement.bloomfilter_active) {
-					result.append(((curPattern.getJoinElements().size() == 1) ? ", $1"
+					result.append(((curPattern.getBagElements().size() == 1) ? ", $1"
 							: ", $1, $2"));
 				}
 
 				result.append(")) as "
-						+ ((curPattern.getJoinElements().size() == 1) ? "(output"
+						+ ((curPattern.getBagElements().size() == 1) ? "(output"
 								+ tripleCounter + ":chararray);"
 								: "(output1_" + tripleCounter
 										+ ":chararray, output2_"
@@ -154,36 +180,36 @@ public class PigIndexScanOperator implements IPigOperator {
 			intermediateJoins.add(curPattern);
 
 			// add bitvector
-			if ((curPattern.getJoinElements().size() == 1)) {
-				curPattern.addBitvector(curPattern.getJoinElements().get(0),
+			if ((curPattern.getBagElements().size() == 1)) {
+				curPattern.addBitvector(curPattern.getBagElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
 								BitvectorManager.bloomfilter1ColumnFamily,
 								curPattern.getPatternId()));
-			} else if ((curPattern.getJoinElements().size() == 2)) {
-				curPattern.addBitvector(curPattern.getJoinElements().get(0),
+			} else if ((curPattern.getBagElements().size() == 2)) {
+				curPattern.addBitvector(curPattern.getBagElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
 								BitvectorManager.bloomfilter1ColumnFamily,
 								curPattern.getPatternId()));
-				curPattern.addBitvector(curPattern.getJoinElements().get(1),
+				curPattern.addBitvector(curPattern.getBagElements().get(1),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(),
 								BitvectorManager.bloomfilter2ColumnFamily,
 								curPattern.getPatternId()));
-			} else if ((curPattern.getJoinElements().size() == 3)) {
+			} else if ((curPattern.getBagElements().size() == 3)) {
 				curPattern.addBitvector(
-						curPattern.getJoinElements().get(0),
+						curPattern.getBagElements().get(0),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(), null, curPattern
 										.getPatternId()));
 				curPattern.addBitvector(
-						curPattern.getJoinElements().get(1),
+						curPattern.getBagElements().get(1),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(), null, curPattern
 										.getPatternId()));
 				curPattern.addBitvector(
-						curPattern.getJoinElements().get(2),
+						curPattern.getBagElements().get(2),
 						new CloudBitvector(curPattern.getTablename(),
 								curPattern.getLiterals(), null, curPattern
 										.getPatternId()));
@@ -261,6 +287,11 @@ public class PigIndexScanOperator implements IPigOperator {
 		return result;
 	}
 
+	/**
+	 * Multi join over two variables.
+	 * 
+	 * @return the string
+	 */
 	public String multiJoinOverTwoVariables() {
 		StringBuilder result = new StringBuilder();
 		HashSet<String> equalVariables = null;
@@ -337,6 +368,11 @@ public class PigIndexScanOperator implements IPigOperator {
 		return result.toString();
 	}
 
+	/**
+	 * Multi join over one variable.
+	 * 
+	 * @return the string
+	 */
 	public String multiJoinOverOneVariable() {
 		StringBuilder result = new StringBuilder();
 		ArrayList<BagInformation> joinAliases = null;
@@ -358,12 +394,12 @@ public class PigIndexScanOperator implements IPigOperator {
 				if (intermediateJoins.get(i).equals(curJoin)) {
 					continue;
 				}
-				for (String variable1 : curJoin.getJoinElements()) {
+				for (String variable1 : curJoin.getBagElements()) {
 					if (found) {
 						variable1 = joinVariable;
 					}
 					for (String variable2 : intermediateJoins.get(i)
-							.getJoinElements()) {
+							.getBagElements()) {
 						if (variable1.equals(variable2)) {
 							found = true;
 							joinVariable = variable1;
@@ -432,8 +468,8 @@ public class PigIndexScanOperator implements IPigOperator {
 		int i = 0;
 		for (BagInformation curPattern : joinOverItem) {
 			i++;
-			for (String s : curPattern.getJoinElements()) {
-				curJoinInfo.getJoinElements().add(s);
+			for (String s : curPattern.getBagElements()) {
+				curJoinInfo.getBagElements().add(s);
 			}
 			result.append(" " + curPattern.getName() + " BY $"
 					+ curPattern.getItemPos(joinElement));
@@ -463,6 +499,15 @@ public class PigIndexScanOperator implements IPigOperator {
 		return result.toString();
 	}
 
+	/**
+	 * Gets the pig multi join with2 columns.
+	 * 
+	 * @param joinOverItem
+	 *            the join over item
+	 * @param joinElements
+	 *            the join elements
+	 * @return the pig multi join with2 columns
+	 */
 	public String getPigMultiJoinWith2Columns(
 			ArrayList<BagInformation> joinOverItem,
 			ArrayList<String> joinElements) {
@@ -488,8 +533,8 @@ public class PigIndexScanOperator implements IPigOperator {
 		int i = 0;
 		for (BagInformation curPattern : joinOverItem) {
 			i++;
-			for (String s : curPattern.getJoinElements()) {
-				curJoinInfo.getJoinElements().add(s);
+			for (String s : curPattern.getBagElements()) {
+				curJoinInfo.getBagElements().add(s);
 			}
 			result.append(" " + curPattern.getName() + " BY ($"
 					+ curPattern.getItemPos(joinElements.get(0)) + ",$"
@@ -518,47 +563,59 @@ public class PigIndexScanOperator implements IPigOperator {
 		return result.toString();
 	}
 
+	/**
+	 * Gets the final alias.
+	 * 
+	 * @return the final alias
+	 */
 	public String getFinalAlias() {
 		return intermediateJoins.get(0).getName();
 	}
 
 	// hat keinen Vorteil gebracht
+	/**
+	 * Removes the duplicated aliases.
+	 * 
+	 * @param oldJoin
+	 *            the old join
+	 * @return the string
+	 */
 	@Deprecated
 	public String removeDuplicatedAliases(BagInformation oldJoin) {
-		 return "";
-//		StringBuilder result = new StringBuilder();
-//		// prüfe ob es doppelte Aliases gibt und entferne diese
-//		ArrayList<String> newElements = new ArrayList<String>();
-//		boolean foundDuplicate = false;
-//
-//		for (String elem : oldJoin.getJoinElements()) {
-//			if (newElements.contains(elem)
-//					// Sonderfall z.B. ?author und ?author2 überpruefen
-//					&& elem.equals(newElements.get(newElements.indexOf(elem)))) {
-//				foundDuplicate = true;
-//			} else {
-//				newElements.add(elem);
-//			}
-//		}
-//
-//		System.out.println("V: " + oldJoin.getJoinElements());
-//		System.out.println("N: " + newElements);
-//		if (foundDuplicate) {
-//			result.append(oldJoin.getName() + " = FOREACH " + oldJoin.getName()
-//					+ " GENERATE ");
-//			boolean first = true;
-//			for (String elem : newElements) {
-//				if (!first) {
-//					result.append(", ");
-//				}
-//				result.append("$" + oldJoin.getItemPos(elem));
-//				first = false;
-//			}
-//			result.append(";\n");
-//			oldJoin.setJoinElements(newElements);
-//		}
-//
-//		return result.toString();
+		return "";
+		// StringBuilder result = new StringBuilder();
+		// // prüfe ob es doppelte Aliases gibt und entferne diese
+		// ArrayList<String> newElements = new ArrayList<String>();
+		// boolean foundDuplicate = false;
+		//
+		// for (String elem : oldJoin.getJoinElements()) {
+		// if (newElements.contains(elem)
+		// // Sonderfall z.B. ?author und ?author2 überpruefen
+		// && elem.equals(newElements.get(newElements.indexOf(elem)))) {
+		// foundDuplicate = true;
+		// } else {
+		// newElements.add(elem);
+		// }
+		// }
+		//
+		// System.out.println("V: " + oldJoin.getJoinElements());
+		// System.out.println("N: " + newElements);
+		// if (foundDuplicate) {
+		// result.append(oldJoin.getName() + " = FOREACH " + oldJoin.getName()
+		// + " GENERATE ");
+		// boolean first = true;
+		// for (String elem : newElements) {
+		// if (!first) {
+		// result.append(", ");
+		// }
+		// result.append("$" + oldJoin.getItemPos(elem));
+		// first = false;
+		// }
+		// result.append(";\n");
+		// oldJoin.setJoinElements(newElements);
+		// }
+		//
+		// return result.toString();
 
 	}
 }

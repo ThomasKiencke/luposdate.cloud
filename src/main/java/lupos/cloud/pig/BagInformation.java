@@ -28,7 +28,7 @@ public class BagInformation {
 	ArrayList<String> bagElements = new ArrayList<String>();
 
 	/** Variablen die sich aus Optionals ergeben haben (ggf. ungebunden). */
-	HashSet<String> optionalJoinElements = new HashSet<String>();
+	HashSet<String> optionalBagElements = new HashSet<String>();
 
 	/** Tripel-Muster. */
 	TriplePattern triplePattern;
@@ -126,7 +126,7 @@ public class BagInformation {
 	 * 
 	 * @return the join elements
 	 */
-	public ArrayList<String> getJoinElements() {
+	public ArrayList<String> getBagElements() {
 		return bagElements;
 	}
 
@@ -155,7 +155,7 @@ public class BagInformation {
 	 * @param elem the elem
 	 */
 	public void addOptionalElements(String elem) {
-		this.optionalJoinElements.add(elem);
+		this.optionalBagElements.add(elem);
 	}
 
 	/**
@@ -164,7 +164,7 @@ public class BagInformation {
 	 * @return the optional join elements
 	 */
 	public HashSet<String> getOptionalJoinElements() {
-		return optionalJoinElements;
+		return optionalBagElements;
 	}
 
 	/**
@@ -191,7 +191,7 @@ public class BagInformation {
 	 * @return true, if is variable optional
 	 */
 	public boolean isVariableOptional(String var) {
-		return optionalJoinElements.contains(var);
+		return optionalBagElements.contains(var);
 	}
 
 	/**
@@ -342,7 +342,7 @@ public class BagInformation {
 	 */
 	public void mergeOptionalVariables(BagInformation bag) {
 		for (String var : bag.getOptionalJoinElements()) {
-			this.optionalJoinElements.add(var);
+			this.optionalBagElements.add(var);
 		}
 	}
 

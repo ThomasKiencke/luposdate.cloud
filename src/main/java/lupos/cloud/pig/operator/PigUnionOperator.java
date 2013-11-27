@@ -3,27 +3,40 @@ package lupos.cloud.pig.operator;
 import java.util.ArrayList;
 
 import lupos.cloud.pig.BagInformation;
-import lupos.cloud.pig.SinglePigQuery;
 
+/**
+ * Union Operator.
+ */
 public class PigUnionOperator implements IPigOperator {
-	private boolean debug;
-	private BagInformation newJoin;
+	
+	/** Zwischenergebnisse. */
+	private BagInformation newBag;
+	
+	/** The multi inputist. */
 	private ArrayList<BagInformation> multiInputist;
 
+	/**
+	 * Instantiates a new pig union operator.
+	 *
+	 * @param newJoin the new join
+	 * @param multiInputist the multi inputist
+	 */
 	public PigUnionOperator(BagInformation newJoin,
 			ArrayList<BagInformation> multiInputist) {
-		this.newJoin = newJoin;
+		this.newBag = newJoin;
 		this.multiInputist = multiInputist;
 	}
 
+	/* (non-Javadoc)
+	 * @see lupos.cloud.pig.operator.IPigOperator#buildQuery(java.util.ArrayList, boolean, java.util.ArrayList)
+	 */
 	public String buildQuery(ArrayList<BagInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
-		this.debug = debug;
 		StringBuilder result = new StringBuilder();
 		if (debug) {
 			result.append("-- UNION:\n");
 		}
-		result.append(newJoin.getName() + " = UNION ");
+		result.append(newBag.getName() + " = UNION ");
 		;
 		for (int i = 0; i < multiInputist.size(); i++) {
 			if (i == 0) {
@@ -33,13 +46,13 @@ public class PigUnionOperator implements IPigOperator {
 			}
 		}
 		result.append(";\n\n");
-		newJoin.setJoinElements(multiInputist.get(0).getJoinElements());
+		newBag.setJoinElements(multiInputist.get(0).getBagElements());
 
 		for (BagInformation bag : multiInputist) {
-			for (String elem : bag.getJoinElements()) {
-				if (!multiInputist.get(0).getJoinElements().contains(elem)) {
-					newJoin.addBagElements(elem);
-					newJoin.addOptionalElements(elem);
+			for (String elem : bag.getBagElements()) {
+				if (!multiInputist.get(0).getBagElements().contains(elem)) {
+					newBag.addBagElements(elem);
+					newBag.addOptionalElements(elem);
 				}
 			}
 		}

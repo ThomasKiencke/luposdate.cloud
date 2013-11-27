@@ -4,18 +4,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import lupos.cloud.pig.BagInformation;
-import lupos.cloud.pig.SinglePigQuery;
 
+/**
+ * Diese Klasse verweist auf alle vorhandenen Filterausdrücke. Die Filter werden
+ * möglichst früh ausgeführt. Dazu wird für jeden Filter überprüft ob alle
+ * relevanten Variablen sich in der jeweiligen Bag befinden um den Filter
+ * auszuführen.
+ */
 public class PigFilterExectuer implements IPigOperator {
-	private boolean debug;
+
+	/** Zwischenergebnisse. */
 	private ArrayList<BagInformation> intermediateBags;
+
+	/** Liste der Filter-Operationen. */
 	HashMap<BagInformation, ArrayList<PigFilterOperator>> bagToFilterList = null;
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.cloud.pig.operator.IPigOperator#buildQuery(java.util.ArrayList,
+	 * boolean, java.util.ArrayList)
+	 */
 	public String buildQuery(ArrayList<BagInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		StringBuilder result = new StringBuilder();
 		this.bagToFilterList = new HashMap<BagInformation, ArrayList<PigFilterOperator>>();
-		this.debug = debug;
 		this.intermediateBags = intermediateBags;
 		ArrayList<BagInformation> toRemove = new ArrayList<BagInformation>();
 		ArrayList<BagInformation> toAdd = new ArrayList<BagInformation>();
@@ -24,12 +38,12 @@ public class PigFilterExectuer implements IPigOperator {
 			this.checkIfFilterPossible(filter);
 		}
 		if (bagToFilterList.size() > 0) {
-			for (BagInformation curJoin : bagToFilterList.keySet()) {
+			for (BagInformation curBag : bagToFilterList.keySet()) {
 				if (debug) {
 					int i = 0;
 					result.append("-- Filter: ");
 					for (PigFilterOperator filter : bagToFilterList
-							.get(curJoin)) {
+							.get(curBag)) {
 						if (i > 0) {
 							result.append(" AND ");
 						}
@@ -39,30 +53,29 @@ public class PigFilterExectuer implements IPigOperator {
 					result.append("\n");
 				}
 
-				BagInformation newJoin = new BagInformation(
-						"INTERMEDIATE_BAG_" + BagInformation.idCounter);
+				BagInformation newBag = new BagInformation("INTERMEDIATE_BAG_"
+						+ BagInformation.idCounter);
 
-				result.append(newJoin.getName() + " = FILTER "
-						+ curJoin.getName() + " BY ");
+				result.append(newBag.getName() + " = FILTER "
+						+ curBag.getName() + " BY ");
 				int i = 0;
-				for (PigFilterOperator filter : bagToFilterList.get(curJoin)) {
+				for (PigFilterOperator filter : bagToFilterList.get(curBag)) {
 					if (i > 0) {
 						result.append(" AND ");
 					}
 					String pigFilterVarReplaced = filter.getPigFilter();
 					for (String var : filter.getVariables()) {
-						pigFilterVarReplaced = pigFilterVarReplaced
-								.replace(
-										var,
-										getPigNameForVariable("?" + var,
-												curJoin.getJoinElements()));
+						pigFilterVarReplaced = pigFilterVarReplaced.replace(
+								var,
+								getPigNameForVariable("?" + var,
+										curBag.getBagElements()));
 					}
-					
+
 					result.append(pigFilterVarReplaced);
 
-					newJoin.addAppliedFilters(filter);
-					curJoin.addAppliedFilters(filter);
-					
+					newBag.addAppliedFilters(filter);
+					curBag.addAppliedFilters(filter);
+
 					i++;
 				}
 
@@ -72,15 +85,15 @@ public class PigFilterExectuer implements IPigOperator {
 					result.append("\n");
 				}
 
-				newJoin.setPatternId(BagInformation.idCounter);
-				newJoin.setJoinElements(curJoin.getJoinElements());
-				newJoin.addAppliedFilters(curJoin.getAppliedFilters());
-				newJoin.addBitVectors(curJoin.getBitVectors());
+				newBag.setPatternId(BagInformation.idCounter);
+				newBag.setJoinElements(curBag.getBagElements());
+				newBag.addAppliedFilters(curBag.getAppliedFilters());
+				newBag.addBitVectors(curBag.getBitVectors());
 
-				toRemove.add(curJoin);
+				toRemove.add(curBag);
 
-//				toRemove.remove(curJoin);
-				toAdd.add(newJoin);
+				// toRemove.remove(curBag);
+				toAdd.add(newBag);
 
 				BagInformation.idCounter++;
 
@@ -96,21 +109,27 @@ public class PigFilterExectuer implements IPigOperator {
 		return result.toString();
 	}
 
+	/**
+	 * Check if filter possible.
+	 * 
+	 * @param filter
+	 *            the filter
+	 */
 	private void checkIfFilterPossible(PigFilterOperator filter) {
 		// Wenn alle Variablen in einer Menge vorkommen, kann der Filter
 		// angewandt weden
-		for (BagInformation curJoin : intermediateBags) {
+		for (BagInformation curBag : intermediateBags) {
 
 			// Wenn die Menge nicht schon einmal gefiltert wurde
-			if (!curJoin.filterApplied(filter)) {
+			if (!curBag.filterApplied(filter)) {
 				boolean varNotFound = false;
 				for (String var : filter.getVariables()) {
-					if (!curJoin.getJoinElements().contains("?" + var)) {
+					if (!curBag.getBagElements().contains("?" + var)) {
 						varNotFound = true;
 					}
 				}
 				if (!varNotFound) {
-					addFilterToBag(curJoin, filter);
+					addFilterToBag(curBag, filter);
 
 				}
 			}
@@ -118,6 +137,15 @@ public class PigFilterExectuer implements IPigOperator {
 
 	}
 
+	/**
+	 * Gets the pig index for variable.
+	 * 
+	 * @param name
+	 *            the name
+	 * @param sparqlVariableList
+	 *            the sparql variable list
+	 * @return the pig name for variable
+	 */
 	private String getPigNameForVariable(String name,
 			ArrayList<String> sparqlVariableList) {
 		for (int i = 0; i < sparqlVariableList.size(); i++) {
@@ -128,6 +156,14 @@ public class PigFilterExectuer implements IPigOperator {
 		return null; // Fall sollte nicht vorkommen
 	}
 
+	/**
+	 * Adds the filter to bag.
+	 * 
+	 * @param toAdd
+	 *            the to add
+	 * @param filter
+	 *            the filter
+	 */
 	private void addFilterToBag(BagInformation toAdd, PigFilterOperator filter) {
 		ArrayList<PigFilterOperator> list = bagToFilterList.get(toAdd);
 		if (list == null) {

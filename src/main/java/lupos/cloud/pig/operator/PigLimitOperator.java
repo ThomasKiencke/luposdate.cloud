@@ -3,16 +3,37 @@ package lupos.cloud.pig.operator;
 import java.util.ArrayList;
 
 import lupos.cloud.pig.BagInformation;
-import lupos.cloud.pig.SinglePigQuery;
 
+/**
+ * Limit Operator.
+ */
 public class PigLimitOperator implements IPigOperator {
+
+	/** Zwischenergebnisse. */
 	private ArrayList<BagInformation> intermediateJoins;
-	private int limit = -1 ;
-	
+
+	/** Limit. */
+	private int limit = -1;
+
+	/**
+	 * Instantiates a new pig limit operator.
+	 * 
+	 * @param limit
+	 *            the limit
+	 */
 	public PigLimitOperator(int limit) {
 		this.limit = limit;
 	}
-	public String buildQuery(ArrayList<BagInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.cloud.pig.operator.IPigOperator#buildQuery(java.util.ArrayList,
+	 * boolean, java.util.ArrayList)
+	 */
+	public String buildQuery(ArrayList<BagInformation> intermediateBags,
+			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		StringBuilder result = new StringBuilder();
 		this.intermediateJoins = intermediateBags;
 
@@ -20,25 +41,25 @@ public class PigLimitOperator implements IPigOperator {
 			result.append("-- Limit: " + limit + " \n");
 		}
 
-		BagInformation curJoin = intermediateJoins.get(0);
-		BagInformation newJoin = new BagInformation("INTERMEDIATE_BAG_"
+		BagInformation curBag = intermediateJoins.get(0);
+		BagInformation newBag = new BagInformation("INTERMEDIATE_BAG_"
 				+ BagInformation.idCounter);
 
-		result.append(newJoin.getName() + " = LIMIT " + curJoin.getName()
-				+ " " + this.limit +  ";\n");
+		result.append(newBag.getName() + " = LIMIT " + curBag.getName() + " "
+				+ this.limit + ";\n");
 
 		if (debug) {
 			result.append("\n");
 		}
 
-		newJoin.setPatternId(BagInformation.idCounter);
-		newJoin.setJoinElements(curJoin.getJoinElements());
-		newJoin.addAppliedFilters(curJoin.getAppliedFilters());
-		newJoin.mergeOptionalVariables(curJoin);
-		newJoin.addBitVectors(curJoin.getBitVectors());
+		newBag.setPatternId(BagInformation.idCounter);
+		newBag.setJoinElements(curBag.getBagElements());
+		newBag.addAppliedFilters(curBag.getAppliedFilters());
+		newBag.mergeOptionalVariables(curBag);
+		newBag.addBitVectors(curBag.getBitVectors());
 
-		intermediateJoins.remove(curJoin);
-		intermediateJoins.add(newJoin);
+		intermediateJoins.remove(curBag);
+		intermediateJoins.add(newBag);
 		BagInformation.idCounter++;
 		return result.toString();
 	}

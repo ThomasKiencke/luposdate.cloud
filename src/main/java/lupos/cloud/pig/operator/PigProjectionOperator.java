@@ -5,16 +5,33 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import lupos.cloud.pig.BagInformation;
-import lupos.cloud.pig.SinglePigQuery;
 import lupos.datastructures.items.Variable;
-import lupos.engine.operators.singleinput.Projection;
 
+/**
+ * Projektsions Operator. Die Projektion wird so früh wie Möglich ausgeführt.
+ * Bevor Variablen gedropt werden, wird überprüft ob die jeweilige Variable ggf.
+ * noch für Filter o.Ä. gebraucht wird.
+ */
 public class PigProjectionOperator implements IPigOperator {
+
+	/** Variablen. */
 	HashSet<String> projectionVariables;
+
+	/** Zwischenergebnisse. */
 	private ArrayList<BagInformation> intermediateJoins;
+
+	/** The debug. */
 	private boolean debug;
+
+	/** Filter Operationen. */
 	ArrayList<PigFilterOperator> filterOps;
 
+	/**
+	 * Instantiates a new pig projection operator.
+	 * 
+	 * @param projection
+	 *            the projection
+	 */
 	public PigProjectionOperator(HashSet<Variable> projection) {
 		this.projectionVariables = new HashSet<String>();
 		for (Variable varToAdd : projection) {
@@ -22,16 +39,34 @@ public class PigProjectionOperator implements IPigOperator {
 		}
 	}
 
+	/**
+	 * Adds the projection varibles.
+	 * 
+	 * @param variables
+	 *            the variables
+	 */
 	public void addProjectionVaribles(HashSet<String> variables) {
 		for (String varToAdd : variables) {
 			this.projectionVariables.add(varToAdd);
 		}
 	}
 
+	/**
+	 * Gets the projection variables.
+	 * 
+	 * @return the projection variables
+	 */
 	public HashSet<String> getProjectionVariables() {
 		return projectionVariables;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.cloud.pig.operator.IPigOperator#buildQuery(java.util.ArrayList,
+	 * boolean, java.util.ArrayList)
+	 */
 	@Override
 	public String buildQuery(ArrayList<BagInformation> intermediateBags,
 			boolean debug, ArrayList<PigFilterOperator> filterOps) {
@@ -41,37 +76,42 @@ public class PigProjectionOperator implements IPigOperator {
 		return this.checkIfProjectionPossible();
 	}
 
+	/**
+	 * Check if projection possible.
+	 * 
+	 * @return the string
+	 */
 	private String checkIfProjectionPossible() {
 		StringBuilder result = new StringBuilder();
 		if (projectionVariables.size() != 0) {
 			HashMap<BagInformation, HashSet<String>> varJoinMap = getValidProjectionVariables();
 
-			for (BagInformation curJoin : varJoinMap.keySet()) {
+			for (BagInformation curBag : varJoinMap.keySet()) {
 
 				// Projektion ist nicht notwendig
 				if (joinListAndProjectionListAreEquals(
-						curJoin.getJoinElements(), varJoinMap.get(curJoin))) {
+						curBag.getBagElements(), varJoinMap.get(curBag))) {
 					continue;
 				} else {
 					if (debug) {
 						result.append("-- Projection: "
-								+ varJoinMap.get(curJoin).toString()
+								+ varJoinMap.get(curBag).toString()
 										.replace("[", "").replace("]", "")
 								+ "\n");
 					}
 
-					BagInformation newJoin = new BagInformation(
+					BagInformation newBag = new BagInformation(
 							"INTERMEDIATE_BAG_" + BagInformation.idCounter);
 
-					result.append(newJoin.getName() + " = FOREACH "
-							+ curJoin.getName() + " GENERATE ");
+					result.append(newBag.getName() + " = FOREACH "
+							+ curBag.getName() + " GENERATE ");
 
 					int i = 0;
-					for (String var : varJoinMap.get(curJoin)) {
-						newJoin.getJoinElements().add(var);
+					for (String var : varJoinMap.get(curBag)) {
+						newBag.getBagElements().add(var);
 						result.append("$"
-								+ curJoin.getJoinElements().indexOf(var));
-						if (i + 1 < varJoinMap.get(curJoin).size()) {
+								+ curBag.getBagElements().indexOf(var));
+						if (i + 1 < varJoinMap.get(curBag).size()) {
 							result.append(", ");
 						} else {
 							result.append(";\n");
@@ -83,16 +123,16 @@ public class PigProjectionOperator implements IPigOperator {
 						result.append("\n");
 					}
 
-					newJoin.setPatternId(BagInformation.idCounter);
-					newJoin.setJoinElements(new ArrayList<String>(varJoinMap
-							.get(curJoin)));
+					newBag.setPatternId(BagInformation.idCounter);
+					newBag.setJoinElements(new ArrayList<String>(varJoinMap
+							.get(curBag)));
 
-					newJoin.mergeOptionalVariables(curJoin);
-					newJoin.addAppliedFilters(curJoin.getAppliedFilters());
-					newJoin.addBitVectors(curJoin.getBitVectors());
+					newBag.mergeOptionalVariables(curBag);
+					newBag.addAppliedFilters(curBag.getAppliedFilters());
+					newBag.addBitVectors(curBag.getBitVectors());
 
-					intermediateJoins.remove(curJoin);
-					intermediateJoins.add(newJoin);
+					intermediateJoins.remove(curBag);
+					intermediateJoins.add(newBag);
 					BagInformation.idCounter++;
 				}
 			}
@@ -100,13 +140,18 @@ public class PigProjectionOperator implements IPigOperator {
 		return result.toString();
 	}
 
+	/**
+	 * Gets the valid projection variables.
+	 * 
+	 * @return the valid projection variables
+	 */
 	private HashMap<BagInformation, HashSet<String>> getValidProjectionVariables() {
 		HashMap<BagInformation, HashSet<String>> varJoinMap = new HashMap<BagInformation, HashSet<String>>();
 		for (String projectionVar : projectionVariables) {
 			int varCounter = 0;
 			BagInformation projectionJoin = null;
 			for (BagInformation item : intermediateJoins) {
-				if (item.getJoinElements().contains(projectionVar)) {
+				if (item.getBagElements().contains(projectionVar)) {
 					varCounter++;
 					projectionJoin = item;
 				}
@@ -117,11 +162,11 @@ public class PigProjectionOperator implements IPigOperator {
 				// aonsonsten nicht droppen
 				HashSet<String> dropNotAllowedList = new HashSet<String>();
 				for (String dropCandidateVariable : projectionJoin
-						.getJoinElements()) {
+						.getBagElements()) {
 					// Variable wird noch für Joins mit anderen Bags gebraucht?
 					for (BagInformation otherJoin : intermediateJoins) {
 						if (!otherJoin.equals(projectionJoin)) {
-							if (otherJoin.getJoinElements().contains(
+							if (otherJoin.getBagElements().contains(
 									dropCandidateVariable)) {
 								dropNotAllowedList.add(dropCandidateVariable);
 							}
@@ -137,7 +182,7 @@ public class PigProjectionOperator implements IPigOperator {
 								// überprüfe ob Filter schon angewendet wurde,
 								// wenn ja kann sie gedroppt weden
 								for (BagInformation join : intermediateJoins) {
-									if (join.getJoinElements().contains(
+									if (join.getBagElements().contains(
 											"?" + filterVar)
 											&& !join.getAppliedFilters()
 													.contains(pigFilter)) {
@@ -156,7 +201,7 @@ public class PigProjectionOperator implements IPigOperator {
 				// Wende die Projetion nur an, wenn sich die Liste
 				// verkleinert
 				if (dropNotAllowedList.size() + 1 < projectionJoin
-						.getJoinElements().size()) {
+						.getBagElements().size()) {
 
 					HashSet<String> varList = varJoinMap.get(projectionJoin);
 					if (varList != null) {
@@ -176,6 +221,15 @@ public class PigProjectionOperator implements IPigOperator {
 		return varJoinMap;
 	}
 
+	/**
+	 * Join list and projection list are equals.
+	 * 
+	 * @param joinElements
+	 *            the join elements
+	 * @param compareList
+	 *            the compare list
+	 * @return true, if successful
+	 */
 	private boolean joinListAndProjectionListAreEquals(
 			ArrayList<String> joinElements, HashSet<String> compareList) {
 		if (joinElements.size() != compareList.size()) {
@@ -189,6 +243,12 @@ public class PigProjectionOperator implements IPigOperator {
 		return true;
 	}
 
+	/**
+	 * Replace variable in projection.
+	 * 
+	 * @param addBinding
+	 *            the add binding
+	 */
 	public void replaceVariableInProjection(HashMap<String, String> addBinding) {
 		if (addBinding != null) {
 			for (String oldVar : addBinding.keySet()) {

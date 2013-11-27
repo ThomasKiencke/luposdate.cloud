@@ -69,7 +69,7 @@ public class PigQuery {
 	 */
 	public ArrayList<String> getVariableList() {
 		ArrayList<String> result = new ArrayList<String>();
-		for (String elem : intermediateBags.get(0).getJoinElements()) {
+		for (String elem : intermediateBags.get(0).getBagElements()) {
 			// Bindings werden für die Ergebnismenge wieder rückgängig gemacht
 			boolean replaced = false;
 			for (String oldVar : this.addBinding.keySet()) {

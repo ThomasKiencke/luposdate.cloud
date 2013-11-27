@@ -26,26 +26,18 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.HashMap;
 import java.util.Properties;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import java17Dependencies.BitSet;
-import lupos.cloud.bloomfilter.BitvectorManager;
-import lupos.cloud.hbase.bulkLoad.HBaseKVMapper;
-
 import org.joda.time.DateTime;
 import org.xerial.snappy.Snappy;
 import org.apache.commons.cli.CommandLine;
@@ -54,11 +46,9 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.collections.map.LinkedMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configuration;
@@ -68,7 +58,6 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.BinaryComparator;
-import org.apache.hadoop.hbase.filter.ColumnPaginationFilter;
 import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.QualifierFilter;
@@ -93,22 +82,18 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.pig.Expression;
 import org.apache.pig.LoadCaster;
 import org.apache.pig.LoadFunc;
-import org.apache.pig.LoadMetadata;
 import org.apache.pig.LoadPushDown;
 import org.apache.pig.LoadStoreCaster;
 import org.apache.pig.OrderedLoadFunc;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
-import org.apache.pig.ResourceStatistics;
 import org.apache.pig.StoreFuncInterface;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
 import org.apache.pig.backend.hadoop.hbase.HBaseBinaryConverter;
 import org.apache.pig.backend.hadoop.hbase.HBaseTableInputFormat.HBaseTableIFBuilder;
 import org.apache.pig.builtin.Utf8StorageConverter;
-import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
@@ -116,8 +101,6 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.PigContext;
 import org.apache.pig.impl.logicalLayer.FrontendException;
-import org.apache.pig.impl.util.LinkedMultiMap;
-import org.apache.pig.impl.util.MultiMap;
 import org.apache.pig.impl.util.Utils;
 import org.apache.pig.impl.util.ObjectSerializer;
 import org.apache.pig.impl.util.UDFContext;
@@ -129,7 +112,9 @@ import com.google.common.io.ByteStreams;
  * Diese UDF Funktion ist eine angepasste Variante der originalen HBaseStorage()
  * UDF Funktion. Diese wurde zum größten Teil übernommen und an einigen Stellen
  * angepasst. Eine wichtige erweiterung ist die Möglichkeit nur einen bestimmten
- * rowKey zu laden, anstatt den gesamten Datenbestand einer Tabelle.
+ * rowKey zu laden, anstatt den gesamten Datenbestand einer Tabelle. Des
+ * weiteren wurde die Konfiguration der HBase Scan-Instanz verändert. (setBatch
+ * ...)
  */
 public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		LoadPushDown, OrderedLoadFunc {
@@ -1392,30 +1377,4 @@ public class HBaseLoadUDF extends LoadFunc implements StoreFuncInterface,
 		}
 		return incremented;
 	}
-
-	// @Override
-	// public String[] getPartitionKeys(String arg0, Job arg1) throws
-	// IOException {
-	// // TODO Auto-generated method stub
-	// return null;
-	// }
-	//
-	// @Override
-	// public ResourceSchema getSchema(String arg0, Job arg1) throws IOException
-	// {
-	// return null;
-	// }
-	//
-	// @Override
-	// public ResourceStatistics getStatistics(String arg0, Job arg1)
-	// throws IOException {
-	// // TODO Auto-generated method stub
-	// return null;
-	// }
-	//
-	// @Override
-	// public void setPartitionFilter(Expression arg0) throws IOException {
-	// // TODO Auto-generated method stub
-	//
-	// }
 }

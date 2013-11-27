@@ -18,8 +18,9 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 
 /**
- * UDF Funktion für Pig. In dieser Klasse wird eine eingehen Map in eine "Bag"
- * überführt um diese dann weiter zu verarbeiten.
+ * UDF Funktion für Pig. In dieser Klasse wird die Map-Datenstruktur in eine
+ * "Bag" überführt um diese dann weiter zu verarbeiten. Des Weiteren werden die
+ * Elemente an dieser Stelle getrennt und der Bloomfilter angewandt.
  */
 public class MapToBagUDF extends EvalFunc<DataBag> implements OrderedLoadFunc {
 
@@ -109,7 +110,6 @@ public class MapToBagUDF extends EvalFunc<DataBag> implements OrderedLoadFunc {
 	@Override
 	public WritableComparable<?> getSplitComparable(InputSplit split)
 			throws IOException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

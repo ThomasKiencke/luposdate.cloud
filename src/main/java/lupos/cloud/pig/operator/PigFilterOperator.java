@@ -3,37 +3,62 @@ package lupos.cloud.pig.operator;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.openrdf.query.parser.serql.ast.ASTBound;
-
 import lupos.cloud.pig.BagInformation;
-import lupos.cloud.pig.SinglePigQuery;
 import lupos.engine.operators.singleinput.filter.Filter;
 import lupos.sparql1_1.*;
 
-public class PigFilterOperator implements IPigOperator {
-	private ArrayList<BagInformation> intermediateJoins;
+/**
+ * Filter-Operation.
+ */
+public class PigFilterOperator {
+
+	/** Luposdate Filter. */
 	Filter filter;
 
+	/** Unterstütze Filter-Typen. */
+	@SuppressWarnings("rawtypes")
 	public static Class[] supportedOperations = { ASTVar.class,
 			ASTLessThanNode.class, ASTNotNode.class, ASTRDFLiteral.class,
 			ASTStringLiteral.class, ASTGreaterThanNode.class,
 			ASTLessThanEqualsNode.class, ASTGreaterThanEqualsNode.class,
 			ASTEqualsNode.class, ASTNotEqualsNode.class, ASTBoundFuncNode.class };
+
+	/** Filterliste. */
 	ArrayList<String> filterListe = new ArrayList<String>();
-	private boolean debug;
+
+	/** Variablenliste. */
 	private ArrayList<String> variables = new ArrayList<String>();
+
+	/** PigLatin Filter. */
 	private String pigFilter = null;
 
+	/**
+	 * Instantiates a new pig filter operator.
+	 * 
+	 * @param filter
+	 *            the filter
+	 */
 	public PigFilterOperator(Filter filter) {
 		this.filter = filter;
 		pigFilter = generateFilterList(filter.getNodePointer().getChildren()[0]);
 	}
-	
+
+	/**
+	 * Gets the pig filter.
+	 * 
+	 * @return the pig filter
+	 */
 	public String getPigFilter() {
 		return pigFilter;
 	}
 
-
+	/**
+	 * Generate filter list.
+	 * 
+	 * @param node
+	 *            the node
+	 * @return the string
+	 */
 	private String generateFilterList(Node node) {
 		StringBuilder result = new StringBuilder();
 
@@ -65,7 +90,7 @@ public class PigFilterOperator implements IPigOperator {
 					result.append(" NOT(");
 					closeBracket = true;
 				} else if (node instanceof ASTBoundFuncNode) {
-//					ASTBoundFuncNode bound = (ASTBoundFuncNode) node;
+					// ASTBoundFuncNode bound = (ASTBoundFuncNode) node;
 					// ASTNotNode notNode = (ASTNotNode) node;
 					result.append(" lupos.cloud.pig.udfs.BoundFilterUDF(");
 					closeBracket = true;
@@ -122,13 +147,31 @@ public class PigFilterOperator implements IPigOperator {
 	}
 
 	/**
-	 * @deprecated  Use PigFilterExecuter!
+	 * Builds the query.
+	 * 
+	 * @param intermediateBags
+	 *            the intermediate bags
+	 * @param debug
+	 *            the debug
+	 * @param filterOps
+	 *            the filter ops
+	 * @return the string
+	 * @deprecated Use PigFilterExecuter!
 	 */
 	@Deprecated
-	public String buildQuery(ArrayList<BagInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+	public String buildQuery(ArrayList<BagInformation> intermediateBags,
+			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		return null;
 	}
 
+	/**
+	 * Check if filter is supported.
+	 * 
+	 * @param node
+	 *            the node
+	 * @return true, if successful
+	 */
+	@SuppressWarnings("rawtypes")
 	public static boolean checkIfFilterIsSupported(Node node) {
 		ArrayList<Class> supportedClasses = new ArrayList<Class>();
 		for (Class clazz : supportedOperations) {
@@ -167,6 +210,13 @@ public class PigFilterOperator implements IPigOperator {
 		return true;
 	}
 
+	/**
+	 * Gets the filter variables.
+	 * 
+	 * @param node
+	 *            the node
+	 * @return the filter variables
+	 */
 	public static HashSet<String> getFilterVariables(Node node) {
 		HashSet<String> result = new HashSet<String>();
 
@@ -191,6 +241,11 @@ public class PigFilterOperator implements IPigOperator {
 		return result;
 	}
 
+	/**
+	 * Gets the variables.
+	 * 
+	 * @return the variables
+	 */
 	public ArrayList<String> getVariables() {
 		return variables;
 	}

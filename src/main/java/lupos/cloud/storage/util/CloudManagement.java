@@ -44,37 +44,42 @@ import lupos.datastructures.bindings.Bindings;
 import lupos.datastructures.items.Variable;
 import lupos.datastructures.items.literal.LiteralFactory;
 import lupos.datastructures.queryresult.QueryResult;
-import lupos.misc.BitVector;
 import lupos.misc.util.ImmutableIterator;
 
 /**
- * Diese Klasse ist für die Kommunikation mit der Cloud zuständig (sowohl
- * HBase als auch MapReduce/Pig).
+ * Diese Klasse ist für die Kommunikation mit der Cloud zuständig (sowohl HBase
+ * als auch MapReduce/Pig).
  */
 public class CloudManagement {
 
-	/** The count triple. */
+	/** Anzahl der geladenen Tripel. */
 	public static long countTriple = 0;
 
-	/** The pig server. */
+	/** PigServer Referenzs. */
 	static PigServer pigServer = null;
 
-	/** The pig query result. */
+	/** Query Result. */
 	Iterator<Tuple> pigQueryResult = null;
 
-	/** The cur variable list. */
+	/** Variablenliste. */
 	ArrayList<String> curVariableList = null;
 
+	/** falls true wird das generierte PigLatin-Programm ausgegeben */
 	boolean PRINT_PIGLATIN_PROGRAMM = false;
 
+	/** Testing Modus. Wenn aktiv, wird das Programm nicht versendet. */
 	boolean TESTING_MODE = false;
 
+	/** # Reduce Knoten. */
 	public static int PARALLEL_REDUCE_OPERATIONS = 5;
 
+	/** Dauer der Bitvektorgeneierung. */
 	public double bitvectorTime = 0;
 
-	public static boolean bloomfilter_active = false;
+	/** Aktiviert den Bloomfilter. */
+	public static boolean bloomfilter_active = true;
 
+	/** Zeit Formatierung. */
 	static SimpleDateFormat formatter = new SimpleDateFormat(
 			"yyyy.MM.dd HH:mm:ss");
 
@@ -88,10 +93,6 @@ public class CloudManagement {
 		try {
 			HBaseConnection.init();
 			pigServer = new PigServer(ExecType.MAPREDUCE);
-			// pigServer.getPigContext().getProperties().setProperty("pig.tmpfilecompression",
-			// "true");
-			// pigServer.getPigContext().getProperties().setProperty("pig.tmpfilecompression.codec",
-			// "lzo");
 			for (String tablename : HBaseDistributionStrategy
 					.getTableInstance().getTableNames()) {
 				HBaseConnection.createTable(tablename,
@@ -113,8 +114,8 @@ public class CloudManagement {
 		for (HBaseTriple item : triple) {
 			if (countTriple % 1000000 == 0) {
 				if (countTriple != 0) {
-					System.out.println(formatter.format(new Date()).toString() + ": "
-							+ countTriple + " HBaseTripel importiert!");
+					System.out.println(formatter.format(new Date()).toString()
+							+ ": " + countTriple + " HBaseTripel importiert!");
 				}
 			}
 			try {
@@ -295,10 +296,18 @@ public class CloudManagement {
 		return result;
 	}
 
+	/**
+	 * Shutdown.
+	 */
 	public void shutdown() {
 		pigServer.shutdown();
 	}
 
+	/**
+	 * Gets the bitvector time.
+	 * 
+	 * @return the bitvector time
+	 */
 	public double getBitvectorTime() {
 		return bitvectorTime;
 	}

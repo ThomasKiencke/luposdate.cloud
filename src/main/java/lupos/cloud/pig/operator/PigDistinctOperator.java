@@ -5,10 +5,23 @@ import java.util.ArrayList;
 import lupos.cloud.pig.BagInformation;
 import lupos.cloud.storage.util.CloudManagement;
 
+/**
+ * Pig Distinct Operator.
+ */
 public class PigDistinctOperator implements IPigOperator {
+
+	/** The intermediate joins. */
 	private ArrayList<BagInformation> intermediateJoins;
 
-	public String buildQuery(ArrayList<BagInformation> intermediateBags, boolean debug, ArrayList<PigFilterOperator> filterOps) {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * lupos.cloud.pig.operator.IPigOperator#buildQuery(java.util.ArrayList,
+	 * boolean, java.util.ArrayList)
+	 */
+	public String buildQuery(ArrayList<BagInformation> intermediateBags,
+			boolean debug, ArrayList<PigFilterOperator> filterOps) {
 		StringBuilder result = new StringBuilder();
 		this.intermediateJoins = intermediateBags;
 
@@ -16,29 +29,30 @@ public class PigDistinctOperator implements IPigOperator {
 			result.append("-- Distinct: \n");
 		}
 
-		BagInformation curJoin = intermediateJoins.get(0);
-		BagInformation newJoin = new BagInformation("INTERMEDIATE_BAG_"
+		BagInformation curBag = intermediateJoins.get(0);
+		BagInformation newBag = new BagInformation("INTERMEDIATE_BAG_"
 				+ BagInformation.idCounter);
 
-		result.append(newJoin.getName() + " = DISTINCT " + curJoin.getName());
-		
+		result.append(newBag.getName() + " = DISTINCT " + curBag.getName());
+
 		if (CloudManagement.PARALLEL_REDUCE_OPERATIONS > 1) {
-			result.append(" PARALLEL " + CloudManagement.PARALLEL_REDUCE_OPERATIONS);
+			result.append(" PARALLEL "
+					+ CloudManagement.PARALLEL_REDUCE_OPERATIONS);
 		}
-		
-		result.append( ";\n");
+
+		result.append(";\n");
 
 		if (debug) {
 			result.append("\n");
 		}
 
-		newJoin.setPatternId(BagInformation.idCounter);
-		newJoin.setJoinElements(curJoin.getJoinElements());
-		newJoin.addAppliedFilters(curJoin.getAppliedFilters());
-		newJoin.addBitVectors(curJoin.getBitVectors());
+		newBag.setPatternId(BagInformation.idCounter);
+		newBag.setJoinElements(curBag.getBagElements());
+		newBag.addAppliedFilters(curBag.getAppliedFilters());
+		newBag.addBitVectors(curBag.getBitVectors());
 
-		intermediateJoins.remove(curJoin);
-		intermediateJoins.add(newJoin);
+		intermediateJoins.remove(curBag);
+		intermediateJoins.add(newBag);
 		BagInformation.idCounter++;
 		return result.toString();
 	}
